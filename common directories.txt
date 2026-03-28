@@ -1,0 +1,416 @@
+================================================================================
+                    LINUX FILE SYSTEM — DIRECTORY REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+Understanding the Linux file system is essential for both system administration
+and penetration testing. Every directory has a purpose — knowing what lives
+where helps you find sensitive data, escalate privileges, and understand
+how a system is configured.
+
+================================================================================
+                         /etc — CONFIGURATION FILES
+================================================================================
+
+WHAT IT IS
+----------
+/etc stands for "et cetera" and contains system-wide configuration files.
+This is one of the most important directories for pentesters — it holds
+credentials, network settings, SSH config, and user account information.
+
+KEY FILES
+---------
+
+  /etc/passwd
+    Lists all user accounts on the system (username, UID, shell, home dir).
+    Readable by all users. Used to enumerate valid usernames.
+    Format: username:x:UID:GID:info:home:shell
+
+  /etc/shadow
+    Contains hashed passwords for all users.
+    Only readable by root — if you can read this, you can crack passwords.
+    Priority target during privilege escalation.
+    Use with john or hashcat to crack offline.
+
+  /etc/hosts
+    Maps IP addresses to hostnames locally (overrides DNS).
+    Attackers check this to discover internal hostnames and network layout.
+    Format: 192.168.1.1   server.local
+
+  /etc/hostname
+    Contains the machine's hostname.
+    Useful for identifying what kind of machine you're on.
+
+  /etc/fstab
+    Disk and partition mount settings.
+    Can reveal NFS shares, external drives, or misconfigured mount points.
+
+  /etc/ssh/sshd_config
+    SSH server configuration.
+    Check for: PermitRootLogin yes, PasswordAuthentication yes,
+    allowed users, port changes. Misconfigs here are goldmines.
+
+  /etc/crontab
+    Scheduled tasks run automatically by the system.
+    Common privilege escalation vector — if a script runs as root
+    and you can write to it, you can execute code as root.
+
+  /etc/sudoers
+    Defines which users can run commands as root with sudo.
+    Check with: sudo -l
+    Misconfigured entries allow privilege escalation.
+
+  /etc/os-release
+    Contains OS name and version info.
+    Useful for identifying the system during enumeration.
+
+  /etc/group
+    Lists all groups and their members.
+    Useful for understanding user privileges and group memberships.
+
+  /etc/environment
+    System-wide environment variables.
+    Can reveal paths, proxy settings, or credentials left by mistake.
+
+  /etc/resolv.conf
+    DNS server configuration.
+    Reveals internal DNS servers — useful for network mapping.
+
+  /etc/network/interfaces  (or /etc/netplan/)
+    Network interface configuration.
+    Reveals IP addresses, gateways, and network layout.
+
+USEFUL COMMANDS
+---------------
+
+  cd /etc               Navigate to the etc directory
+  ls /etc               List its contents
+  cat /etc/passwd       Read user account list
+  cat /etc/shadow       Read password hashes (requires root)
+  cat /etc/hosts        Read IP-to-hostname mappings
+  cat /etc/ssh/sshd_config    Read SSH server config
+  cat /etc/crontab      Read scheduled tasks
+  cat /etc/sudoers      Read sudo permissions (may need root)
+
+================================================================================
+                    /var — VARIABLE / FREQUENTLY CHANGING DATA
+================================================================================
+
+WHAT IT IS
+----------
+/var contains data that changes frequently while the system runs.
+Logs, web files, mail spools, and application state all live here.
+For pentesters this is where you find logs (to cover tracks or read activity),
+web application files, and stored application data.
+
+KEY SUBDIRECTORIES
+------------------
+
+  /var/log/
+    System and application log files.
+    High value — shows login attempts, errors, running services.
+
+    /var/log/auth.log         SSH logins, sudo usage, authentication events
+    /var/log/syslog           General system activity
+    /var/log/apache2/         Apache web server logs (access + error)
+    /var/log/nginx/           NGINX web server logs
+    /var/log/faillog          Failed login attempts
+    /var/log/kern.log         Kernel messages
+
+    As an attacker: check logs to understand what's running.
+    As an attacker post-exploitation: clear or tamper with logs to hide activity.
+
+  /var/www/
+    Default web server root for Apache and NGINX.
+    Contains website files — PHP, HTML, config files with DB credentials.
+
+    /var/www/html/            Default web root (public-facing files)
+    Look for: config.php, wp-config.php, .env — often contain DB passwords.
+
+  /var/tmp/
+    Temporary files that PERSIST after reboot (unlike /tmp).
+    Useful for storing files that need to survive a restart.
+
+  /var/spool/
+    Files waiting to be processed.
+    /var/spool/mail/          User mail — may contain sensitive info
+    /var/spool/cron/          User-specific cron jobs — check for privesc
+
+  /var/lib/
+    State and database info used by installed programs.
+    /var/lib/mysql/           MySQL database files
+    /var/lib/dpkg/            Installed package list
+
+  /var/cache/
+    Cached data for applications.
+    Sometimes contains old package files or stored credentials.
+
+USEFUL COMMANDS
+---------------
+
+  cat /var/log/auth.log         View authentication and login logs
+  tail -f /var/log/syslog       Watch live system log output
+  ls /var/www/html/             List web server files
+  cat /var/www/html/config.php  Look for hardcoded DB credentials
+  ls /var/spool/mail/           Check for user mail
+
+================================================================================
+                         /root — ROOT USER HOME
+================================================================================
+
+WHAT IT IS
+----------
+The home directory for the root (superuser) account.
+Unlike regular users whose home dirs are in /home/username,
+root's home is /root. Access to this directory means you have
+full control of the machine.
+
+  /root/.bash_history     Commands previously run as root — goldmine
+  /root/.ssh/             SSH keys — may contain private keys for other servers
+  /root/.ssh/id_rsa       Root's private SSH key
+  /root/.ssh/authorized_keys    Keys allowed to SSH in as root
+
+USEFUL COMMANDS
+---------------
+
+  ls -la /root                  List root's home (requires root access)
+  cat /root/.bash_history       View command history
+  cat /root/.ssh/id_rsa         Read private SSH key (use to pivot to other machines)
+
+================================================================================
+                         /tmp — TEMPORARY FILES
+================================================================================
+
+WHAT IT IS
+----------
+Short for "temporary" — stores files that are only needed briefly.
+Contents are CLEARED on every reboot (unlike /var/tmp).
+
+WHY IT MATTERS FOR PENTESTING
+-------------------------------
+Any user can write to /tmp by default — no special permissions needed.
+This makes it the go-to location for:
+  - Dropping enumeration scripts after gaining access
+  - Storing reverse shells or payloads temporarily
+  - Writing exploit output or captured files
+
+  NOTE: Because it's cleared on reboot and writable by all,
+        /tmp is commonly used in post-exploitation but be aware
+        that a reboot will wipe anything stored here.
+
+USEFUL COMMANDS
+---------------
+
+  ls -la /tmp                   See what's currently in /tmp
+  cp script.sh /tmp/            Drop a script into /tmp
+  chmod +x /tmp/script.sh       Make it executable
+  /tmp/script.sh                Run it
+
+================================================================================
+                    /home — USER HOME DIRECTORIES
+================================================================================
+
+WHAT IT IS
+----------
+Contains a personal directory for each regular user on the system.
+Each user's files, configs, and history are stored here.
+
+KEY FILES TO CHECK IN EACH USER'S HOME
+----------------------------------------
+
+  ~/.bash_history               Command history — reveals what the user has done
+  ~/.ssh/id_rsa                 Private SSH key — can be used to access other systems
+  ~/.ssh/authorized_keys        Public keys allowed to log in as this user
+  ~/.bashrc / ~/.bash_profile   Shell config — may contain exported credentials
+  ~/.config/                    App configs — sometimes store tokens or passwords
+
+/home/neo/.bashrc          ← YOUR file — this is the one to edit and back up
+/etc/bash.bashrc           ← system-wide, applies to all users
+/etc/skel/.bashrc          ← template copied to new users when created, don't touch
+
+USEFUL COMMANDS
+---------------
+  ls -a                         # show ALL files including hidden ones
+  ls /home                      List all users with home directories
+  ls -la /home/username/        List a specific user's files
+  cat /home/username/.bash_history    Read their command history
+  find /home -name "*.txt" 2>/dev/null    Search for text files across all homes
+
+================================================================================
+                    /proc — PROCESS & KERNEL INFORMATION
+================================================================================
+
+WHAT IT IS
+----------
+A virtual filesystem — doesn't exist on disk, generated live by the kernel.
+Contains real-time information about running processes and system state.
+
+KEY FILES
+---------
+
+  /proc/version                 Kernel version and OS info
+  /proc/cmdline                 Boot parameters passed to the kernel
+  /proc/net/tcp                 Active TCP connections and open ports
+  /proc/<PID>/cmdline           Exact command used to start a process
+  /proc/<PID>/environ           Environment variables for a running process
+                                (may contain passwords or tokens)
+
+USEFUL COMMANDS
+---------------
+
+  cat /proc/version             Check kernel version (look up exploits)
+  cat /proc/net/tcp             View open network connections in hex
+  cat /proc/1/environ           View environment variables of PID 1
+
+================================================================================
+                    /bin, /sbin, /usr/bin — EXECUTABLES
+================================================================================
+
+WHAT IT IS
+----------
+These directories contain system binaries (programs and commands).
+
+  /bin/         Essential binaries available to all users (ls, cat, cp, bash)
+  /sbin/        System binaries — mostly for root/admin use (ifconfig, iptables)
+  /usr/bin/     User-installed programs and tools
+  /usr/sbin/    Admin tools installed by the system or packages
+
+WHY IT MATTERS
+--------------
+  Knowing what tools are available on a compromised machine is critical.
+  Check for: python, perl, gcc, wget, curl, nc (netcat) — these can all
+  be used to escalate, download payloads, or establish reverse shells.
+
+USEFUL COMMANDS
+---------------
+
+  which python3                 Check if python3 is installed and where
+  which nc                      Check if netcat is available
+  which wget                    Check if wget is available
+  find / -perm -4000 2>/dev/null    Find all SUID binaries (privesc)
+
+================================================================================
+                    /opt — OPTIONAL / THIRD PARTY SOFTWARE
+================================================================================
+
+WHAT IT IS
+----------
+Contains manually installed third-party software not managed by the
+package manager. Often where custom applications or tools are placed.
+
+  Check here for: internally developed apps, custom scripts,
+  vulnerable software versions, or hardcoded credentials in configs.
+
+USEFUL COMMANDS
+---------------
+
+  ls /opt                       See what's installed here
+  find /opt -name "*.conf" 2>/dev/null    Search for config files
+
+================================================================================
+                    /dev — DEVICE FILES
+================================================================================
+
+WHAT IT IS
+----------
+Contains device files representing hardware and virtual devices.
+
+  /dev/null         The void — discard output (2>/dev/null)
+  /dev/sda          First hard drive
+  /dev/tty          Current terminal
+  /dev/mem          Physical memory access (highly restricted)
+
+================================================================================
+                    QUICK REFERENCE — PENTESTER PRIORITIES
+================================================================================
+
+  PRIORITY 1 — CREDENTIALS & USERS
+  /etc/passwd               User account list
+  /etc/shadow               Password hashes (needs root)
+  /etc/sudoers              Sudo permissions
+  /home/*/.bash_history     User command history
+  /root/.bash_history       Root command history
+  /root/.ssh/id_rsa         Root SSH private key
+  /var/www/html/config.php  Web app DB credentials
+
+  PRIORITY 2 — SYSTEM INFO & NETWORK
+  /etc/hosts                Internal hostnames and IPs
+  /etc/ssh/sshd_config      SSH configuration
+  /proc/version             Kernel version (find exploits)
+  /etc/os-release           OS version
+  /etc/resolv.conf          Internal DNS servers
+  /proc/net/tcp             Open network connections
+
+  PRIORITY 3 — PERSISTENCE & PRIVESC
+  /etc/crontab              Scheduled tasks (run as root?)
+  /var/spool/cron/          User cron jobs
+  find / -perm -4000        SUID binaries
+  /tmp/                     Drop scripts and payloads here
+  /var/tmp/                 Persistent temp storage
+
+  PRIORITY 4 — LOGS (COVER TRACKS / GATHER INTEL)
+  /var/log/auth.log         Login attempts
+  /var/log/syslog           General system activity
+  /var/log/apache2/         Web server access logs
+
+================================================================================
+
+cd /home        # note the leading slash — always needed for absolute paths
+```
+
+**The `.bashrc` you want is `/home/neo/.bashrc`** — that is your personal one. Here is why:
+```
+/home/neo/.bashrc          ← YOUR file — this is the one to edit and back up
+/etc/bash.bashrc           ← system-wide, applies to all users
+/etc/skel/.bashrc          ← template copied to new users when created, don't touch
+
+
+/etc/passwd 
+/etc/shadow
+
+/etc/usr/share/hosts
+
+/etc — What It Is:
+/etc stands for "et cetera"
+
+It contains system configuration files
+
+Examples of files in /etc:
+
+/etc/passwd – user account info
+
+/etc/hostname – system hostname
+
+/etc/hosts – IP to hostname mappings
+
+/etc/fstab – disk mount settings
+
+/etc/ssh/sshd_config – SSH server settings
+
+cd /etc        # navigate to the etc directory
+ls /etc        # list its contents
+cat /etc/passwd   # read a config file
+
+
+/var directory contains variable data that changes frequently while the system is running. This includes logs, spool files, and temporary application data.
+
+/var/log/	System and application log files (e.g., syslog, auth.log)
+/var/tmp/	Temporary files that persist after reboot
+/var/spool/	Files waiting to be processed (e.g., mail, print jobs)
+/var/lib/	State information used by programs (e.g., package manager)
+/var/www/	Default web server root for Apache/NGINX
+/var/cache/	Cached data for applications
+
+
+
+/root
+
+Unlike the /home directory, the /root folder is actually the home for the "root" system user. There isn't anything more to this folder other than just understanding that this is the home directory for the "root" user. But, it is worth a mention as the logical presumption is that this user would have their data in a directory such as "/home/root" by default.  
+
+
+/tmp
+
+This is a unique root directory found on a Linux install. Short for "temporary", the /tmp directory is volatile and is used to store data that is only needed to be accessed once or twice. Similar to the memory on your computer, once the computer is restarted, the contents of this folder are cleared out.
+
+What's useful for us in pentesting is that any user can write to this folder by default. Meaning once we have access to a machine, it serves as a good place to store things like our enumeration scripts.

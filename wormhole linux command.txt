@@ -1,0 +1,19 @@
+================================================================================
+                         WORMHOLE — FILE TRANSFER
+================================================================================
+
+STEP 1 — SENDER (you)
+----------------------
+wormhole send file.mp4
+
+  Run this first. It will print a receive command — share it with recipient.
+
+--------------------------------------------------------------------------------
+
+STEP 2 — RECEIVER (them)
+-------------------------
+wormhole receive <code shown above>
+
+  Run the exact command the sender shared. File transfers peer-to-peer.
+
+================================================================================

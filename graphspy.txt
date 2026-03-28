@@ -1,0 +1,137 @@
+=============================================================
+GRAPHSPY - BEGINNER NOTES
+Created by: RedByte1337
+GitHub: https://github.com/RedByte1337/GraphSpy
+=============================================================
+
+WHAT IS GRAPHSPY?
+-------------------------------------------------------------
+GraphSpy is a red team / penetration testing tool used to
+perform initial access and post-exploitation attacks against:
+  - Azure Active Directory (AAD / Entra ID)
+  - Office 365 (O365)
+
+It has a browser-based GUI, making it beginner-friendly
+compared to command-line-only tools.
+
+It abuses Microsoft's Graph API to interact with services
+like Outlook, Teams, OneDrive, and SharePoint using just
+an access token.
+-------------------------------------------------------------
+
+
+WHAT CAN IT DO?
+-------------------------------------------------------------
+  - Device Code Phishing: Generate device codes to trick
+    users into handing over OAuth tokens
+
+  - Token Management: Store and manage access/refresh tokens
+    for multiple users and scopes in one place
+
+  - Post-Exploitation:
+      * Read and send Outlook emails
+      * Browse OneDrive and SharePoint files
+      * Interact with Microsoft Teams
+
+  - MFA Persistence: Add MFA methods (OTP app, FIDO keys)
+    to maintain access even after password resets
+
+  - WinHello / PRT Attacks: Register fake devices and
+    generate Primary Refresh Tokens for persistence
+
+  - Entra ID Enumeration: List users, groups, apps,
+    devices, and conditional access policies
+
+  - Multiple Databases: Keep separate projects/assessments
+    organized in their own databases
+-------------------------------------------------------------
+
+
+INSTALLATION - LINUX (Recommended)
+-------------------------------------------------------------
+Step 1: Install pipx (skip if already installed)
+  apt install pipx
+  pipx ensurepath
+
+Step 2: Install GraphSpy from PyPI
+  pipx install graphspy
+
+  -- OR install directly from GitHub --
+  pipx install git+https://github.com/RedByte1337/GraphSpy
+-------------------------------------------------------------
+
+
+INSTALLATION - WINDOWS
+-------------------------------------------------------------
+Step 1: Install pipx
+  python -m pip install pipx
+  python -m pipx ensurepath
+
+Step 2: Install GraphSpy
+  python -m pipx install graphspy
+
+  -- OR from GitHub --
+  python -m pipx install git+https://github.com/RedByte1337/GraphSpy
+-------------------------------------------------------------
+
+
+INSTALLATION - MANUAL (Clone from GitHub)
+-------------------------------------------------------------
+  cd /opt
+  git clone https://github.com/RedByte1337/GraphSpy.git
+  cd GraphSpy
+  python3 -m pip install -r requirements.txt
+
+  Run manually:
+  python3 /opt/GraphSpy/GraphSpy/GraphSpy.py
+-------------------------------------------------------------
+
+
+RUNNING GRAPHSPY
+-------------------------------------------------------------
+Default launch (opens on localhost port 5000):
+  graphspy
+
+Then open your browser and go to:
+  http://127.0.0.1:5000
+
+Run on a custom IP and port:
+  graphspy -i 192.168.0.10 -p 8080
+
+Run on all interfaces:
+  graphspy -i 0.0.0.0
+
+Use a specific database file:
+  graphspy -d /path/to/database.db
+
+View all options/help:
+  graphspy -h
+-------------------------------------------------------------
+
+
+IMPORTANT SECURITY WARNING
+-------------------------------------------------------------
+  - GraphSpy has NO built-in authentication
+  - NEVER expose it on an untrusted or public network
+  - Only run it on localhost or behind a secure proxy
+  - Unauthorized access exposes all stored tokens
+    and target data in the database
+-------------------------------------------------------------
+
+
+DATABASE INFO
+-------------------------------------------------------------
+  - GraphSpy uses SQLite3 to store tokens and session data
+  - Default DB location: ~/.gspy/databases/database.db
+  - You can create multiple DBs for different assessments
+  - Switch between DBs from the Settings page in the GUI
+-------------------------------------------------------------
+
+
+USEFUL LINKS
+-------------------------------------------------------------
+  GitHub:  https://github.com/RedByte1337/GraphSpy
+  Wiki:    https://github.com/RedByte1337/GraphSpy/wiki
+  Install: https://github.com/RedByte1337/GraphSpy/wiki/Installation
+  Usage:   https://github.com/RedByte1337/GraphSpy/wiki/GraphSpy-Usage
+-------------------------------------------------------------

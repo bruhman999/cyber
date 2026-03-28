@@ -1,0 +1,167 @@
+================================================================================
+                    JOHN THE RIPPER — COMPLETE REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+John the Ripper (JtR) is a fast and flexible password cracking tool.
+It supports hundreds of hash types and multiple attack modes including
+wordlist attacks, brute force, and rule-based mangling.
+
+It works offline — you extract hashes from a system, then crack them
+on your own machine without touching the target again.
+
+Required tools: john, unshadow
+Common wordlists: /usr/share/wordlists/rockyou.txt
+                  /usr/share/wordlists/fasttrack.txt
+
+================================================================================
+                    STEP 1 — GATHER PASSWORD HASHES
+================================================================================
+
+ON A LINUX SYSTEM
+-----------------
+Passwords are split across two files:
+  /etc/passwd     User account info (readable by all)
+  /etc/shadow     Password hashes (readable by root only)
+
+Copy both files to a working directory:
+  sudo cp /etc/passwd /tmp/passwd
+  sudo cp /etc/shadow /tmp/shadow
+
+Combine them using unshadow (built into John the Ripper):
+  sudo unshadow /tmp/passwd /tmp/shadow > /tmp/hashes
+
+Filter to only grab hashed entries (removes accounts with no password):
+  sudo unshadow /tmp/passwd /tmp/shadow | grep '\$y' | tee /tmp/hashes
+
+  NOTE: The hash type prefix tells you the algorithm used:
+    $1$    MD5
+    $5$    SHA-256
+    $6$    SHA-512
+    $y$    yescrypt (modern default on many distros)
+    $2b$   bcrypt
+
+ON A WINDOWS SYSTEM
+--------------------
+Windows stores hashes in the SAM database. Extract with:
+  samdump2, secretsdump.py (Impacket), or Mimikatz
+
+  python3 secretsdump.py -sam SAM -system SYSTEM LOCAL > /tmp/winhashes.txt
+
+================================================================================
+                    STEP 2 — IDENTIFY THE HASH TYPE
+================================================================================
+
+John can usually auto-detect the hash type, but you can also check manually.
+
+  john --list=formats                       List ALL supported hash formats
+  john --list=formats | grep -i md5         Search for a specific format
+  hash-identifier                           Interactive tool to identify hash type
+
+  Common format flags to use with --format=:
+    crypt           Linux shadow hashes (auto-detects $1, $5, $6, $y)
+    md5crypt        MD5-based Linux hashes ($1$)
+    sha512crypt     SHA-512 Linux hashes ($6$)
+    bcrypt          bcrypt hashes ($2b$)
+    nt              Windows NTLM hashes
+    lm              Windows LM hashes (older)
+    raw-md5         Plain unsalted MD5
+    raw-sha1        Plain unsalted SHA1
+    raw-sha256      Plain unsalted SHA256
+
+================================================================================
+                    STEP 3 — CRACK THE HASHES
+================================================================================
+
+WORDLIST ATTACK (most common)
+------------------------------
+Try every password in a wordlist against the hashes:
+
+  john <hashfile> --wordlist=<wordlist>
+
+  Example:
+  john /tmp/hashes --wordlist=/usr/share/wordlists/rockyou.txt
+
+  With a specific format:
+  john /tmp/hashes --wordlist=/usr/share/wordlists/fasttrack.txt --format=crypt
+
+  NOTE: Press Ctrl+C to stop at any point — progress is saved automatically
+        and can be resumed later.
+
+--------------------------------------------------------------------------------
+
+WORDLIST + RULES (mangling)
+-----------------------------
+Rules modify wordlist entries to try common variations like
+capitalising letters, adding numbers, substituting characters, etc.
+
+  john <hashfile> --wordlist=<wordlist> --rules
+
+  Example:
+  john /tmp/hashes --wordlist=/usr/share/wordlists/rockyou.txt --rules
+
+  Specify a named ruleset:
+  john /tmp/hashes --wordlist=/usr/share/wordlists/rockyou.txt --rules=Jumbo
+
+  Common rulesets:
+    --rules             Default rules
+    --rules=Jumbo       Extended rules (more variations, slower)
+    --rules=KoreLogic   Very thorough ruleset for complex passwords
+
+--------------------------------------------------------------------------------
+
+BRUTE FORCE ATTACK (incremental)
+----------------------------------
+Try every possible character combination — slow but exhaustive.
+Use when you have no wordlist or other attacks have failed.
+
+  john <hashfile> --incremental
+
+  Specify character set:
+  john <hashfile> --incremental=Di
+
+
+
+
+
+Copy-and-paste a list of usernames to work with.
+USERNAMES=("sophie" "nathaniel" "lauren" "christopher" "seth" "connor" "beverly" "craig" "debra" "sandra" "alice" "roberto" "ivan" "gloria" "nicole" "johnny" "juliana" "amanda" "jerry" "joe" "gilbert" "riley" "stephanie" "troy" "liam" "hector" "nick" "clark" "danna" "perry" "alexis" "stuart" "daisy" "joey" "ron" "janet" "albert" "ben" "ashley" "dan" "shane" "scott" "sandy" "paul" "terry" "marion" "isabel" )
+Create all the user accounts.
+sudo bash -c " \
+for user in $USERNAMES; do 
+	useradd \$user; 
+	password=\$(shuf -n 1 /usr/share/wordlists/fasttrack.txt); 
+	echo \$user:\$password | chpasswd; 
+	echo Creating user \"\$user\"...; 
+done ;
+
+echo 'All done!'
+"
+Copy the Linux password file and shadow file into a temporary directory.
+sudo bash -c " \
+cp /etc/passwd /tmp/passwd
+cp /etc/shadow /tmp/shadow
+"
+Unshadow the Linux shadow passwords with John The Ripper to collect password hashes.
+sudo bash -c " \
+unshadow /tmp/passwd /tmp/shadow | grep '\$y'| tee /tmp/hashes
+"
+Crack the passwords with John The Ripper!
+john /tmp/hashes --wordlist /usr/share/wordlists/fasttrack.txt --format=crypt
+This may take some time, so once you see some passwords come through and you are satsified, press Ctrl+C to stop John The Ripper.
+
+Cleanup
+Remove all the created users.
+sudo bash -c " \
+for user in $USERNAMES; do 
+	userdel \$user; 
+	echo Removing user \"\$user\"...; 
+done ;
+
+echo 'All done!' 
+"
+Remove the setup files from the temporary directory.
+sudo bash -c " \
+rm /tmp/passwd /tmp/shadow /tmp/hashes
+"

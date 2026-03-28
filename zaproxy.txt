@@ -1,0 +1,353 @@
+FOR EASY SCANS, CLICK AUTOMATED SCANS AND CHECK ALERTS
+
+================================================================================
+ZAPROXY (ZAP) — WEB APPLICATION TESTING REFERENCE
+OVERVIEW
+OWASP ZAP (Zed Attack Proxy) is an open-source web application security
+scanner and intercepting proxy. It sits between your browser and a target
+web application, allowing you to intercept, inspect, modify, and replay
+HTTP/HTTPS traffic. It also includes automated scanners for finding common
+web vulnerabilities.
+Key features:
+
+Intercept and modify HTTP/HTTPS requests and responses in real time
+Automated active and passive vulnerability scanning
+Spider/crawler to map out all pages and endpoints of a web application
+Fuzzer for testing inputs with wordlists
+Built-in scripts for custom attack logic
+REST API for automation and CI/CD pipeline integration
+Free and open source — maintained by OWASP
+
+Common use cases:
+
+Finding vulnerabilities in web applications (SQLi, XSS, CSRF, etc.)
+Intercepting and modifying requests during manual testing
+Spidering a target site to discover hidden endpoints
+Brute forcing login forms and parameters
+CTF web challenges
+Authorized penetration testing of web applications
+
+================================================================================
+STEP 1 — INSTALLATION
+KALI LINUX (recommended — often pre-installed)
+Check if already installed:
+zaproxy --version
+(or search for ZAP in the applications menu under Web Application Analysis)
+Install via apt:
+sudo apt update && sudo apt install zaproxy
+Launch from terminal:
+zaproxy
+Launch from menu:
+Applications > Web Application Analysis > ZAP
+DEBIAN / UBUNTU (manual install)
+Option 1 — Download the installer directly from OWASP:
+https://www.zaproxy.org/download/
+Option 2 — Install via snap:
+sudo snap install zaproxy --classic
+Option 3 — Run via Docker:
+docker pull ghcr.io/zaproxy/zaproxy:stable
+docker run -u zap -p 8080:8080 ghcr.io/zaproxy/zaproxy:stable zap.sh
+JAVA REQUIREMENT
+ZAP requires Java 11 or higher.
+Check Java version:
+java -version
+Install Java if missing:
+sudo apt install default-jdk
+================================================================================
+STEP 2 — FIRST LAUNCH & SETUP
+Launch ZAP:
+zaproxy
+On first launch you will be asked:
+"Do you want to persist the ZAP session?"
+
+YES    Saves all traffic and findings to a session file you can reload later
+NO     Runs without saving (good for quick tests)
+
+Recommended: choose YES and save to a named session file so you don't lose
+your work if ZAP crashes or you close it accidentally.
+MAIN INTERFACE AREAS
+Top menu bar       File, Edit, Analyse, Report, Tools, Help
+Sites tree         Left panel — shows all hosts and URLs discovered
+Workspace          Centre — shows requests, responses, alerts, spider results
+Info panel         Bottom — History, Search, Alerts, Output tabs
+Toolbar            Quick access to Spider, Scanner, Break, etc.
+================================================================================
+STEP 3 — CONFIGURE YOUR BROWSER
+ZAP works as an intercepting proxy. Your browser must be configured to route
+traffic through ZAP before it can intercept anything.
+ZAP'S DEFAULT PROXY SETTINGS
+Host:    127.0.0.1
+Port:    8080
+CONFIGURE FIREFOX (recommended for testing)
+Option 1 — Use ZAP's built-in browser (easiest):
+Click the browser icon in the ZAP toolbar
+This launches a pre-configured Firefox instance — no manual setup needed.
+Option 2 — Configure Firefox manually:
+
+Open Firefox > Settings > Search "proxy"
+Click "Settings" under Network Settings
+Select "Manual proxy configuration"
+Set HTTP Proxy: 127.0.0.1   Port: 8080
+Check "Also use this proxy for HTTPS"
+Click OK
+
+Option 3 — Use FoxyProxy extension (easier to switch on/off):
+Install FoxyProxy from Firefox Add-ons
+Add a new proxy: 127.0.0.1:8080
+Toggle it on when testing, off when done
+INSTALL THE ZAP SSL CERTIFICATE (required for HTTPS)
+Without this, your browser will show SSL errors on HTTPS sites because ZAP
+is intercepting and re-signing the traffic with its own certificate.
+
+With your browser proxied through ZAP, visit:
+http://zap/
+Click "Download CA Certificate" — saves zap_root_ca.cer
+
+Alternative — export from ZAP directly:
+Tools > Options > Network > Server Certificates > Save
+
+Import into Firefox:
+Settings > Privacy & Security > View Certificates > Authorities > Import
+Select the downloaded zap_root_ca.cer
+Check "Trust this CA to identify websites"
+Click OK
+Verify it works:
+Visit any https:// site — no SSL warning should appear
+ZAP's History tab should show the intercepted HTTPS traffic
+
+================================================================================
+STEP 4 — INTERCEPT TRAFFIC (MANUAL TESTING)
+Intercepting requests lets you inspect and modify them before they reach the
+server — essential for manual testing of parameters, authentication, and logic.
+ENABLE BREAK (INTERCEPT MODE)
+Click the green circle button in the toolbar    (sets a break on all requests)
+Keyboard shortcut: Ctrl+B
+The button turns red when break/intercept is active.
+Now browse to your target in the browser. ZAP will pause each request,
+showing it in the Break tab so you can inspect and modify it before sending.
+WHAT YOU CAN DO IN THE BREAK TAB
+
+View raw HTTP request headers and body
+Edit any parameter, header, cookie, or value
+Click "Step" to forward the current request and pause on the next
+Click "Continue" (play button) to forward and stop intercepting
+Click "Drop" to discard the request entirely
+
+TURN OFF INTERCEPT
+Click the red circle button again to disable — traffic flows through freely
+but ZAP still logs everything in the History tab.
+VIEW ALL TRAFFIC IN HISTORY
+Click the "History" tab at the bottom of ZAP
+Every request/response is logged here even when intercept is off
+Click any entry to view the full request and response
+================================================================================
+STEP 5 — SPIDER (CRAWL THE TARGET)
+The spider automatically crawls a web application, following links and
+discovering pages and endpoints you might not find manually.
+TRADITIONAL SPIDER
+Right-click the target in the Sites tree > Attack > Spider
+(or go to: Tools > Spider)
+Set the target URL and click Start Scan.
+The spider will:
+
+Follow all links it finds
+Submit forms with empty/default values
+Discover new URLs and add them to the Sites tree
+
+View progress in the Spider tab at the bottom.
+AJAX SPIDER (for JavaScript-heavy sites)
+Traditional spider misses content loaded by JavaScript.
+Use the AJAX Spider for React, Angular, Vue, and similar apps.
+Tools > AJAX Spider
+Set the target URL, choose a browser (Firefox or Chrome), click Start.
+The AJAX Spider actually drives a real browser — it's slower but finds
+content that the traditional spider misses entirely.
+NOTE: AJAX Spider requires a browser to be installed. Use the ZAP
+built-in browser or ensure Firefox/Chrome is available.
+REVIEW SPIDER RESULTS
+After the spider finishes, check the Sites tree on the left —
+all discovered pages and directories will be listed under the target host.
+Also check the Spider tab results for a full list of URLs found.
+================================================================================
+STEP 6 — PASSIVE SCANNING
+Passive scanning runs automatically in the background whenever ZAP sees
+traffic. It analyses requests and responses WITHOUT sending any extra traffic
+to the server — making it completely safe and invisible to the target.
+Passive scanning is ON by default — no action needed.
+As you browse or spider the target, ZAP automatically checks for:
+
+Missing security headers (CSP, HSTS, X-Frame-Options, etc.)
+Cookies without Secure or HttpOnly flags
+Information disclosure in headers or responses
+Insecure links (HTTP mixed content on HTTPS pages)
+Basic XSS and injection indicators
+
+VIEW PASSIVE SCAN ALERTS
+Click the "Alerts" tab at the bottom of ZAP
+Alerts are colour coded by severity:
+Red        High severity
+Orange     Medium severity
+Yellow     Low severity
+Blue       Informational
+Click any alert to see:
+
+Description of the vulnerability
+The specific request and response that triggered it
+A suggested solution
+References and CVE links where applicable
+
+================================================================================
+STEP 7 — ACTIVE SCANNING
+Active scanning sends crafted attack payloads to the target to actively probe
+for vulnerabilities. Unlike passive scanning, it DOES send extra traffic and
+will show up in server logs.
+WARNING: Only run active scans against targets you own or have explicit
+written permission to test. Active scanning is loud and intrusive.
+START AN ACTIVE SCAN
+Right-click the target in the Sites tree > Attack > Active Scan
+(or go to: Analyse > Active Scan)
+Set the target URL.
+Optionally adjust scan policy (which checks to run).
+Click Start Scan.
+The active scanner tests for:
+
+SQL Injection
+Cross-Site Scripting (XSS)
+Command Injection
+Path Traversal / Directory Traversal
+Remote File Inclusion
+LDAP Injection
+XML/XXE Injection
+Server-Side Request Forgery (SSRF)
+And many more
+
+MONITOR SCAN PROGRESS
+Active Scan tab at the bottom shows progress, requests sent, and alerts found.
+Alerts tab updates in real time as vulnerabilities are discovered.
+SCAN POLICY
+Tools > Scan Policy Manager
+You can create custom policies to:
+
+Enable or disable specific test categories
+Set the strength of each test (low/medium/high)
+Set the threshold for when alerts are raised
+Save policies and reuse them across scans
+
+================================================================================
+STEP 8 — FUZZING
+The fuzzer sends a wordlist of payloads to a specific parameter to test how
+the application handles unexpected input. Useful for finding injection points,
+hidden endpoints, and bypasses.
+
+Find a request in the History tab that contains a parameter you want to fuzz
+Right-click the request > Fuzz
+In the request body/URL, highlight the value you want to replace
+Click "Add" to add a payload source:
+
+File fuzzers    Use built-in or custom wordlists
+Strings         Enter payloads manually
+Regex           Generate payloads from a pattern
+Numberzz        Iterate through numeric ranges
+
+
+Click Start Fuzzer
+
+View results in the Fuzzer tab — look for responses with different
+status codes, sizes, or response times which may indicate a hit.
+Useful built-in wordlists for fuzzing:
+jbrofuzz    Large set of injection payloads (SQLi, XSS, etc.)
+dirbuster   Directory and filename wordlists
+================================================================================
+STEP 9 — FORCED BROWSING (DIRECTORY BRUTE FORCE)
+Forced browsing attempts to discover hidden files and directories by
+requesting paths from a wordlist, similar to gobuster or dirb.
+Right-click target in Sites tree > Attack > Forced Browse Site
+(or: Tools > Forced Browse)
+Select a wordlist from the dropdown.
+Click Start.
+ZAP will request each path and show which ones return a valid response
+(200, 301, 302, etc.) versus a 404.
+NOTE: For more powerful directory brute forcing, dedicated tools like
+gobuster or feroxbuster are generally faster:
+gobuster dir -u http://target.com -w /usr/share/wordlists/dirb/common.txt
+================================================================================
+STEP 10 — GENERATE A REPORT
+After scanning, export a report of all findings.
+Reports > Generate Report
+Choose format:
+
+HTML     Best for sharing and reading in a browser
+PDF      Good for formal reporting
+XML      For importing into other tools
+JSON     For programmatic processing
+Markdown For documentation
+
+Select which alerts to include (by severity).
+Set a title, description, and author.
+Click Generate Report.
+The report includes:
+
+All alerts grouped by severity
+Request and response detail for each finding
+Description, solution, and references for each vulnerability
+
+================================================================================
+QUICK REFERENCE — KEY SHORTCUTS
+Ctrl+B              Toggle break/intercept on and off
+Ctrl+S              Save session
+Ctrl+O              Open saved session
+Ctrl+F              Find in requests/responses
+F5                  Start spider on selected node
+F6                  Start active scan on selected node
+================================================================================
+QUICK REFERENCE — COMMON WORKFLOW
+
+Launch ZAP:
+zaproxy
+Configure browser to proxy through 127.0.0.1:8080
+Install ZAP CA certificate in browser (for HTTPS)
+Browse target manually — ZAP logs all traffic passively
+Run Spider to discover all pages:
+Right-click target > Attack > Spider
+Run AJAX Spider if site uses JavaScript frameworks:
+Tools > AJAX Spider
+Review passive scan alerts:
+Alerts tab > review findings by severity
+Run Active Scan for deeper testing:
+Right-click target > Attack > Active Scan
+Manually test interesting requests:
+History tab > right-click request > Fuzz / Resend / Break
+Generate report:
+Reports > Generate Report > HTML or PDF
+
+================================================================================
+RELATED TOOLS
+Burp Suite        The industry-standard alternative to ZAP — more features
+in the Pro version but the Community edition is free.
+Similar concept: intercepting proxy + scanner + repeater.
+gobuster          Fast directory and DNS brute forcer — better than ZAP's
+forced browsing for directory enumeration.
+gobuster dir -u http://target.com -w wordlist.txt
+nikto             Web server vulnerability scanner — quick and noisy.
+nikto -h http://target.com
+sqlmap            Automated SQL injection detection and exploitation.
+sqlmap -u "http://target.com/page?id=1"
+wfuzz             Web application fuzzer — powerful parameter fuzzing.
+wfuzz -c -w wordlist.txt http://target.com/FUZZ
+================================================================================
+IMPORTANT NOTES
+
+Always install the ZAP CA certificate before testing HTTPS sites or
+ZAP cannot intercept the traffic and your browser will show SSL errors.
+Passive scanning is safe and invisible — active scanning is loud and
+intrusive. Never run an active scan without permission.
+Use the built-in ZAP browser (toolbar icon) to avoid manually configuring
+proxy settings — it comes pre-configured and saves time.
+The AJAX Spider is essential for modern web apps built with React, Angular,
+or Vue. The traditional spider will miss most of their content.
+Save your session regularly (Ctrl+S) — ZAP can be memory-intensive on
+large scans and crashes can lose your work.
+For serious web app testing, ZAP and Burp Suite are often used together —
+ZAP for automated scanning, Burp for precise manual testing and repeating.
+
+=================================================================

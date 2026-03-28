@@ -1,0 +1,250 @@
+================================================================================
+                          FFUF — WEB FUZZER REFERENCE
+================================================================================
+
+  ffuf (Fuzz Faster U Fool) — fast Go-based web fuzzer used in penetration
+  testing to discover hidden directories, files, vhosts, and parameters
+  by brute-forcing URLs and inputs with wordlists.
+
+  Install:   sudo apt install ffuf
+  Alt:       go install github.com/ffuf/ffuf/v2@latest
+
+================================================================================
+                          BASIC FUZZING
+================================================================================
+--------------------------------------------------------------------------------
+  FUZZ keyword — place anywhere in URL, header, or body
+--------------------------------------------------------------------------------
+  ffuf -u https://codingo.io/FUZZ/ -w ./wordlist
+
+    → Sends GET requests, replacing FUZZ with each line in the wordlist.
+      Discovers hidden directories and paths.
+
+--------------------------------------------------------------------------------
+  RECURSION  (-recursion)
+--------------------------------------------------------------------------------
+  ffuf -u https://codingo.io/FUZZ -w ./wordlist -recursion
+
+    → When a directory is found, automatically re-fuzzes inside it.
+      Useful for deep enumeration of nested directories.
+      Warning: generates a lot of traffic — use carefully on live targets.
+
+--------------------------------------------------------------------------------
+  EXTENSION FUZZING  (-e)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -recursion -e .bak
+
+    → Appends extensions to each FUZZ entry (tries both word and word.bak).
+
+  WHY .bak FILES MATTER:
+    Backup files (.bak, .old, .orig, .swp) left on servers accidentally by
+    developers can expose full source code, hardcoded credentials, database
+    connection strings, and API keys — all as plain text, no auth required.
+    Finding a config.php.bak can be a critical finding.
+
+  Other useful extensions:
+    -e .php,.bak,.old,.txt,.log,.conf,.xml,.zip
+
+--------------------------------------------------------------------------------
+  CUSTOM WORDLIST KEYWORD  (:W1)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/W1 -w ./wordlist:W1 -e .bak
+
+    → Name wordlist placeholders anything using -w path:KEYWORD syntax.
+      Required when using multiple wordlists (W1, W2...) in one command.
+      Needed for pitchfork and clusterbomb modes.
+
+================================================================================
+                          OUTPUT OPTIONS
+================================================================================
+--------------------------------------------------------------------------------
+  -of  (output format)     -o  (output file path)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -of html -o ./results.html
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -of json -o ./out.json
+
+  Formats:  html  json  csv  md  all
+
+    html  → Browsable report, good for sharing with clients.
+    json  → Pipe results into other tools or scripts.
+    all   → Write every format simultaneously.
+
+================================================================================
+                          FILTER AND MATCHER OPTIONS
+================================================================================
+
+  Matchers SHOW results that match a condition.
+  Filters  HIDE results that match a condition.
+  Both accept comma-separated values.
+
+--------------------------------------------------------------------------------
+  MATCHERS (show if matches)
+--------------------------------------------------------------------------------
+  -mc 200,301,302        Match HTTP status codes
+  -ms 1234               Match response size (bytes)
+  -mw 42                 Match word count in response
+  -ml 10                 Match line count in response
+  -mr "admin"            Match regex pattern in response body
+
+--------------------------------------------------------------------------------
+  FILTERS (hide if matches)
+--------------------------------------------------------------------------------
+  -fc 404,403            Filter out status codes
+  -fs 0                  Filter by response size
+  -fw 1                  Filter by word count
+  -fl 5                  Filter by line count
+  -fr "not found"        Filter by regex pattern
+
+  Common pattern:
+    Run once → note the default 404 response size → add -fs [that size]
+    to filter noise on subsequent runs.
+
+================================================================================
+                          AUTHENTICATION
+================================================================================
+--------------------------------------------------------------------------------
+  COOKIES  (-b)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -b "NAME1=VALUE1; NAME2=VALUE2"
+
+    → Pass session cookies to fuzz authenticated areas of an application.
+      Grab cookies from browser DevTools (Application > Cookies) or Burp.
+      Separate multiple cookies with a semicolon and space.
+
+  Use case: After logging in, fuzz /dashboard/FUZZ or /api/FUZZ with your
+  authenticated session to find hidden endpoints a logged-in user can access.
+
+--------------------------------------------------------------------------------
+  HEADERS  (-H)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -H "Authorization: Bearer TOKEN"
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -H "X-API-Key: abc123" -H "X-Custom: val"
+
+    → Use -H for any header: Bearer tokens, API keys, X-Forwarded-For, etc.
+      Multiple -H flags are supported.
+
+================================================================================
+                          MULTI-WORDLIST MODES
+================================================================================
+--------------------------------------------------------------------------------
+  PITCHFORK MODE
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ1/FUZZ2 \
+       -w ./userlist:FUZZ1 -w ./passlist:FUZZ2 \
+       -mode pitchfork
+
+    → Iterates wordlists in parallel (line 1+1, line 2+2, like a zipper).
+      Use when wordlist entries are paired (e.g. usernames + known passwords).
+
+--------------------------------------------------------------------------------
+  CLUSTERBOMB MODE
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ1/FUZZ2 \
+       -w ./userlist:FUZZ1 -w ./passlist:FUZZ2 \
+       -mode clusterbomb
+
+    → Tests every combination of all wordlists (W1 x W2).
+      Use when you want full coverage regardless of pairing.
+
+  Pitchfork = paired (fast, fewer requests)
+  Clusterbomb = all combinations (thorough, many more requests)
+
+================================================================================
+                          RATE CONTROL & SAFETY
+================================================================================
+--------------------------------------------------------------------------------
+  STOP ON SPURIOUS ERRORS  (-se)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -se
+
+    → Auto-stops when an unusual number of errors are detected.
+      Prevents wasting time on broken endpoints and avoids accidental DoS
+      on live targets when the server starts rate-limiting or crashing.
+
+--------------------------------------------------------------------------------
+  SLOW DOWN REQUESTS  (-p and -rate)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -p 0.5
+    → Adds a 0.5 second pause between each request.
+      Use decimals for fine control (e.g. -p 0.1 = 100ms pause).
+
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -rate 10
+    → Caps at 10 requests/sec regardless of thread count.
+      More precise than -p. Essential for avoiding WAF bans and IDS alerts.
+
+================================================================================
+                          AUTO-CALIBRATION FILTERING
+================================================================================
+--------------------------------------------------------------------------------
+  -ac  (auto-calibration)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist -ac
+
+    → ffuf sends initial requests with dummy values that shouldn't exist,
+      records the typical response profile (size, words, lines, status),
+      then auto-filters anything matching that profile during the main scan.
+
+    When to use: Noisy applications that return 200 OK for everything with
+    slightly different bodies. Removes the manual step of running once,
+    eyeballing the junk, then adding -fs/-fw.
+
+--------------------------------------------------------------------------------
+  -acc  (custom calibration URL)
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist \
+       -acc http://codingo.io/nonexistentpageXYZ123
+
+    → Specify the URL to use for calibration. Useful when the default path
+      returns a different response than the FUZZ location.
+
+================================================================================
+                          REPLAY PROXY (BURP SUITE)
+================================================================================
+--------------------------------------------------------------------------------
+  --replay-proxy
+--------------------------------------------------------------------------------
+  ffuf -u http://codingo.io/FUZZ -w ./wordlist \
+       --replay-proxy http://127.0.0.1:8080
+
+    → Sends only matched/interesting responses through Burp — NOT every
+      request. ffuf still runs at full speed; only hits are replayed.
+
+  Why use this:
+    ffuf is fast but Burp is powerful. Use ffuf to rapidly enumerate, then
+    replay hits into Burp to manually inspect responses, modify requests,
+    check for injection points, or pass to Burp Scanner.
+    Much faster than routing all traffic through Burp from the start.
+
+  For HTTPS targets (using Burp listener at 127.0.0.1:4444 → codingo.io:443):
+    ffuf -u https://codingo.io/FUZZ -w ./wordlist \
+         --replay-proxy http://127.0.0.1:4444
+
+  Note: Do NOT use --replay-proxy without -rate. Replaying hits through
+  Burp at full speed can freeze Burp or cause missed responses.
+
+================================================================================
+                          QUICK FLAG CHEAT SHEET
+================================================================================
+
+  -u                 URL (-u http://target.com/FUZZ)
+  -w                 Wordlist path (-w ./list or -w ./list:KEYWORD)
+  -e                 Extensions to append (-e .php,.bak,.txt)
+  -recursion         Re-fuzz discovered directories
+  -b                 Cookies for authentication
+  -H                 Custom request headers
+  -mode              pitchfork | clusterbomb | sniper
+  -mc / -fc          Match / filter by HTTP status code
+  -ms / -fs          Match / filter by response size (bytes)
+  -mw / -fw          Match / filter by word count
+  -ml / -fl          Match / filter by line count
+  -mr / -fr          Match / filter by regex pattern
+  -ac                Auto-calibration (smart baseline filter)
+  -acc               Custom calibration URL
+  -p                 Pause between requests (seconds, supports decimals)
+  -rate              Max requests per second
+  -se                Stop on spurious errors
+  -of                Output format (html | json | csv | md | all)
+  -o                 Output file path
+  --replay-proxy     Replay matched hits to proxy (e.g. Burp Suite)
+
+================================================================================

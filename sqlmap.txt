@@ -1,0 +1,300 @@
+================================================================================
+                         SQLMAP - SQL INJECTION REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+SQLMap is an automated SQL injection tool that can detect and exploit SQL
+injection vulnerabilities, then extract data from the database.
+
+Workflow: Find injection point → Capture request → Run sqlmap → Dump data
+
+Required tools: sqlmap, Burp Suite, FoxyProxy (browser extension)
+
+================================================================================
+                    STEP 1 — INTERCEPT REQUEST WITH BURP SUITE
+================================================================================
+
+SETUP FOXYPROXY & BURP SUITE
+-----------------------------
+
+  1. Install FoxyProxy extension in your browser
+  2. Configure FoxyProxy to point to Burp Suite (127.0.0.1:8080)
+  3. Launch Burp Suite:
+     burpsuite &
+
+  4. In Burp Suite: go to Proxy → Intercept → Turn Intercept ON
+  5. In your browser: activate FoxyProxy (select Burp Suite profile)
+
+CAPTURE THE REQUEST
+--------------------
+
+  6. Navigate to the target website
+  7. Enter a value into the form field you want to test (e.g. login form)
+  8. Submit the form — Burp Suite will intercept the request
+  9. In Burp Suite, right-click the request → Save item → save to file
+     (give it a name with NO extension, e.g. just: request)
+
+  NOTE: The saved file contains the full POST request including headers
+        and cookies. SQLMap will use this to replicate the request exactly.
+
+================================================================================
+                       STEP 2 — RUN SQLMAP
+================================================================================
+
+BASIC USAGE — URL BASED
+------------------------
+
+  sqlmap -u <URL> --dbs
+
+  Example:
+  sqlmap -u "http://192.168.1.11/login.php?id=1" --dbs
+
+  NOTE: Use this when the injection point is in a URL GET parameter.
+        Best for simple cases without authentication or cookies needed.
+
+--------------------------------------------------------------------------------
+
+FROM BURP SUITE CAPTURED REQUEST (recommended)
+-----------------------------------------------
+
+  Test a specific parameter for injection:
+  sqlmap -r <requestfile> -p <parameter>
+
+  Example:
+  sqlmap -r request -p username
+
+  Dump all data from the database:
+  sqlmap -r <requestfile> -p <parameter> --dump
+
+  Example:
+  sqlmap -r request -p username --dump
+
+  NOTE: -r reads the saved Burp request file directly.
+        -p specifies which parameter to test (e.g. username, id, search).
+        --dump extracts all table contents once injection is confirmed.
+
+--------------------------------------------------------------------------------
+
+USEFUL ADDITIONAL FLAGS
+------------------------
+
+  --dbs                  List all databases on the server
+  --tables               List tables in the current database
+  --columns              List columns in a table
+  -D <dbname>            Specify a database to target
+  -T <tablename>         Specify a table to target
+  --dump                 Dump all data from the target table/database
+  --batch                Auto-answer all prompts with default/recommended values
+  --level=<1-5>          How many parameters are tested (default: 1)
+  --risk=<1-3>           How aggressive the payloads are (default: 1)
+  --dbms=mysql           Skip detection, tell sqlmap which DBMS to use
+
+  Full example — target specific DB and table:
+  sqlmap -r request -p username -D users_db -T accounts --dump
+
+  Full example — with batch mode (no prompts):
+  sqlmap -r request -p username --dump --batch
+
+================================================================================
+                      STEP 3 — UNDERSTANDING THE PROMPTS
+================================================================================
+
+SQLMap will ask several questions during a scan. Here is what each means
+and what to answer in a lab/legal environment:
+
+--------------------------------------------------------------------------------
+
+1) COOKIE USAGE
+   Prompt:   Do you want to use provided cookie? [Y/n]
+   Answer:   Y
+   Why:      Many injection points only exist when logged in.
+             Without the session cookie, sqlmap may only see guest pages
+             and miss the vulnerable parameter entirely.
+
+--------------------------------------------------------------------------------
+
+2) SERVER REDIRECT (302)
+   Prompt:   Got a 302 redirect. Follow? [Y/n]
+   Answer:   Y
+   Why:      If you don't follow the redirect, sqlmap scans the wrong page
+             and will likely find nothing.
+
+--------------------------------------------------------------------------------
+
+3) UNSTABLE PAGE CONTENT
+   Prompt:   Page content is not stable. Continue? [Y/n]
+   Answer:   Y
+   Why:      This just means the page has dynamic elements like timestamps,
+             ads, or counters that change between requests. This is normal
+             and does not affect the injection test.
+
+--------------------------------------------------------------------------------
+
+4) INCREASE LEVEL / RISK
+   Prompt:   Do you want to include all tests for level 2 and risk 2? [Y/n]
+   Answer:   Y (in a lab environment)
+
+   What these settings control:
+
+     Level (1-5)   How many parameters and headers are tested.
+                   Higher = more thorough but slower.
+
+     Risk  (1-3)   How aggressive the payloads are.
+                   Higher = more injection types but more likely to
+                   modify or damage data. Use carefully.
+
+   NOTE: For labs, Y is fine. On real systems, start low (level 1, risk 1)
+         and only increase if nothing is found and you have permission.
+
+--------------------------------------------------------------------------------
+
+5) UNION-BASED INJECTION TEST
+   Prompt:   Test UNION injection? [Y/n]
+   Answer:   Y
+   Why:      UNION-based injection is one of the most powerful extraction
+             methods. It allows sqlmap to pull data directly from tables.
+             Always test this if you want to dump data.
+
+--------------------------------------------------------------------------------
+
+6) DBMS ALREADY IDENTIFIED
+   Prompt:   Back-end DBMS is MySQL. Skip other DBMS tests? [Y/n]
+   Answer:   Y
+   Why:      No point running PostgreSQL or MSSQL payloads against a MySQL
+             server. Skipping speeds up the scan significantly.
+
+--------------------------------------------------------------------------------
+
+7) ENUMERATE DATABASES
+   Prompt:   Do you want to retrieve database names? [Y/n]
+   Answer:   Y (legal lab only)
+   Why:      This moves sqlmap from the detection phase into the enumeration
+             phase where it actually lists databases on the server.
+
+   !! NEVER answer Y on a real website without explicit written permission !!
+
+================================================================================
+                            QUICK REFERENCE
+================================================================================
+
+  Step 1   Launch Burp Suite, enable intercept, capture form submission
+  Step 2   Save the Burp request to a file (no extension)
+  Step 3   sqlmap -r request -p username               Test for injection
+  Step 4   sqlmap -r request -p username --dbs         List databases
+  Step 5   sqlmap -r request -p username --dump        Dump all data
+
+  URL-based shortcut (no Burp needed for GET params):
+           sqlmap -u "http://target.com/page?id=1" --dbs
+
+  Auto mode (no prompts):
+           sqlmap -r request -p username --dump --batch
+
+================================================================================
+                              IMPORTANT NOTES
+================================================================================
+
+  - Only use sqlmap on systems you own or have written permission to test.
+  - --batch is useful for speed but always reads the prompts in a lab
+    so you understand what sqlmap is actually doing.
+  - If sqlmap finds nothing, try increasing --level and --risk incrementally.
+  - Save your results: sqlmap logs sessions in ~/.sqlmap/output/ by default
+    so scans can be resumed if interrupted.
+
+================================================================================
+
+
+
+sqlmap -u <URL> --dbs - Automated SQL Injection.
+
+
+use foxyproxy extension, click burpsuite
+
+type burpsuite &
+
+go to proxy, turn on intercept
+
+enter value into website, 
+
+copy post request from burpsuite and save to file
+
+sqlmap -r (filename, not txt) -p username
+
+sqlmap -r (filename, not txt) -p username --dump (shows all values in database)
+
+
+The Pop-Ups / Prompts Explained
+1) Cookie usage
+
+Prompt:
+
+Do you want to use provided cookie? [Y/n]
+
+
+Meaning:
+The site uses a session login cookie and sqlmap detected it.
+
+What to choose (lab environment):
+👉 Y
+
+Why:
+
+Without cookies you may only see guest pages
+
+Many injections exist only when logged in
+
+2) Server suggests redirect
+Got a 302 redirect. Follow? [Y/n]
+
+
+👉 Y
+
+Otherwise sqlmap scans the wrong page.
+
+3) Page looks dynamic
+Page content is not stable. Continue? [Y/n]
+
+
+👉 Y
+
+This just means timestamps / ads change — normal.
+
+4) Increase level or risk
+
+You’ll see something like:
+
+Do you want to include all tests for level 2 and risk 2? [Y/n]
+
+What these mean
+Setting	What changes
+Level	How many parameters tested
+Risk	How aggressive payloads are
+
+👉 Typical class/lab answer: Y
+
+This lets it check more injection types.
+
+5) UNION column count brute force
+Test UNION injection? [Y/n]
+
+
+👉 Y
+
+This checks if data extraction is possible.
+
+6) DBMS identified — skip others
+Back-end DBMS is MySQL. Skip other DBMS tests? [Y/n]
+
+
+👉 Y
+
+Speeds things up.
+
+7) Want to enumerate databases
+Do you want to retrieve database names? [Y/n]
+
+
+👉 In a legal lab: Y
+👉 Real website: Never without permission
+
+This moves from detection → enumeration phase.

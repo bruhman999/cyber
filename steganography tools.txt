@@ -1,0 +1,370 @@
+================================================================================
+                    STEGANOGRAPHY TOOLS — STEGHIDE & STEGSNOW
+================================================================================
+
+  Steganography is the practice of hiding secret data inside ordinary,
+  non-secret files so that the existence of the hidden data is concealed.
+  Unlike encryption (which scrambles data so it can't be read), steganography
+  hides the fact that secret data exists at all.
+
+  Common use cases:
+    - CTF challenges (very frequently used)
+    - Covert communication
+    - Digital watermarking
+    - Forensics investigation (finding hidden data in files)
+
+================================================================================
+                              STEGHIDE
+================================================================================
+
+  steghide hides (embeds) data inside image and audio files without visibly
+  altering them. It uses passphrase-based encryption (AES-128 by default) and
+  pseudo-random scattering so the hidden data is not stored in a predictable
+  location within the file. Supports JPEG, BMP, WAV, and AU file formats.
+
+  Install:   sudo apt install steghide
+
+--------------------------------------------------------------------------------
+  HOW IT WORKS
+--------------------------------------------------------------------------------
+
+  steghide modifies the least significant bits (LSBs) of the cover file's
+  data to encode the secret. The changes are imperceptible to the human eye
+  or ear. The embedded data is also encrypted with the passphrase before
+  being hidden, so even if someone knows steghide was used, they still need
+  the password to recover the data.
+
+  Supported cover file formats:  JPEG, BMP, WAV, AU
+  Supported embed file formats:  Any file type (txt, zip, exe, etc.)
+
+--------------------------------------------------------------------------------
+  SETUP
+--------------------------------------------------------------------------------
+
+  Install steghide:
+    sudo apt install steghide
+
+  Verify installation:
+    steghide --version
+
+  You will need:
+    - A cover file (the image or audio that hides the data)
+        e.g. linux.jpg, photo.bmp, audio.wav
+    - A secret file (what you want to hide)
+        e.g. secret.txt, creds.txt, archive.zip
+    - A passphrase (used to encrypt the hidden data)
+
+--------------------------------------------------------------------------------
+  EMBEDDING (HIDING DATA)
+--------------------------------------------------------------------------------
+
+  Basic syntax:
+    steghide embed -ef [secret file] -cf [cover file]
+
+  Example:
+    steghide embed -ef secret.txt -cf linux.jpg
+
+    → Hides secret.txt inside linux.jpg.
+      You will be prompted to enter and confirm a passphrase.
+      The output file is linux.jpg (the cover file is modified in place).
+
+  With passphrase on command line (no prompt):
+    steghide embed -ef secret.txt -cf linux.jpg -p "mypassword"
+
+  Specify a different output file (keep original untouched):
+    steghide embed -ef secret.txt -cf linux.jpg -sf output.jpg
+
+  Force overwrite if output file already exists:
+    steghide embed -ef secret.txt -cf linux.jpg -sf output.jpg -f
+
+  Embed with no encryption (not recommended):
+    steghide embed -ef secret.txt -cf linux.jpg -e none
+
+  Embed with specific encryption algorithm:
+    steghide embed -ef secret.txt -cf linux.jpg -e rijndael-256
+    steghide embed -ef secret.txt -cf linux.jpg -e cast-128
+
+  Common encryption options:
+    rijndael-128 (AES-128, default)
+    rijndael-256 (AES-256)
+    cast-128
+    blowfish
+    none
+
+  Compress the secret data before embedding (default: on):
+    steghide embed -ef secret.txt -cf linux.jpg -z 9
+      → -z 1 to 9, where 9 = maximum compression
+
+  Disable compression:
+    steghide embed -ef secret.txt -cf linux.jpg -Z
+
+  Verbose output (shows what steghide is doing):
+    steghide embed -ef secret.txt -cf linux.jpg -v
+
+--------------------------------------------------------------------------------
+  EXTRACTING (RECOVERING HIDDEN DATA)
+--------------------------------------------------------------------------------
+
+  Basic syntax:
+    steghide extract -sf [stego file]
+
+  Example:
+    steghide extract -sf linux.jpg
+
+    → Prompts for the passphrase, then extracts the hidden file.
+      Output is written to the current directory using the original filename.
+
+  With passphrase on command line:
+    steghide extract -sf linux.jpg -p "mypassword"
+
+  Extract to a specific output file:
+    steghide extract -sf linux.jpg -p "mypassword" -xf ./recovered.txt
+
+  Force overwrite if output file already exists:
+    steghide extract -sf linux.jpg -p "mypassword" -f
+
+  Verbose extraction:
+    steghide extract -sf linux.jpg -v
+
+--------------------------------------------------------------------------------
+  GETTING INFO (WITHOUT EXTRACTING)
+--------------------------------------------------------------------------------
+
+  steghide info linux.jpg
+
+    → Shows metadata about the file: whether it contains embedded data,
+      what encryption was used, the size of the embedded payload, etc.
+      Will prompt for a passphrase to confirm embedded data details.
+
+  Without passphrase prompt (just file format info):
+    steghide info linux.jpg -p ""
+
+--------------------------------------------------------------------------------
+  CTF TIPS — STEGHIDE
+--------------------------------------------------------------------------------
+
+  1. Always try an empty passphrase first:
+       steghide extract -sf image.jpg -p ""
+
+  2. Try common passwords manually or use stegseek to brute-force:
+       sudo apt install stegseek
+       stegseek image.jpg /usr/share/wordlists/rockyou.txt
+
+  3. Run steghide info first to confirm data is actually embedded
+     before spending time brute-forcing.
+
+  4. If steghide gives errors, check the file format — steghide only
+     supports JPEG, BMP, WAV, AU. PNG files are NOT supported.
+     Use binwalk or stegsolve for PNG files instead.
+
+  5. Common CTF pattern:
+       steghide info suspicious.jpg          ← check if data is hidden
+       steghide extract -sf suspicious.jpg   ← extract it
+
+--------------------------------------------------------------------------------
+  STEGHIDE QUICK FLAG CHEAT SHEET
+--------------------------------------------------------------------------------
+
+  embed                        Mode: hide data in a cover file
+  extract                      Mode: recover hidden data from a stego file
+  info                         Mode: inspect a file for hidden data
+
+  -ef  [file]                  Secret file to embed
+  -cf  [file]                  Cover file (image/audio to hide data in)
+  -sf  [file]                  Stego file (input for extract/info)
+  -xf  [file]                  Output file path for extracted data
+  -p   [passphrase]            Passphrase (skips interactive prompt)
+  -e   [algorithm]             Encryption algorithm (default: rijndael-128)
+  -z   [1-9]                   Compression level (9 = max)
+  -Z                           Disable compression
+  -f                           Force overwrite of existing output file
+  -v                           Verbose output
+  --help                       Show full help
+
+================================================================================
+                              STEGSNOW
+================================================================================
+
+  stegsnow hides secret messages inside plain text files by appending
+  whitespace characters (spaces and tabs) to the ends of lines. The whitespace
+  is invisible to anyone reading the file normally, making the hidden message
+  completely undetectable without the tool. It optionally supports passphrase-
+  based encryption using ICE encryption.
+
+  Install:   sudo apt install stegsnow
+
+--------------------------------------------------------------------------------
+  HOW IT WORKS
+--------------------------------------------------------------------------------
+
+  stegsnow encodes data as a pattern of spaces and tabs appended to the end
+  of each line in a text file. Spaces and tabs represent binary 0 and 1
+  respectively. Since trailing whitespace is invisible in most text editors
+  and terminals, the file looks completely normal to anyone reading it.
+
+  Cover file format:  Plain text (.txt) only
+  Secret file format: Any text content (messages, passwords, notes)
+
+  Limitation: The cover text file needs to be long enough to hold the encoded
+  message. Each line can only hold a small amount of data via whitespace.
+  Larger messages require longer cover files.
+
+--------------------------------------------------------------------------------
+  SETUP
+--------------------------------------------------------------------------------
+
+  Install stegsnow:
+    sudo apt install stegsnow
+
+  Verify installation:
+    stegsnow --help
+
+  You will need:
+    - A cover file (plain text file the message is hidden inside)
+        e.g. cover.txt (any .txt file with enough lines)
+    - A secret message or file to hide
+    - A passphrase (optional but recommended)
+    - An output file (the stego text file produced)
+
+--------------------------------------------------------------------------------
+  EMBEDDING (HIDING DATA)
+--------------------------------------------------------------------------------
+
+  Basic syntax:
+    stegsnow -f [secret file] [cover file] [output file]
+
+  Example:
+    stegsnow -f secret.txt cover.txt stego.txt
+
+    → Hides the contents of secret.txt inside cover.txt.
+      Writes the result to stego.txt.
+      stego.txt looks identical to cover.txt when read normally.
+
+  Hide a message directly (no secret file — type inline):
+    stegsnow -m "this is my hidden message" cover.txt stego.txt
+
+  With passphrase encryption:
+    stegsnow -C -p "mypassword" -f secret.txt cover.txt stego.txt
+
+    → -C enables ICE encryption using the passphrase.
+      Without -C the data is hidden but NOT encrypted — anyone with
+      stegsnow can extract it without a password.
+
+  Verbose output (shows capacity info and encoding progress):
+    stegsnow -V -f secret.txt cover.txt stego.txt
+
+  Check how much data a cover file can hold:
+    stegsnow -S cover.txt
+
+    → Prints the maximum number of bytes the cover file can conceal.
+      Useful before attempting to embed to avoid "file too small" errors.
+
+--------------------------------------------------------------------------------
+  EXTRACTING (RECOVERING HIDDEN DATA)
+--------------------------------------------------------------------------------
+
+  Basic syntax:
+    stegsnow [stego file]
+
+  Example:
+    stegsnow stego.txt
+
+    → Prints the hidden message to stdout.
+      No passphrase needed if data was embedded without -C.
+
+  With passphrase (if -C was used during embedding):
+    stegsnow -C -p "mypassword" stego.txt
+
+  Save extracted output to a file:
+    stegsnow -C -p "mypassword" stego.txt > recovered.txt
+
+  Verbose extraction:
+    stegsnow -V -C -p "mypassword" stego.txt
+
+--------------------------------------------------------------------------------
+  CTF TIPS — STEGSNOW
+--------------------------------------------------------------------------------
+
+  1. Always check for trailing whitespace in suspicious .txt files:
+       cat -A suspicious.txt    ← shows $ at line ends; spaces/tabs visible
+       cat suspicious.txt | cat -A | grep " $"   ← lines with trailing space
+
+  2. Just run stegsnow on any suspicious text file:
+       stegsnow suspicious.txt
+
+  3. If nothing comes out, try with common passwords:
+       stegsnow -C -p "password" suspicious.txt
+       stegsnow -C -p "secret" suspicious.txt
+       stegsnow -C -p "" suspicious.txt
+
+  4. Check the file capacity first if your embed is failing:
+       stegsnow -S cover.txt
+
+  5. stegsnow only works on plain .txt files — it will not work on
+     Word documents, PDFs, or HTML files.
+
+  6. The output stego.txt file will be larger than the original cover.txt
+     because of the appended whitespace — a quick file size check can
+     reveal if steganography has been used.
+
+--------------------------------------------------------------------------------
+  STEGSNOW QUICK FLAG CHEAT SHEET
+--------------------------------------------------------------------------------
+
+  stegsnow [flags] [cover/stego file] [output file]
+
+  -f  [file]           Secret file to embed (read from file)
+  -m  [message]        Secret message to embed (inline string)
+  -p  [passphrase]     Passphrase for ICE encryption/decryption
+  -C                   Enable ICE encryption (must use with -p)
+  -S  [file]           Check how many bytes a cover file can hold
+  -V                   Verbose — show encoding/decoding details
+  --help               Show full help
+
+  Embedding:   stegsnow -C -p "pass" -f secret.txt cover.txt stego.txt
+  Extracting:  stegsnow -C -p "pass" stego.txt
+
+================================================================================
+                        STEGHIDE vs STEGSNOW — COMPARISON
+================================================================================
+
+  steghide:
+    - Works on images and audio (JPEG, BMP, WAV, AU)
+    - Strong AES encryption built in
+    - Imperceptible changes — pixel/sample level hiding
+    - Best for hiding data in media files
+    - No PNG support
+    - Most common in CTF image challenges
+
+  stegsnow:
+    - Works on plain text files only
+    - Hides data as invisible trailing whitespace (spaces/tabs)
+    - Lighter encryption (ICE) — optional
+    - Very simple and easy to detect if you know to look
+    - Best for text-based covert communication or CTF text challenges
+
+  Other tools to know:
+    stegseek    Brute-force steghide passphrases (rockyou.txt compatible)
+    binwalk     Extract hidden files from any binary (great for CTFs)
+    exiftool    Read metadata from images (flags, comments often hidden here)
+    strings     Extract readable strings from binary files
+    zsteg       PNG and BMP steganography detection
+    stegsolve   GUI tool for analysing image steganography layers
+
+================================================================================
+                              QUICK REFERENCE
+================================================================================
+
+  STEGHIDE:
+    Hide:      steghide embed -ef secret.txt -cf image.jpg -p "pass"
+    Extract:   steghide extract -sf image.jpg -p "pass"
+    Info:      steghide info image.jpg
+    No pass:   steghide extract -sf image.jpg -p ""
+
+  STEGSNOW:
+    Check cap: stegsnow -S cover.txt
+    Hide:      stegsnow -C -p "pass" -f secret.txt cover.txt stego.txt
+    Extract:   stegsnow -C -p "pass" stego.txt
+    No pass:   stegsnow stego.txt
+
+================================================================================

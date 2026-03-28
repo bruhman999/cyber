@@ -1,0 +1,316 @@
+DONT LAUNCH VPN THEN WSL:
+
+When you run wsl --shutdown or close WSL, the virtual machine fully powers off. When WSL tries to start back up it needs to:
+
+Spin up the Hyper-V virtual machine
+Create a fresh virtual network adapter
+Configure networking from scratch
+
+The problem is ProtonVPN has already rewritten Windows' routing tables and network stack. When WSL tries to build its network adapter on top of that, it hits conflicts — specifically that ConfigureNetworking error you saw earlier. NAT mode is more tolerant than Mirrored but still needs a clean network to initialize against.
+Basically — starting WSL is sensitive, running WSL is fine. Once it's up and connected it rides along with whatever the network does. It's only the boot process that's fragile.
+
+
+
+================================================================================
+WSL — WINDOWS SUBSYSTEM FOR LINUX REFERENCE
+OVERVIEW
+WSL (Windows Subsystem for Linux) lets you run a full Linux environment
+directly inside Windows without a virtual machine or dual boot. It integrates
+tightly with Windows — you can access Windows files from Linux, run Linux
+tools alongside Windows apps, and even launch Linux GUI applications.
+Key features:
+
+Run Linux distros (Kali, Ubuntu, Debian, etc.) inside Windows
+Access Windows files directly from inside Linux via /mnt/
+Run GUI Linux applications on the Windows desktop (with kex or WSLg)
+Use Docker inside Linux from Windows
+Share or mirror your Windows network interface with Linux
+Export and import distros as backups
+
+Common use cases:
+
+Using Kali Linux tools without leaving Windows
+Accessing Windows files and drives from Linux
+Running tools like Wireshark, Metasploit, or Burp from a Linux shell
+Running a full Kali desktop environment via kex
+Penetration testing lab setup on a Windows machine
+
+================================================================================
+STEP 1 — LAUNCH WSL
+Launch WSL from the Windows search bar:
+Press Win key > type "WSL" > press Enter
+Launch WSL from Command Prompt or PowerShell:
+wsl
+Launch a specific distro:
+wsl -d kali-linux
+NOTE: If WSL is not installed, see Step 2 — Installation.
+================================================================================
+STEP 2 — INSTALLATION
+Install WSL with the default distro (Ubuntu):
+wsl --install
+Install a specific distro (Kali Linux recommended for security testing):
+wsl --install -d kali-linux
+List all available distros to install:
+wsl --list --online
+Check if WSL is running and see installed distros:
+wsl --list --verbose
+Example output:
+NAME          STATE           VERSION
+kali-linux    Running         2
+NOTE: Run these commands in PowerShell or Command Prompt as Administrator.
+WSL 2 is the default and recommended version — it is faster and more
+compatible than WSL 1.
+================================================================================
+STEP 3 — NAVIGATING THE FILE SYSTEM
+LINUX SIDE — NAVIGATING TO WINDOWS FILES
+WSL mounts your Windows drives under /mnt/ automatically.
+Go to the top of the Linux directory tree:
+cd /
+Go to the Windows mounts folder:
+cd /mnt
+Go to the Windows C: drive:
+cd /mnt/c
+Go to your Windows user folder:
+cd /mnt/c/Users/<your-windows-username>
+Go to your Windows Desktop:
+cd /mnt/c/Users/<your-windows-username>/Desktop
+Go up one directory level:
+cd ..
+Go directly to your Linux home directory:
+cd ~
+List files in the current directory:
+ls
+List files on the C: drive from Linux:
+ls /mnt/c
+WINDOWS SIDE — ACCESSING LINUX FILES
+From Windows Explorer, type this in the address bar:
+\wsl$\kali-linux
+This opens the Linux filesystem in Windows Explorer.
+You can drag and drop files between Windows and Linux this way.
+NOTE: It is faster to keep files on the Linux filesystem (/home/) when
+working in Linux, and files on the Windows filesystem (/mnt/c/) when
+working in Windows. Accessing files across the boundary is slower.
+================================================================================
+STEP 4 — RUNNING LINUX GUI APPS ON WINDOWS
+WSL supports running GUI applications directly on your Windows desktop.
+The app window appears like any normal Windows application.
+Launch a GUI app from the Linux terminal:
+google-chrome
+sudo wireshark
+gedit file.txt
+nautilus .              (opens file manager)
+NOTE: Modern WSL 2 includes WSLg (GUI support) built in on Windows 11.
+On Windows 10 you may need to install an X server like VcXsrv.
+For a full desktop experience, use kex (see Step 5).
+================================================================================
+STEP 5 — FULL KALI DESKTOP WITH KEX
+kex (Kali Desktop Experience) gives you a full Kali Linux desktop environment
+running inside Windows — like having a complete virtual machine but faster
+and more integrated.
+INSTALL KEX
+Inside Kali WSL, install the kex package:
+sudo apt install kali-win-kex -y
+START THE FULL KALI DESKTOP
+Launch full Kali desktop (Window mode):
+kex
+Launch in Win-KeX window mode explicitly:
+kex --win
+Launch in seamless mode (Linux apps appear on Windows taskbar):
+kex --sl
+Launch in enhanced session mode:
+kex --esm
+KEYBOARD SHORTCUTS INSIDE KEX
+F8                      Open the kex menu (fullscreen toggle, settings)
+F8 > Fullscreen         Enter or exit fullscreen mode
+STOP KEX
+Stop Win-KeX window mode:
+kex --win --stop
+Stop seamless mode:
+kex --sl --stop
+NOTE: kex requires a VNC client. kali-win-kex installs everything needed.
+Run kex from inside the Kali WSL terminal, not from PowerShell.
+================================================================================
+STEP 6 — DOCKER IN WSL
+You can install and use Docker inside WSL to run containers from Linux.
+Install Docker inside Kali WSL:
+sudo apt install docker.io
+Start the Docker service:
+sudo service docker start
+Verify Docker is working:
+sudo docker run hello-world
+NOTE: Docker Desktop for Windows can also integrate with WSL 2 directly
+which is often easier to set up and manage. Enable WSL integration
+in Docker Desktop settings > Resources > WSL Integration.
+================================================================================
+STEP 7 — NETWORKING MODES
+By default WSL uses NAT networking — it gets a different IP address from your
+Windows machine. This can cause issues when tools need to communicate between
+Windows and Linux or when you need WSL to be reachable on your local network.
+NAT MODE (default)
+WSL gets its own internal IP — different from your Windows IP.
+Tools inside WSL cannot easily be reached from other devices on your network.
+Can cause problems with Metasploit listeners, Burp, and similar tools.
+Check the WSL IP from inside Linux:
+ip a
+Check the WSL IP from Windows:
+wsl hostname -I
+MIRRORED MODE (recommended for security testing)
+Mirrored mode gives WSL the same IP as your Windows machine.
+This solves most networking problems with security tools.
+Other devices on the network can reach services running in WSL directly.
+Enable mirrored networking:
+
+Open (or create) the WSL config file on Windows:
+C:\Users<your-username>.wslconfig
+Add the following:
+[wsl2]
+networkingMode=mirrored
+Shut down and restart WSL:
+wsl --shutdown
+wsl
+
+Verify the IP matches Windows after restarting:
+ip a     (should show the same IP as your Windows adapter)
+NOTE: Mirrored mode is available in WSL 2 on Windows 11 22H2 and later.
+If networking problems persist with security tools (LHOST mismatches,
+listeners not receiving connections), switching to mirrored mode is
+usually the fix.
+================================================================================
+STEP 8 — SHUTTING DOWN WSL
+Exit the Linux terminal first:
+exit
+Shut down all running WSL distros from PowerShell or CMD:
+wsl --shutdown
+Shut down a specific distro only:
+wsl --terminate kali-linux
+NOTE: You must exit the Linux shell before running wsl --shutdown.
+Running wsl --shutdown from inside Linux will not work.
+================================================================================
+STEP 9 — EXPORT AND IMPORT (BACKUP & RESTORE)
+Exporting saves your entire WSL distro — all installed tools, configs, and
+files — to a .tar file you can restore later or move to another machine.
+EXPORT (BACKUP)
+Export from PowerShell (must be outside WSL):
+wsl --export kali-linux kali.tar
+Export to a specific drive or path:
+wsl --export kali-linux F:\linux.tar
+NOTE: The distro must not be running. Run wsl --shutdown first.
+The .tar file can be several GB depending on what is installed.
+IMPORT (RESTORE)
+Import a saved distro back:
+wsl --import kali-linux C:\WSL\kali F:\linux.tar
+Syntax:
+wsl --import <DistroName> <InstallLocation> <TarFilePath>
+After importing, launch the restored distro:
+wsl -d kali-linux
+USING GREP ON WSL FROM WINDOWS
+You can pipe Windows commands through WSL tools directly from PowerShell:
+List items and filter with Linux grep:
+ls | wsl grep kali
+This runs the Windows ls output through WSL's grep — useful for quick
+filtering without switching into a Linux shell.
+================================================================================
+QUICK REFERENCE — COMMANDS
+LAUNCHING
+wsl                               Launch default distro
+wsl -d kali-linux                 Launch specific distro
+wsl --list --verbose              List installed distros and status
+wsl --list --online               List available distros to install
+INSTALLATION
+wsl --install                     Install WSL with default distro (Ubuntu)
+wsl --install -d kali-linux       Install Kali Linux
+NAVIGATION (inside Linux)
+cd /mnt/c                         Go to Windows C: drive
+cd /mnt/c/Users/<name>/Desktop    Go to Windows Desktop
+cd ~                              Go to Linux home directory
+cd ..                             Go up one directory
+GUI APPS
+google-chrome                     Launch Chrome
+sudo wireshark                    Launch Wireshark
+kex                               Launch full Kali desktop
+kex --win --stop                  Stop Win-KeX window mode
+F8                                kex fullscreen toggle
+DOCKER
+sudo apt install docker.io        Install Docker in WSL
+sudo service docker start         Start Docker service
+NETWORKING
+ip a                              Show WSL IP address
+wsl hostname -I                   Show WSL IP from Windows
+SHUTDOWN
+exit                              Exit Linux shell
+wsl --shutdown                    Shut down all WSL distros
+wsl --terminate kali-linux        Shut down one specific distro
+EXPORT / IMPORT
+wsl --export kali-linux kali.tar           Export to current directory
+wsl --export kali-linux F:\linux.tar       Export to specific path
+wsl --import kali-linux C:\WSL\ F:\linux.tar   Import/restore
+PIPE WINDOWS OUTPUT THROUGH LINUX
+ls | wsl grep kali                Filter Windows output with Linux grep
+================================================================================
+IMPORTANT NOTES
+
+Always run wsl --shutdown from PowerShell or CMD, never from inside Linux.
+Type exit first to leave the Linux shell, then shut down from Windows.
+/mnt/c is your Windows C: drive. Any file you put here is accessible from
+both Windows and Linux. Use this to move files between the two easily.
+If your security tools (Metasploit, netcat listeners, etc.) have networking
+issues in WSL, switch networkingMode to mirrored in .wslconfig.
+kex requires kali-win-kex to be installed inside the Kali WSL distro.
+Run sudo apt install kali-win-kex -y before trying to launch kex.
+Export your distro (wsl --export) regularly as a backup — especially after
+setting up a full toolset. Restoring from a .tar is much faster than
+reinstalling and reconfiguring everything from scratch.
+WSL 2 uses a lightweight VM under the hood. It is significantly faster
+than WSL 1 and supports more Linux features (including Docker).
+
+================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+wsl good for using windows file while in linux
+
+wsl or wsl -d kali (wsl --install -d kali)
+
+cd.. (go to main directory)
+
+cd mnt ( for windows)
+
+cd c (for c drive)
+
+wsl --shutdown (must be out of Linux, type exit first)
+
+GUI for Linux commands, ex: google-chrome, sudo wireshark, 
+
+sudo apt install kali-win-kex -y
+
+Kex (full kali, f8 for fullscreen)
+
+kex --win --stop (to stop)
+
+sudo apt install docker.io (can use docker)
+
+ending of video he talks about the networking mode, its on nat auto, different ip from local, can change to mirrored to have same as windows. (might solve networking problems)
+
+wsl --export kali kali.tar (save wsl)
+
+ls | wsl grep kali
+
+wsl --list --verbose (check if wsl is running on windows)
+
+
+TO LAUNCH TYPE "WSL" IN CMD
+
+OR WIN KEY WSL
+
+
+to export wsl type in powershell:
+wsl --export kali-linux F:\linux.tar

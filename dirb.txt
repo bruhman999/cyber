@@ -1,0 +1,292 @@
+================================================================================
+                          DIRB — WEB CONTENT SCANNER REFERENCE
+================================================================================
+
+  dirb is a web content scanner that brute-forces URLs using wordlists to
+  discover hidden directories, files, and paths on web servers. It works by
+  launching dictionary-based attacks against a web server and analysing
+  responses. It is one of the oldest and most commonly used enumeration tools
+  in web application penetration testing and is included by default in Kali.
+
+  Unlike ffuf, dirb is simpler, slower, and more straightforward — good for
+  quick scans without needing to configure matchers or filters manually.
+
+  Install:   sudo apt install dirb
+  Location of default wordlists:  /usr/share/dirb/wordlists/
+
+================================================================================
+                          DEFAULT WORDLISTS (built-in)
+================================================================================
+
+  /usr/share/dirb/wordlists/common.txt          General-purpose (most used)
+  /usr/share/dirb/wordlists/big.txt             Larger list, more coverage
+  /usr/share/dirb/wordlists/small.txt           Quick lightweight scan
+  /usr/share/dirb/wordlists/vulns/              Vulnerability-specific lists
+  /usr/share/dirb/wordlists/others/             Misc additional wordlists
+
+  Other wordlist sources:
+    SecLists:  /usr/share/seclists/Discovery/Web-Content/
+    Install:   sudo apt install seclists
+
+================================================================================
+                          BASIC USAGE
+================================================================================
+--------------------------------------------------------------------------------
+  SIMPLEST SCAN
+--------------------------------------------------------------------------------
+  dirb http://codingo.io
+
+    → Uses the default wordlist (common.txt) automatically.
+      No flags needed for a basic scan.
+
+--------------------------------------------------------------------------------
+  SPECIFY A WORDLIST
+--------------------------------------------------------------------------------
+  dirb http://codingo.io /usr/share/dirb/wordlists/big.txt
+
+    → Syntax: dirb [URL] [wordlist]
+      Always specify the full path to the wordlist.
+
+--------------------------------------------------------------------------------
+  SCAN HTTPS TARGET
+--------------------------------------------------------------------------------
+  dirb https://codingo.io /usr/share/dirb/wordlists/common.txt
+
+    → Works with HTTPS out of the box.
+      If you get SSL errors on self-signed certs, see -S flag below.
+
+================================================================================
+                          COMMON FLAGS
+================================================================================
+--------------------------------------------------------------------------------
+  -o  (save output to file)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -o ./results.txt
+
+    → Saves all results to a plain-text file.
+      Good for keeping a record of findings during an engagement.
+
+--------------------------------------------------------------------------------
+  -a  (set custom User-Agent)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -a "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+
+    → Override the default dirb User-Agent string.
+      Useful to blend in with normal browser traffic or bypass basic WAF rules
+      that block known scanner user-agent strings.
+
+--------------------------------------------------------------------------------
+  -c  (set cookies)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -c "sessionid=abc123; token=xyz"
+
+    → Pass session cookies to scan authenticated areas of an application.
+      Grab from browser DevTools (Application > Cookies) or Burp Suite.
+      Separate multiple cookies with a semicolon and space.
+
+--------------------------------------------------------------------------------
+  -H  (add custom HTTP header)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -H "Authorization: Bearer TOKEN"
+
+    → Inject any HTTP header into every request.
+      Use for Bearer tokens, API keys, or custom auth headers.
+      Only one -H flag supported — for multiple headers use a proxy.
+
+--------------------------------------------------------------------------------
+  -p  (use a proxy)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -p http://127.0.0.1:8080
+
+    → Route all traffic through a proxy (e.g. Burp Suite).
+      Lets you inspect, modify, and log every request dirb makes.
+      Use this to replay interesting findings through Burp for manual analysis.
+
+  With proxy auth:
+    dirb http://codingo.io -p http://127.0.0.1:8080 -P user:pass
+
+--------------------------------------------------------------------------------
+  -r  (don't search recursively)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -r
+
+    → By default dirb recurses into every found directory automatically.
+      -r disables recursion — only scans the top-level path.
+      Useful for fast surface-level scans or when recursion is too noisy.
+
+--------------------------------------------------------------------------------
+  -R  (interactive recursion)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -R
+
+    → Asks you interactively whether to recurse into each found directory.
+      Gives manual control over depth without disabling recursion entirely.
+
+--------------------------------------------------------------------------------
+  -S  (silent — don't show "NOT_FOUND" errors)
+--------------------------------------------------------------------------------
+  dirb https://codingo.io -S
+
+    → Suppresses SSL certificate errors on self-signed or misconfigured certs.
+      Also used to silence noisy "NOT_FOUND" warning messages in output.
+
+--------------------------------------------------------------------------------
+  -t  (don't add a trailing slash)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -t
+
+    → By default dirb appends a trailing slash to directory guesses.
+      -t disables this. Can help avoid false negatives on some web servers
+      that handle trailing slashes differently.
+
+--------------------------------------------------------------------------------
+  -v  (verbose — show all responses including NOT FOUND)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -v
+
+    → Prints every single request and its response code, including 404s.
+      Useful for understanding exactly what the server is returning.
+      Warning: very noisy output on large wordlists.
+
+--------------------------------------------------------------------------------
+  -z  (add a millisecond delay between requests)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -z 100
+
+    → Adds a 100ms delay between each request.
+      Use to slow down scans and avoid triggering rate-limiting, WAFs,
+      or IDS/IPS alerts on live targets or production environments.
+
+--------------------------------------------------------------------------------
+  -x  (append extensions from a file)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -x ./extensions.txt
+
+    → Test each wordlist entry with every extension listed in the file.
+      Create a plain text file with one extension per line:
+        .php
+        .bak
+        .txt
+        .html
+        .old
+
+  WHY EXTENSIONS MATTER:
+    Backup and temp files (.bak, .old, .orig, .swp) left on servers can expose
+    full source code, hardcoded credentials, DB strings, and API keys as
+    plain text — no authentication required.
+
+--------------------------------------------------------------------------------
+  -X  (append extensions directly on the command line)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -X ".php,.bak,.txt"
+
+    → Simpler than -x when you only need a few extensions.
+      Comma-separated, no spaces.
+
+--------------------------------------------------------------------------------
+  -w  (don't stop on warning messages)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -w
+
+    → Continues scanning even when dirb encounters warning-level issues
+      (e.g. unusual response sizes or status codes it doesn't recognise).
+      Useful for noisy or non-standard web applications.
+
+--------------------------------------------------------------------------------
+  -N  (ignore responses with this HTTP code)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -N 302
+
+    → Ignore all responses returning a specific status code.
+      Useful when a site redirects everything to a login page (302)
+      and you want to filter out that noise.
+
+--------------------------------------------------------------------------------
+  -f  (fine-tune NOT FOUND detection)
+--------------------------------------------------------------------------------
+  dirb http://codingo.io -f
+
+    → Tells dirb to use fine-tuned detection for custom 404 pages.
+      Some servers return 200 OK for non-existent pages (soft 404s).
+      -f helps dirb distinguish real results from these false positives.
+
+================================================================================
+                          COMBINING FLAGS — PRACTICAL EXAMPLES
+================================================================================
+
+  Basic scan with output saved:
+    dirb http://codingo.io -o ./scan.txt
+
+  Authenticated scan with cookies, big wordlist, output saved:
+    dirb http://codingo.io /usr/share/dirb/wordlists/big.txt \
+         -c "sessionid=abc123" -o ./auth_scan.txt
+
+  Scan with extensions, no recursion, slow rate, save output:
+    dirb http://codingo.io -X ".php,.bak,.old" -r -z 200 -o ./results.txt
+
+  Route through Burp Suite, custom user-agent, no recursion:
+    dirb http://codingo.io -p http://127.0.0.1:8080 \
+         -a "Mozilla/5.0" -r
+
+  HTTPS target with SSL errors suppressed, verbose:
+    dirb https://codingo.io -S -v
+
+  Ignore 302 redirects (e.g. everything redirects to login):
+    dirb http://codingo.io -N 302
+
+  Fast surface scan (small wordlist, no recursion, no trailing slash):
+    dirb http://codingo.io /usr/share/dirb/wordlists/small.txt -r -t
+
+================================================================================
+                          DIRB vs FFUF — WHEN TO USE WHICH
+================================================================================
+
+  dirb:
+    - Quick, simple scans with minimal setup
+    - Built-in recursion by default
+    - No need to manually configure filters
+    - Good for beginners or fast surface enumeration
+    - Slower — single-threaded by default
+    - Less flexible for advanced filtering
+
+  ffuf:
+    - Much faster (multi-threaded Go)
+    - Highly customisable filters and matchers
+    - Better for large wordlists and deep enumeration
+    - Supports multiple wordlists and fuzzing modes
+    - Required for parameter fuzzing, vhost discovery, POST body fuzzing
+    - Better choice for serious or time-constrained engagements
+
+  Rule of thumb:
+    Use dirb for quick initial recon.
+    Use ffuf for thorough, tuned enumeration.
+
+================================================================================
+                          QUICK FLAG CHEAT SHEET
+================================================================================
+
+  dirb [URL] [wordlist] [flags]
+
+  [URL]              Target URL (http:// or https://)
+  [wordlist]         Path to wordlist (optional — defaults to common.txt)
+  -o  [file]         Save output to file
+  -a  [string]       Custom User-Agent string
+  -c  [cookies]      Session cookies for authenticated scanning
+  -H  [header]       Custom HTTP header
+  -p  [proxy:port]   Route traffic through proxy (e.g. Burp Suite)
+  -P  [user:pass]    Proxy authentication credentials
+  -r                 Disable recursion (scan top level only)
+  -R                 Interactive recursion (ask per directory)
+  -S                 Suppress SSL errors and NOT_FOUND warnings
+  -t                 Do not append trailing slash to requests
+  -v                 Verbose — show all responses including 404s
+  -z  [ms]           Add millisecond delay between requests
+  -x  [file]         Append extensions from a file (one per line)
+  -X  [.ext,.ext]    Append extensions directly on command line
+  -w                 Do not stop on warning messages
+  -N  [code]         Ignore responses with this HTTP status code
+  -f                 Fine-tune NOT FOUND detection (soft 404 handling)
+
+  Default wordlist location:  /usr/share/dirb/wordlists/common.txt
+
+================================================================================

