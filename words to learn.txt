@@ -1,0 +1,557 @@
+words to study
+San·skrit - an ancient Indo-European language of India
+dog·mat·ic - inclined to lay down principles as incontrovertibly true.
+van·i·ty - excessive pride in or admiration of one's own appearance or achievements.
+prag·mat·ic - dealing with things sensibly and realistically in a way that is based on practical rather than theoretical considerations.
+dil·et·tante - a person who cultivates an area of interest, such as the arts, without real commitment or knowledge.
+na·ive - showing a lack of experience, wisdom, or judgment.
+ca·thar·sis - the process of releasing, and thereby providing relief from, strong or repressed emotions
+se·ren·i·ty - the state of being calm, peaceful, and untroubled.
+res·ti·tu·tion - the restoration of something lost or stolen to its proper owner.
+vil·i·fy - speak or write about in an abusively disparaging manner.
+ef·fi·gy - a sculpture or model of a person.
+sod·om·ize - have anal intercourse with (someone).
+vin·dic·tive - having or showing a strong or unreasoning desire for revenge.
+fraught - filled with or likely to result in (something undesirable).
+dull·ard - a slow or stupid person.
+man·tra - a word or sound repeated to aid concentration in meditation.
+agnostic - a person who believes that nothing is known or can be known of the existence or nature of God or of anything beyond material phenomena; a person who claims neither faith nor disbelief in God.
+aggregate- a whole formed by combining several elements.
+serenade- a piece of music sung or played in the open air
+deregulation- elimination of government power in an industry
+indentured servitude- a form of labor where someone agrees to work without pay for a set period of time in exchange for something else
+betrothed- person to whom one is engaged
+pandandle- beg in the street
+celibacy- practice of being unmarried and/or sexually abstinent, usually for religious reasons
+defrock- deprive (someone) of professional status
+amyl nitrate- used by inhalation to relieve the pain of angina attacks
+heir- a person legally entitled to the property or rank of another on that person's death.
+besmirch- damage the reputation of someone or something
+
+EBITDA	=	Earnings Before Interest, Taxes, Depreciation, and Amortization
+\text{E}	=	net income
+\text{I}	=	interest
+\text{T}	=	taxes
+\text{D}	=	depreciation
+\text{A}	=	amortization
+
+indelible- making marks that cannot be removed
+relegate- dismiss to an inferior rank
+freudian- relating to or influenced by Sigmund Freud and his methods of psychoanalysis, especially with reference to the importance of sexuality in human behavior.
+honeypot- In cybersecurity, a honeypot is a decoy that's designed to look like a vulnerable system and attract cybercriminals
+airgap- An air gap, air wall, air gapping or disconnected network is a network security measure employed on one or more computers to ensure that a secure computer network is physically isolated from unsecured networks, such as the public Internet or an unsecured local area network.
+aptly- manner that is appropiate 
+abdicate- renounce one's throne
+restitution- restoration of something lost
+cede- give up power or territory
+congenial- pleasant because of presonality
+libelous- constituting a libel
+effusive- expressing feelings of gratitude
+coronary- relating to or denoting the arteries
+transmogrify- to change or alter greatly
+ravishing- delightful; entrancing
+petulant- childishly sulky or bad-tempered
+ixnay- used in rejecting something specifed
+sabbatical- a period of paid leave granted to a university teacher or other worker for study or travel, traditionally one year for every seven years worked.
+oriental- characteristic of asia
+candor- the quality of being open and honest
+malfeasance- Malfeasance is an act that is illegal and causes physical or monetary harm to someone else
+atrophy-waste away
+poa- A power of attorney (POA) is a legal document that allows someone else to act on your behalf in private matters, business, or legal matters.
+defenestration- the action of throwing someone out a window
+unfettered- unrestrained
+aspirant- having ambitions to achieve something
+farce- a comic dramatic work using buffoonery and horseplay
+cutpurse- a theif who steals from the pockets
+ire- anger
+sate- satisfy
+estranged- no longer close or affectionate to someone
+belabor- argue or elaborate in excessive detail
+heredity- passing on of physical or mental characteristics genetically from one generation to another.
+benign- gentle and kind
+quibble- slight objection or criticism about a trival matter
+chaperone- a person who accompanies and looks after another person 
+scat- go away leave
+gish gallop- attempts to overwhelm an opponent with excessive number of arguments
+A CVE, short for Common Vulnerabilities and Exposures
+End-to-end encryption (E2EE) is a secure communication method that prevents third parties from accessing data being transferred between two endpoints
+jilt- to reject
+masochist- a person who derives sexual gratification from their own pain or humilation
+scant- barely sufficient or adequate.
+extemporaneously- composed, performed, or uttered on the spur of the moment
+quixotic- exceedingly idealist; unrealistic and impractical
+parishioner- an inhabitant of a parish, especially one who belongs to or attends a particular church
+chicanery- the use of trickery to achieve a political, financial, or legal purpose
+attrition- the action or process of gradually reducing the strength or effectiveness of someone or something through sustained attack or pressure.
+erstwhile- former
+camaraderie- mutual trust and friendship among people who spend a lot of time together.
+enclave- a portion of territory within or surrounded by a larger territory whose inhabitants are culturally or ethnically distinct.
+indefatigable- persisting tirelessly
+ethos- characteristic spirit of a culture, era, or community as manifested in its beliefs and aspirations
+feverish- displaying a frenetic excitement
+aferbrile- not feverish
+meager- lacking in quantity or quality
+chaperone- person who accompanies and looks after another person or group
+exorbitant- unreasonably high price
+uppity- self-important;arrogant
+mensch- a person of integrity and honor
+insipid- lacking flavor
+Emulsification- the process of mixing two or more liquids that do not normally mix together to create a semi-stable mixture
+renege- go back on a promise, undertaking, or contract.
+absolve- set or delclare someone free from blame or responsibility
+ostentatious- characterized by vulgar or pretentious display; designed to impress or attract notice
+Necrotic-  means dead or dying
+shambolic- chaotic, disorganzied
+salacious- having or conveying undue or inappropiate interest in sexual matter
+befit- be appropiate for; suit
+keel- turn over on its side
+privy- sharing in the knowledge of (something secret or private)
+gumption- shrewd or spritited initiative and resourcefulness
+con- persuade (somone) to do or believe something
+skulduggery- underhanded or unscrupulous
+contention- heated disagreement
+approbation- approval or praise
+apparition- a ghost or ghostlike image of a person
+atonement- reparation for a wrong or injury
+Muzak- refers to a brand of background music, often associated with bland, instrumental music played in public places like elevators, retail stores, and waiting rooms, and has become a generic term for such music
+coronation- the ceremony of crowning a sovereign or a sovereign's consort.
+perspicacious- having a ready insight into and understanding of things
+multifaceted- having many facets
+facet- one side of something many-sided
+monopolistic- relating to a person or business that has exclusive possession or control of the supply of or trade in a commodity
+squalid- extremely dirty and unpleasant, especially as a result of poverty or neglect
+tepid- only slightly warm
+deign- do something that one considers to be beneath ones dignity
+retrechment- the reduction of costs or spending in response to economic difficulty
+fiduciary- involving trust, regards to relationship between a trustee and a beneficiary
+wry- using or expressing dry
+bleat- wavering cry
+auspicious- conductive to success
+cogent- clean, logical, and convincing.
+vote of no confidence- a vote showing that a majority does not support the policy of a leader or governing body.
+infidelity- the action or state of being unfaithful to a spouse or sexual partner.
+recuse- challenge (a judge, prosecurtor or juror) as unqualified to perfrom legal duties because of a potential conflick of interest or lack of impartiality
+morsel- a small piece or amount of food
+abstain- restrain oneself from doing or enjoying something
+jejune- naive, simplistic
+remit- cancel or refrain from exacting or inflicting
+litigious- unreasonably prone to go to law to settle disputes
+debonair- confident, stylish, and charming
+liturgical- relating to liturgy or public worship
+pernicious- having a harmful effect
+debauchery- sexual pleasures
+solvent- having assets in excess of liabilities
+coarsen- make or become rough
+bout- a short period of intense activity of specified kind
+impish- inclined to do slightly naughty things for fun
+infallible- incapable of making mistakes
+oxymoron- figure of speech in which apparently contradicitory terms apper in conjuction
+irrefutable- impossible to deny
+ineptitude- lack of skill or ability
+betterment- the act or process of improving something
+perilous- full of danger or risk
+remonstration- act of expressing earnest opposition or protest
+feculance- the state of being unsanitary
+monosyllabically- way that involves saying very little
+sire- cause the birth of
+duly- proper or expected manner
+indecorous- not in keeping with good taste and propiety
+revel- take great pleasure
+probity- quality of having strong moral principles
+sapient- wise 
+verbose- containing more words than necessary
+efficacy- ability to produce a desired or intended result
+verve- lively and forceful enthusiasm or energy
+wile- devious or cunning stratagems employed in manipulating or persuading
+stratagem- a plan or scheme to outwit and oppent
+outwit- decieve or defeat by greater ingenuity
+tomography- xray technique 
+tribulation- a cause of great trouble or suffering
+onanism- masturbation
+usury- illegal action or practice of lending money at unreasonably high rates of interest
+merit- quality of being particulary good or worthy
+monogamous- involving marriage to one person at a time
+corrugated- shaped into alternate ridges and grooves
+facetious- treating serious issues with deliberately inappropiate humor
+egocentric- thinkg only of oneself, without regard for the feelings or desires of others
+gibe- an insulting or mocking remark
+giblet- the liver heart, gizzards and neck of a chicken or fowl
+pusillanimous- showing a lack of courage or determination
+promiscuous- having or characterized by many transient sexual relations
+transient- staying or working in a place for only a short time
+bohemian- a socially unconventional person, one who is involved in the arts
+obviate- remove
+scrupulous- dilligent, thorough, and extremely attentive to details
+divestiture- the action or process of selling off subsidiary business interests or investments
+ombudsman- an independent official who investigates and resolves complaints
+oscilate- move or swing back
+doff- remove
+tarry- of, like, or covered with tar
+suffice- be enough or adequate
+palpable- so intense as to seem tangible
+vagabond- a person who wanders from place to place without a home or job
+encroach- intrude on (a persons territory or a thing)
+nomenclature- the devising or choosing of names for things
+Lexicon-The vocabulary of a language, person, or subject.
+ethos- characteristic of a culture, era, or community as manifested in its beliefs and apsirations
+estranged- no longer close or affectionate to someone
+amicable- having a spirit of friendliness
+consortium- an association, typically of several business companies
+gallant- brave heroic
+internecine- destrucive to both sides in a conflict
+capacious- having a lot of space inside
+deference- humble submission and respect
+amiss- not quite right; inappropiate
+investiture- the action of formally investing a person with honors of rank
+interloper- a person who becomes involved in a place or situation where they are not wanted or are considered not to belong
+germane- relevant to a subject under consideration
+addendums- things added
+moot- subject to debate
+rapport- a close and harmonious relationship 
+vindicate- clear someone of blame
+singed- slightly burnt
+perverse- showing a deliberate and obstinate desire to behave in a way that is unreasonale
+grotesque- comically 
+pariah- an outcast
+prudent- acting with or showing care and thought for the future
+interregnum- period when normal government is suspended
+predicate- state, affirm, or assert something about the subject or sentence
+assiduously- with great care and perseverance
+propensity- an inclination or natural tendency to behave in a particular way
+servile- having or showing an excessive willingness to serve or please others
+amalgamate- combine or unite to form one
+colloquial- used in ordinary or familiar conversation
+lament- a passionate expression of grief or sorrow
+monosyllabic- consisting of one syllable
+palpable- so intense as to seem almost tangible
+frivolity- lack of seriousness
+conformity- compliance with standards, rules or law
+vehemently- in a foreceful, passionate, or intense manner;
+cacophony- a harsh discordant mixture of sounds
+prehensile- capable of grasping
+delineate- describe or portray 
+innumerate- without a basic knowledge of mathematics and arithmetic
+residuum- a substance or thing that remains or is left behind
+recant- say that one no longer holds an opinion or belief
+demagogue- a political leader who seeks support by appealing to the desires and prejudices of ordinary people rather tahn by using rational argument
+acumen- the ability to make good judgments and quick decisions
+temerity- excessive confidence or boldness
+meager- lacking in quality or quanity
+vim- energy, enthusiasm
+placate- make (someone) less angry
+headshrinker- a headhunter who preserved and shrank the heads of their dead animals
+copacetic- in excellent order
+oxymoron- a figure of speech in which apparently contradictictory terms appear in conjunction
+inert- lacking the ability or strength to move
+besotted- strongly infatuated
+betrothed- the person to whom one is engaged
+irrevocable- not able to be changed, reversed
+assiduously- with great care
+inexorably- in a way that is impossible to stop or prevent
+vagary- an unexpected and inexplicable change in a situation 
+nihilism- the rejection of all religious and moral principles, in the belief that life is meaningless
+behoove- it is a duty or responsibility for someone to do something
+soliloquize- speak one's thoughts aloud when by oneself or regardless of any hearers
+supposition- an uncertain belief
+vocation- a strong feeling of suitability for a particular career or occupation
+innudation- an overwhelming abundance of people or things
+suffuse- gradually spread through or over
+arbitrarily- on the basis of random choice or personal whim
+undulate- move or go with a smooth up-and-down motion
+inert- lacking the ability or strength to move
+tantamount- equivalent in seriousness to
+superflous- unencessary
+antithetical- directly opposed or contrasted
+panhandle- a narrow strip of territory projecting from the main territory of one state into another state
+terraform- transform a planet so as to resemble the earth
+beguile- charm or enchant (someone), sometimes in a deceptive way.
+permutate- change the order or arrangement of
+effete- affected and overly refined
+promiscuous- having or characterized by many transient sexual relationships
+welching- to avoid doing something you have promised to do, especially not pay a debt
+penitent- feeling or showing sorrow
+transgress- infringe or go beyond the bounds of (a moral principle)
+bosom- a womans chest
+beseech- ask (someone) urgently 
+decadence- moral or cultural decline as characterized by excessive indulgence in pleasure
+widower- a man who has lost his spouse by death and has not remarried
+inordinate- unusually
+sacrilege- violation or misuse of what is regarded as sacred
+sanctify- set apart as or declare holy
+extremity- the furthest point or limit of something
+capitulate- cease to resist an opponent or an unwelcome demand
+perineum- is the region of skin and muscle located between the anus and the genitals
+exodus- a mass departure of people
+bucolic- relating to the pleasant aspects of the countryside and country life
+quaint- attractively unusual 
+maroon- leave (someone) trapped and isolated in an inaccessible place
+perilous- full of danger
+caveat emptor- the principle that the buyer alone is responsible for checking the quality before a purchase is made. 
+lilliputian- trivial or very small
+secular- denoting attiudes, activities, or other things that have no religious or spiritual basis
+bigamy- the act of going through a marriage ceremony while already married to another person
+comatose- of or in a state of deep unconsciousness for a prolonged or indefinite period
+benevolent - kind and with positive intentions
+gouge- make (a groove, hole, or identation) with or as with a sharp tool
+ornamental- serving or intended as an ornament
+accost- approach and address someone boldy or aggressively
+procreation- the production of offspring
+emerge- to come forth into view
+hermaphrodite- an organism with both male and female reproductive organs
+bemused- puzzled
+inconsolable- not able to be comforted
+solace- comfort or consolation in a time of distress
+butterface- a person regarded as having an attractive body but unattractive facial features
+mausoleum-is a large, above-ground tomb or building built to house the remains of the dead
+brevity- concise and exact use of words in writing or speech
+druther- a persons preference in matter
+incessant- continuing without pause
+ogle- stare at in a lecherous manner
+guffaw- a loud and boisterous laugh
+genetic predisposition- an increased chance of developing a particular disease due to a genetic variant 
+hypoglycemia- blood glucose levels fall below average range
+eccentric- unconventional and slightly strange
+destitute- without the basic necessities of life
+inoculation- the action of immunizing someone against a disease by introducing infective material
+leisure- free time
+betwixt- between
+figment- a thing that someone believes to be real but that exists only in their imagination
+volition- the faculty or power of using ones trust
+cretin- a stupid person
+menopause- period in womens life when menstruation ceases
+succubus- a female demon believed to have sexual intercourse with sleeping men
+oaf- a man who is rough or clumsy
+virile - having strength, energy, and a strong sex drive
+aloof- not friendly or forthcoming
+allure- the quality of being powerfully and mysteriously attractive
+sumptuos- very rich, elaborate, or luxurious
+facetious- treating serious issues with deliberately inappropriate humor
+conation- the mental faculty of purpose, desire, or will to perform
+felching- the ingestion of semen from the anus
+admissible- acceptable or valid
+cinch- extremely easy task
+promiscuity- the fact or state of being promiscuous
+promiscous- characterized by many transient sexual relationships
+transient- lasting only for a short time
+wetback- a Mexican living in the US, without official authorization
+dba- doing business as (registration a doctor of businesss)
+goy- a term used by Jewish people for a non-Jewish person
+beseech- ask (someone) urgently and fervently to do something
+fervently- very passionately
+ornate-made in an intricate shape 
+idiosyncrasy- way of thought peculiar to an individual
+besieged- surrounded by armed forces aiming to capture it or force surrender
+mercurial- subject to sudden or unpredictable changes of mood or mind
+facsimile-an exact copy
+perturbed- feeling anxiety or concern
+expatriate- a person who lives outside their native country
+intromit- to send or put in
+relinquish- cease to keep
+fictive- creating or created by imagination
+pretense- an attempt to make something that is not the case appear true
+ascertain- find out for certain
+ostracize- exclude someone from a group or society
+assimilate- take in and understand fully
+irrevocable- not able to be changed
+expenditure- the action of spending funds
+matriculate- be enrolled at a college or university
+advent- the arrival of a notable person or thing
+maloncholy- a feeling of pensive sadness
+pantomime- a dramatic entertainment, 
+myopic- nearsighted
+malcontent- a person who is dissatisfied 
+on the lam- in flight, especially from the police
+accoutrement- additional items of dress or equipment
+befall- something bad happen to someone
+clandestine- kept secret or done secretively
+disseminate- spread information widely
+coddle- treat in an indulgent or overprotective way
+tread- walk in a specified way
+fey- giving an impression of sensitivity and vague unworldliness
+fornicate- have sexual intercourse with someone one is not married to
+punctuality- the fact or quality of being on time
+consummate- make a marriage or relationship complete by having sex 
+interminable- endless
+browbeat- intimidate someone
+omnipotence- the quality of having unlimited power
+atone- make amends 
+muggle- a person who is not conversant with a particular activity or skil
+profligate- recklessly extravagant or wasteful in the use of resources
+philistine- a person who is hostile
+immodest- lacking humility or decency
+wagon burner- racist slur for native americans
+conceited- excessively proud of oneself
+annul- declare invalid
+intrepid- fearless
+ingrate- ungrateful person
+eunuch- a man who has been castrated 
+attaint- subject to attainder
+attainder- the forfeiture of land and civil rights
+belligerent- hostile and aggressive
+austerity- severity of manner or attitude
+sly- showing a cunning and deceitful nature
+obsequious- obedient
+scruple- feeling of doubt
+dominion - control
+malady- a disease or ailment
+regent- appointed to administer a country because the monarch is a minor or is absent
+insalubrious- unhealthy
+err(erred)- be mistaken or incorrect
+protracted- lasting for a long time
+shrewd- having or showing sharp powers of judgement
+charlatan- a person falsely claiming to have a special knowledge or skill
+strife- angry or bitter disagreement
+patronage- the support given by a patron
+foray- a sudden attack or incursion into enemy territory
+infidel- a person who does not believe in religion
+penchant- a strong or habitual liking for something 
+unsullied- not spoiled or made impure
+quandary- a state of perplexity 
+macabre- disturbing and horrifying
+coalesce- come together to form one mass or whole
+proclivity-a tendency to choose or do something regularly
+irksome- irritating, annoyed
+maim- wound or injure
+abet- encourage or assist someone to do something wrong
+swoon- faint 
+geld- castrate
+spurn- reject with disdain
+pomposity- self-important
+pompous- self important
+drudgery- hard menial or dull work
+prerogative- a right or privilege exclusive to a particular individual
+cynicism- an inclination to believe that people are motivated purely by self interest
+timid- showing a lack of courage or confidence
+pillow biter- homosexual man who engages in passive anal sex
+asunder- apart
+pious- devoutly religious
+regicide- the action of killing a king
+extricate- free someone or something
+usurp- take unlawfully or by force
+decry-publicly denounce or condemn.
+carrion- the decaying flesh of dead animals.
+coy- making a pretense of shyness or modesty that is intended to be alluring.
+predilection- a preference or special liking for something
+melancholy-a feeling of pensive sadness
+fratricide- the killing of one's brother or sister.
+filicide- the killing of ones sons or daughter
+delude- impose a misleading belief upon someone
+sycophant- a person who acts obsequiously toward someone important in order to gain advantage
+obsequious- obedient or attentive to an excessive or servile degree.
+pact- a formal agreement between individuals or parties.
+mulish- likened to a mule in being stubborn.
+wane- have a progressively smaller part of its visible surface illuminated, so that it appears to decrease in size.
+sullen- bad-tempered and uncommunicative, especially on account of resentment.
+despondent- in low spirits from loss of hope or courage.
+fornication- sexual intercourse between people not married to each other.
+contrition- the state of feeling remorseful and penitent.
+vanity-excessive pride in or admiration of one's own appearance or achievements.
+eloquent-fluent or persuasive in speaking or writing.
+fickle- changing frequently, especially as regards one's loyalties, interests, or affection.
+stupor- a state of near-unconsciousness 
+beset- trouble or threaten persistently
+gallivant- go around from one place to another in the pursuit of pleasure or entertainment.
+yearn- have an intense feeling of longing for something, typically something that one been separated from or that is unattainable.
+perpetuity- the state of lasting forever
+enmity- the state or feeling of being actively opposed or hostile to someone or something
+brood-think deeply about something that makes one unhappy.
+unguent- a soft greasy or viscous substance used as ointment or for lubrication.
+purveyor- a person who sells or deals in particular goods.\
+armistice-an agreement made by opposing sides in a war to stop fighting for a certain time; a truce.
+whinge- complain persistently and in a peevish or irrating way
+surmise- suppose that something is true without having evidence to confirm it.
+snide- derogatory or mocking in an indirect way.
+bestow- confer or present
+cadaver- a corpse
+dither- be indecisive
+leal- loyal and honest
+misssive- a letter
+vying- present participle of vie
+exalt- hold someone or something in very high regard
+forlorn- pitifully sad and abandoned
+halfwit- a foolish stupid person
+cunning- having or showing skill in achieving ones end by deceit or evasion
+ceaseless- constant and unending
+supplant- supersede and replace
+proffer- hold out (something) to someone for acceptance
+fete- a celebration
+atrophied- of body tissue or an organ wasted away
+regal- of, resembling, or git for a monarch
+dowry- property or money brought by a bride to her husband on their marriage
+machination- a plot or scheme
+environ- surround, enclose
+rebuke- express sharp disapproval 
+wroth- angry
+brown noser- a person who acts in a grossly obsequious way
+jape- a practical joke
+confide- tell someone about a secret or private matter
+herald- an official messenger bringing news
+bereft- deprived of or lacking something
+laud- praise highly
+hie- go quickly
+deign- do something that one considers to be beneath ones dignity
+drab- lacking brightness or interest
+deft- neatly skillful and quick in ones movement
+sot- a habitual drunkard
+impudent- not showing due respect for another person
+seldom- not often
+premonition- a strong feeling that something is about to happen 
+fud- fear, uncertainty and doubt, usually evoked intentionally in order to put a competitor at a disadvantage
+gale- a very strong wind
+tantamount- equivalent in seriousness to
+magnanimous- generous or forgiving
+paleolithic- old stone age
+bigamist- a person who commits the offense of marrying someone while already married to another
+crude- constructed in a rudimentary or makeshift way
+precarious- not securely held
+adolescent- in the process of developing from a child into an adult
+quintessential- representing the most perfect or typical example of
+erudite- having or showing great knowledge 
+pageantry- elaborate display
+compunction - a feeling of guilt or moral scruple that prevents or follows the doing of something bad.
+temptress- a woman who tempts someone to do something
+boff- have sex
+culled- selectively slaughtered
+insofar as- to the extent that
+tempestuous- characterized by strong and turbulent or conflicting emotion
+amenity- a desirable or useful feature
+apiary- a place where bees are kept
+insidious- proceeding in a gradual, subtle way, but with harmful effects
+appendage - a thing that is added or attached to something 
+cordial- warm and friendly
+conjunction- a word used to connect clauses or sentences 
+conjecture- an opinion
+gentrify- change the character through wealthier people moving in, improving housing, and attracting new business
+convulse- suffer violent involuntary contraction of the muscles
+gargoyle- a carved stone creature
+
+
+
+medical////
+grand mal seizure- involves loss of consciousness and violent muscle contractions
+appendectomy- surgery to remove the appendix when its infected
+anoxia- absence of oxygen
+pulmonary embolism(PE)- occurs when blood clot gets stuck in an artery in the lung, blocking blood flow to part of the lung
+asystole- type of cardiac arrest
+Multinucleate cell angiohistiocytoma is a rare idiopathic benign fibrohistiocytic and vascular proliferation usually presenting as multiple asymptomatic papules, red to violaceous in colour, primarily located on the extremities of middle-aged females.
+Tetralogy of Fallot is a combination of four heart changes present at birth
+Pulmonary atresia- is a congenital heart defect
+Increased intracranial pressure (ICP) is an increase in pressure around the brain, likely due to an excess of fluid. It's life threatening and requires immediate medical attention.
+febrile- showing the symptoms of a fever
+syphilis- bacterial sexually transmitted infection (STI) that can cause serious health problems if left untreated
+Penicillin- is one of the most commonly used broad-spectrum antibiotics globally
+Hemochromatosis is a disorder that causes excess iron deposition and, in turn, multiple organ dysfunction
+Twin-to-twin transfusion syndrome- also known as feto-fetal transfusion syndrome
+Decerebrate posturing- there's severe damage to your brain or something is causing major disruptions in brain activity
+Diverticulitis- inflammation of irregular bulging pouches in the wall of the large intestine.
+thoracotomy- surgical procedure in which a cut is made between the ribs to see and reach the lungs or other organs in the chest or thorax
+Horner syndrome- rare condition that affects the eye and surrounding tissues on one side of the face
+brachial plexus- network of nerves that provides movement and feeling to the shoulder, arm and hand
+pneumothorax- collection of air outside the lung but within the pleural cavity
+laparotomy is a surgical incision (cut) into the abdominal cavity
+tamponade- a medical condition that occurs when the heart is compressed by fluid or blood
+Porcelain gallbladder- condition in which the inner gallbladder wall is encrusted with calcium
+Marfan syndrome- genetic disorder that affects the body's connective tissues, which support organs, bones, muscles, and skin
+Priapism is a urological emergency that involves a prolonged penile erection that is not caused by sexual stimulation
+Trichinosis (or trichinellosis) is a parasitic disease from eating undercooked meat (like pork or wild game) infected with Trichinella roundworm larvae
+Proprioception is your body's subconscious sense of its own position, movement, and effort in space
