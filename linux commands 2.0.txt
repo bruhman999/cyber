@@ -28,6 +28,203 @@ BASIC FILE & DIRECTORY COMMANDS
   echo "text" >> file            Append text, add onto it
   tee                            Takes input and writes it to a file
   -a                             Flag means append add to existing instead of overwriting
+  diff                           Shows the difference of a file (diff file1.txt file2.txt)
+
+--------------------------------------------------------------------------------
+FLAGS — COMMON FLAGS EXPLAINED
+--------------------------------------------------------------------------------
+
+  Flags (also called options or switches) modify how a command behaves.
+  They follow the command and start with - (single letter) or -- (full word).
+  Multiple flags can be combined: ls -la is the same as ls -l -a
+
+  LS FLAGS
+  --------
+
+  ls -l                  Long format — shows permissions, owner, size, and date
+                         Output example:
+                         -rwxr-xr--  1  kali  kali  4096  Mar 10  file.sh
+                         (permissions / links / owner / group / size / date / name)
+
+  ls -a                  All files — shows hidden files (files starting with a dot)
+                         Example: .bashrc  .ssh  .config  would normally be invisible
+
+  ls -la                 Combines -l and -a — full details including hidden files
+                         Most commonly used ls command in security work
+
+  ls -lh                 Human-readable sizes — shows KB, MB, GB instead of raw bytes
+                         Example: 4.0K instead of 4096
+
+  ls -lt                 Sort by time — newest files shown first
+                         Useful for seeing what was recently created or modified
+
+  ls -lS                 Sort by size — largest files shown first
+
+  ls -R                  Recursive — lists contents of all subdirectories too
+
+  ls -d */               Show only directories in current location
+
+  NMAP FLAGS
+  ----------
+
+  -sn                    Ping sweep only — no port scan, just find live hosts
+  -sT                    TCP Connect Scan — full handshake, more detectable
+  -sS                    SYN Scan — stealth scan, sends SYN but never completes handshake
+  -sU                    UDP Scan — scans UDP ports (slower than TCP)
+  -sV                    Version detection — identifies what software is running on open ports
+  -O                     OS detection — tries to identify the target operating system
+  -A                     Aggressive — enables OS detection, version detection, scripts, traceroute
+  -p <port>              Scan a specific port or range  (e.g. -p 80  or  -p 1-1000)
+  -p-                    Scan ALL 65535 ports
+  --open                 Only show open ports in results
+  -oN <file>             Save output in normal readable format to a file
+  -oG <file>             Save output in greppable format (easy to parse with grep)
+  -T4                    Speed template — T4 is fast, T5 is fastest, T1 is slowest/stealthy
+  -v                     Verbose — show more output while scanning
+  -vv                    Very verbose — even more detail during scan
+  --script <name>        Run a specific NSE script against the target
+
+  HYDRA FLAGS
+  -----------
+
+  -l <username>          Single known username
+  -L <file>              List of usernames from a file
+  -p <password>          Single known password
+  -P <file>              List of passwords (wordlist) from a file
+  -t <number>            Number of parallel threads  (e.g. -t 4)
+  -f                     Stop as soon as one valid login is found
+  -v                     Verbose output
+  -V                     Very verbose — shows every attempt (slow but useful for debugging)
+  -s <port>              Specify a custom port if the service is not on default
+  -o <file>              Save found credentials to a file
+
+  NETCAT FLAGS
+  ------------
+
+  -l                     Listen mode — wait for an incoming connection
+  -v                     Verbose — show connection details
+  -n                     No DNS — skip hostname resolution, use IPs only
+  -p <port>              Specify the port to listen on or connect to
+  -e <program>           Execute a program on connect  (e.g. -e /bin/bash for shell)
+  -u                     UDP mode instead of default TCP
+
+  GOBUSTER FLAGS
+  --------------
+
+  dir                    Mode — directory and file brute-forcing
+  -u <URL>               Target URL
+  -w <wordlist>          Wordlist to use for brute-forcing
+  -t <number>            Threads — how many requests to run at once  (default 10)
+  -x <extensions>        File extensions to look for  (e.g. -x php,html,txt)
+  -o <file>              Save output to a file
+  -q                     Quiet — only show results, hide progress bar
+  --status-codes <codes> Only show specific HTTP status codes  (e.g. 200,301)
+
+  CHMOD FLAGS
+  -----------
+
+  -R                     Recursive — apply permission change to folder and all contents
+                         Example: chmod -R 755 /var/www/html
+
+  GENERAL FLAGS USED ACROSS MANY COMMANDS
+  ----------------------------------------
+
+  -r  or  -R             Recursive — applies command to all files and subfolders
+  -f                     Force — skip confirmation prompts, override errors
+  -v                     Verbose — show what the command is doing step by step
+  -h                     Human-readable — show sizes in KB/MB/GB
+  -n                     Number — (in grep: show line numbers, in head/tail: set count)
+  -i                     Case-insensitive — ignore uppercase/lowercase differences
+  -o                     Output — send results to a file
+  -q                     Quiet — suppress output, run silently
+  -e                     Execute or expression — run a specific command or pattern
+  -d                     Directory — target a directory specifically
+  -p                     Port — specify a port number
+  -u                     User — specify a username
+  -s                     Silent / stealth depending on the tool
+
+--------------------------------------------------------------------------------
+WILDCARDS — PATTERN MATCHING
+--------------------------------------------------------------------------------
+
+  Wildcards are special characters that represent one or more unknown characters.
+  They let you match multiple files or strings without typing each name out.
+  They are used with commands like ls, cp, mv, rm, grep, find, and many others.
+
+  *   ASTERISK — Match anything (zero or more characters)
+  -------------------------------------------------------
+
+  The most commonly used wildcard. Matches any number of any characters.
+
+  ls *.txt                    List all files ending in .txt
+  ls scan*                    List all files starting with "scan"
+  ls *2024*                   List all files with "2024" anywhere in the name
+  rm *.log                    Delete all .log files in current directory
+  cp *.py /backup/            Copy all Python scripts to /backup/
+  cat *.txt                   Print contents of every .txt file
+  mv report* /archive/        Move all files starting with "report" to /archive/
+
+  ?   QUESTION MARK — Match exactly one character
+  ------------------------------------------------
+
+  Matches any single character. Useful when you know the length but not exact name.
+
+  ls file?.txt                Matches file1.txt, file2.txt, fileA.txt — NOT file10.txt
+  ls scan_??_2024.txt         Matches scan_01_2024.txt, scan_AB_2024.txt
+  rm log?.txt                 Deletes log1.txt, log2.txt etc but NOT log10.txt
+  ls ?.sh                     Lists all .sh files with a single character name (e.g. a.sh)
+
+  []  BRACKETS — Match one character from a set
+  ----------------------------------------------
+
+  Matches exactly one character from the set defined inside the brackets.
+
+  ls file[123].txt            Matches file1.txt, file2.txt, file3.txt only
+  ls [abc]*.sh                Matches any .sh file starting with a, b, or c
+  ls scan[0-9].txt            Matches scan0.txt through scan9.txt
+  ls [A-Z]*.txt               Matches any .txt file starting with an uppercase letter
+  ls [!a]*.txt                The ! means NOT — matches files NOT starting with a
+
+  {}  CURLY BRACES — Match specific options (brace expansion)
+  ------------------------------------------------------------
+
+  Not technically a wildcard but works similarly — matches exact listed patterns.
+
+  cp file.{txt,py,sh} /backup/        Copy file.txt, file.py, and file.sh at once
+  touch scan_{1,2,3}.txt              Create scan_1.txt, scan_2.txt, scan_3.txt
+  ls *.{jpg,png,gif}                  List all image files of those three types
+  mv {old,new}_config.txt /etc/       Move both files at once
+
+  ~   TILDE — Home directory shortcut
+  ------------------------------------
+
+  Not a wildcard exactly but a special character worth knowing alongside them.
+
+  cd ~                        Go to your home directory
+  ls ~/Desktop                List files on your Desktop
+  cp file.txt ~/Documents/    Copy a file to your Documents folder
+
+  COMBINING WILDCARDS
+  -------------------
+
+  ls *.???                    All files with a 3-character extension
+  ls [0-9]*_scan.txt          Files starting with a number and ending in _scan.txt
+  find / -name "*.conf"       Find all .conf files anywhere on the system
+  find / -name "pass*"        Find any file starting with "pass"
+  grep "error" *.log          Search for "error" across all log files at once
+  rm temp_?.txt               Remove temp_1.txt, temp_2.txt etc but not temp_10.txt
+
+  WILDCARD SAFETY WARNING
+  -----------------------
+
+  Be careful using wildcards with rm — there is no undo in Linux.
+
+  rm *.txt                    Deletes ALL .txt files — double check before running
+  rm *                        Deletes EVERYTHING in the current directory
+  rm -rf *                    Deletes everything including folders — extremely dangerous
+
+  Tip: Run ls with your wildcard first to preview what will be matched before deleting.
+  Example:  ls *.log    — check the output looks right, then run:   rm *.log
 
 --------------------------------------------------------------------------------
 FILE PERMISSIONS — CHMOD
