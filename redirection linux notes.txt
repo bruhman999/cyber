@@ -1,0 +1,362 @@
+================================================================================
+              LINUX — STANDARD STREAMS & I/O REDIRECTION REFERENCE
+================================================================================
+
+  Every process in Linux has three standard data streams automatically
+  attached to it when it runs. Understanding these is fundamental to
+  working in the terminal — redirection lets you control where data
+  goes and where it comes from.
+
+  The three streams:
+    stdin   (standard input)   — data going INTO a program      — fd 0
+    stdout  (standard output)  — normal output from a program   — fd 1
+    stderr  (standard error)   — error messages from a program  — fd 2
+
+  fd = file descriptor. Every stream is just a file descriptor number.
+  This matters when redirecting — you reference streams by their number.
+
+================================================================================
+                         STANDARD INPUT  (stdin)
+================================================================================
+
+  File descriptor:  0
+  Default source:   keyboard
+
+  stdin is the data stream that feeds input INTO a command.
+  By default it reads from the keyboard — whatever you type.
+  You can redirect it to read from a file instead.
+
+  Redirect stdin from a file:
+    command < file
+
+  Examples:
+    sort < names.txt
+      → sort reads its input from names.txt instead of waiting for
+        you to type. Same result as: cat names.txt | sort
+
+    mail admin@site.com < message.txt
+      → Sends the contents of message.txt as the email body.
+
+    mysql -u root -p database < backup.sql
+      → Feeds a SQL file into MySQL as if you typed it.
+        Very common for restoring database backups.
+
+    cat < file.txt
+      → Reads and prints file.txt via stdin redirection.
+        Functionally same as cat file.txt but uses < operator.
+
+  Here string (feed a string directly as stdin):
+    command <<< "string"
+
+    grep "error" <<< "no error found here"
+      → Searches the string "no error found here" for the word error.
+
+================================================================================
+                         STANDARD OUTPUT  (stdout)
+================================================================================
+
+  File descriptor:  1
+  Default target:   terminal screen
+
+  stdout is the normal output of a command — what it prints when
+  things work correctly. By default it prints to your terminal.
+  You can redirect it to a file instead.
+
+  Redirect stdout to a file (overwrite):
+    command > file
+    command 1> file      ← explicit, same thing
+
+  Redirect stdout to a file (append — do not overwrite):
+    command >> file
+    command 1>> file     ← explicit, same thing
+
+  Examples:
+    ls > files.txt
+      → Saves the directory listing to files.txt.
+        If files.txt already exists it is overwritten completely.
+
+    ls >> files.txt
+      → Appends the directory listing to files.txt.
+        Existing content is preserved. New output is added at the end.
+
+    echo "scan complete" > log.txt
+      → Writes "scan complete" into log.txt, creating it if needed.
+
+    nmap 192.168.1.0/24 > scan_results.txt
+      → Saves full nmap output to a file instead of printing to screen.
+        Useful for long scans you want to review later.
+
+    echo "new entry" >> log.txt
+      → Appends "new entry" to log.txt on a new line.
+        Use >> for logs you add to over time.
+
+  OVERWRITE vs APPEND — critical difference:
+    >   overwrites the file from scratch every time
+    >>  appends to the end — never destroys existing content
+    Always use >> for log files. Using > on a log will wipe it.
+
+================================================================================
+                         STANDARD ERROR  (stderr)
+================================================================================
+
+  File descriptor:  2
+  Default target:   terminal screen
+
+  stderr is the error output stream — separate from stdout.
+  Error messages print here even when stdout is redirected to a file.
+  This is intentional — errors should be visible even if normal
+  output is being saved somewhere else.
+
+  WHY ARE THEY SEPARATE?
+    If stdout and stderr were the same stream, redirecting output to
+    a file would silently hide all error messages. Keeping them separate
+    means you can redirect normal output to a file and still see errors
+    on your screen — or handle them independently.
+
+  Redirect stderr to a file:
+    command 2> errorfile
+    command 2>> errorfile    ← append errors
+
+  Examples:
+    ls /fakepath 2> errors.txt
+      → The error "No such file or directory" is saved to errors.txt
+        instead of printing to screen. Nothing appears in the terminal.
+
+    find / -name "passwords" 2> /dev/null
+      → Runs find as a normal user. Lots of "Permission denied" errors
+        would normally flood the screen. Redirecting stderr to /dev/null
+        discards all the errors so you only see actual results.
+
+    nmap 192.168.1.1 2>> error_log.txt
+      → Appends any nmap errors to error_log.txt over time.
+
+================================================================================
+                         REDIRECTION — COMBINING STREAMS
+================================================================================
+
+  The & symbol signals that a FILE DESCRIPTOR is being referenced,
+  not a filename. Without & the shell would treat the number as a filename.
+
+  &1  means "file descriptor 1" (stdout)
+  &2  means "file descriptor 2" (stderr)
+
+--------------------------------------------------------------------------------
+  2>&1  — Redirect stderr INTO stdout (combine them)
+--------------------------------------------------------------------------------
+
+  command > file 2>&1
+
+    → Sends stdout to file, then redirects stderr to wherever stdout
+      currently points (also the file). Both streams end up in the same file.
+
+  ORDER MATTERS:
+    command > file 2>&1      CORRECT  — stderr follows stdout to file
+    command 2>&1 > file      WRONG    — stderr goes to terminal (original
+                                        stdout), then stdout goes to file.
+                                        They do NOT end up in the same place.
+
+  Examples:
+    ls /here /fakepath > output.txt 2>&1
+      → Both the directory listing (stdout) AND the error for /fakepath
+        (stderr) are written to output.txt. Nothing prints to screen.
+
+    nmap 192.168.1.0/24 > scan.txt 2>&1
+      → All nmap output including errors saved to scan.txt.
+
+    ./script.sh > run.log 2>&1
+      → Run a script and capture absolutely everything — output and errors —
+        into run.log. Standard pattern for logging script execution.
+
+  Shorthand (bash 4+):
+    command &> file          → Same as: command > file 2>&1
+    command &>> file         → Append both stdout and stderr to file
+
+    ls /here /fakepath &> output.txt
+      → Cleaner syntax, same result.
+
+--------------------------------------------------------------------------------
+  2>file  — Redirect stderr only to a file
+--------------------------------------------------------------------------------
+
+  command 2> errorfile
+
+    → stdout still prints to screen. Only errors go to the file.
+      Useful when you want to see normal output but log errors separately.
+
+  Examples:
+    make 2> build_errors.txt
+      → Compile output prints to screen. Only errors saved to file.
+
+    find / -name "*.conf" 2> /dev/null
+      → Find results print to screen. Permission denied errors discarded.
+
+--------------------------------------------------------------------------------
+  Redirect stdout and stderr to SEPARATE files
+--------------------------------------------------------------------------------
+
+  command > output.txt 2> errors.txt
+
+    → Normal output → output.txt
+      Error messages → errors.txt
+      Nothing prints to terminal.
+
+  Example:
+    ./script.sh > results.txt 2> errors.txt
+      → Clean separation — review results and errors independently.
+
+================================================================================
+                         THE NULL DEVICE  (/dev/null)
+================================================================================
+
+  /dev/null is a special device file that discards everything written to it.
+  Reading from it returns nothing (immediate EOF).
+  It is sometimes called the "black hole" of Linux.
+
+  Think of it as a bin that instantly destroys everything thrown into it.
+  Nothing is stored, nothing is logged — it is simply gone.
+
+  Redirect stdout to null (discard normal output):
+    command > /dev/null
+
+  Redirect stderr to null (suppress error messages):
+    command 2> /dev/null
+
+  Redirect both stdout and stderr to null (total silence):
+    command > /dev/null 2>&1
+    command &> /dev/null      ← shorthand
+
+--------------------------------------------------------------------------------
+  EXAMPLES — /dev/null in practice
+--------------------------------------------------------------------------------
+
+  ls here not-here 2> /dev/null
+    → "here" directory listing prints normally (stdout → screen).
+      The error for "not-here" is silently discarded (stderr → /dev/null).
+      Only successful results are visible.
+
+  ls here not-here > /dev/null 2>&1
+    → Both the directory listing AND the error are discarded.
+      Nothing prints to screen at all. Completely silent.
+
+  find / -name "secret.txt" 2> /dev/null
+    → Searches the whole filesystem. The hundreds of "Permission denied"
+      errors are discarded. Only actual file matches print to screen.
+      One of the most common uses of /dev/null in practice.
+
+  ping -c 1 192.168.1.1 > /dev/null 2>&1
+    → Silently check if a host is up. No output — use the exit code instead:
+      ping -c 1 192.168.1.1 > /dev/null 2>&1 && echo "up" || echo "down"
+
+  cron job example (run silently, no emails):
+    0 * * * * /usr/bin/script.sh > /dev/null 2>&1
+      → Cron jobs normally email output. Redirecting to null suppresses this.
+
+  Overwrite/empty a file instantly (without deleting it):
+    > file.txt
+      → Redirects nothing to file.txt, truncating it to zero bytes.
+        Faster than rm + touch when you want to keep the file but clear it.
+
+================================================================================
+                         PIPES  (|) — BONUS: CHAINING COMMANDS
+================================================================================
+
+  A pipe connects the stdout of one command to the stdin of the next.
+  Not technically redirection but closely related — essential to know.
+
+    command1 | command2
+
+  Examples:
+    ls -la | grep ".txt"
+      → List files, pipe output into grep to filter only .txt files.
+
+    cat /etc/passwd | cut -d: -f1
+      → Print passwd file, pipe into cut to extract just the usernames.
+
+    nmap 192.168.1.0/24 | grep "open"
+      → Run nmap, show only lines with "open" ports.
+
+    ps aux | grep apache
+      → List all processes, filter to show only apache-related ones.
+
+    cat access.log | sort | uniq -c | sort -rn | head -10
+      → Log analysis: sort → deduplicate → count → sort by frequency
+        → show top 10. Chain of pipes building a mini pipeline.
+
+  Pipe stderr through a pipe (bash):
+    command 2>&1 | grep "error"
+      → Merge stderr into stdout first, then pipe everything into grep.
+
+================================================================================
+                         PRACTICAL COMBINATIONS
+================================================================================
+
+  Save output, suppress errors, keep running:
+    ./longscript.sh > output.txt 2> /dev/null
+
+  Save everything (stdout + stderr) to a log:
+    ./longscript.sh > full.log 2>&1
+
+  Run in background, completely silent:
+    ./script.sh > /dev/null 2>&1 &
+
+  Append output to a log file, discard errors:
+    command >> results.log 2> /dev/null
+
+  Read input from file, write output to file:
+    sort < unsorted.txt > sorted.txt
+
+  Read from file, discard all output:
+    command < input.txt > /dev/null 2>&1
+
+  Capture both streams separately while still seeing stdout on screen:
+    command 2> errors.txt | tee output.txt
+      → stdout goes to screen AND output.txt via tee.
+        stderr goes to errors.txt separately.
+
+================================================================================
+                         QUICK CHEAT SHEET
+================================================================================
+
+  STREAMS:
+    stdin   fd 0    Default: keyboard
+    stdout  fd 1    Default: terminal screen (normal output)
+    stderr  fd 2    Default: terminal screen (error messages)
+
+  STDIN REDIRECTION:
+    command < file              Read stdin from a file
+    command <<< "string"        Feed a string as stdin (here string)
+
+  STDOUT REDIRECTION:
+    command > file              Redirect stdout to file (overwrite)
+    command >> file             Redirect stdout to file (append)
+    command 1> file             Explicit fd1 redirect (same as >)
+
+  STDERR REDIRECTION:
+    command 2> file             Redirect stderr to file (overwrite)
+    command 2>> file            Redirect stderr to file (append)
+
+  COMBINING STREAMS:
+    command > file 2>&1         stdout + stderr both to file
+    command &> file             Shorthand for above (bash 4+)
+    command &>> file            Append both streams to file
+    command > out.txt 2> err.txt   stdout and stderr to separate files
+    command 2>&1 | grep "x"    Merge stderr into stdout then pipe
+
+  NULL DEVICE:
+    command > /dev/null         Discard stdout
+    command 2> /dev/null        Discard stderr (suppress errors)
+    command > /dev/null 2>&1    Discard everything (total silence)
+    command &> /dev/null        Shorthand for above
+
+  PIPES:
+    cmd1 | cmd2                 Pipe stdout of cmd1 into stdin of cmd2
+    cmd1 2>&1 | cmd2            Pipe stdout AND stderr into cmd2
+
+  KEY RULES:
+    >   overwrites — destroys existing file content
+    >>  appends   — preserves existing content, adds to end
+    &   before a number means file descriptor, not a filename
+    Order matters: cmd > file 2>&1 is NOT the same as cmd 2>&1 > file
+    /dev/null silently destroys everything written to it
+
+================================================================================
