@@ -1,0 +1,919 @@
+================================================================================
+                              DNS — COMPLETE REFERENCE
+================================================================================
+
+  DNS = Domain Name System
+  Translates human-readable domain names into IP addresses.
+  Example: google.com  →  142.250.74.46
+
+  Without DNS you would have to type the raw IP address of every website.
+  DNS is often called the "phonebook of the internet."
+
+  HOW A DNS QUERY WORKS (step by step)
+  --------------------------------------
+
+  1. You type google.com in your browser
+  2. Your device checks its LOCAL CACHE — if it already knows the IP, done
+  3. If not, it asks your RECURSIVE RESOLVER (usually your ISP or custom DNS)
+  4. The resolver checks its own cache — if it knows, it answers you
+  5. If not, the resolver asks a ROOT NAME SERVER  (.)
+  6. Root server says "I don't know, but ask the .com TLD server"
+  7. Resolver asks the .com TLD SERVER
+  8. TLD server says "I don't know, but ask Google's authoritative server"
+  9. Resolver asks GOOGLE'S AUTHORITATIVE NAME SERVER
+  10. Authoritative server returns the actual IP address
+  11. Resolver sends the IP back to you and caches it for next time
+  12. Your browser connects to the IP
+
+================================================================================
+                        I. AUTHORITATIVE NAME SERVERS
+================================================================================
+
+  An authoritative name server holds the ACTUAL DNS records for a domain.
+  It is the final source of truth — it gives the definitive answer.
+  When someone asks "what is the IP for google.com?" the authoritative
+  server for google.com is the one that answers with certainty.
+
+  These servers do NOT recurse or forward — they only answer for zones
+  they are authoritative for and reply "I don't know" for everything else.
+
+--------------------------------------------------------------------------------
+BIND9  (Berkeley Internet Name Domain 9)
+--------------------------------------------------------------------------------
+
+  Developer:   ISC (Internet Systems Consortium)
+  Website:     isc.org
+  Type:        Authoritative + Recursive (can do both)
+  Platform:    Linux, Unix, Windows
+
+  The most widely used and battle-tested DNS server in the world.
+  Powers a huge portion of the internet's DNS infrastructure.
+  Extremely feature-rich but also complex to configure.
+
+  USE CASE
+  --------
+  - Hosting DNS zones for your own domains
+  - Running authoritative DNS for enterprise or ISP infrastructure
+  - Full control over DNS with extensive configuration options
+
+  KEY FEATURES
+  ------------
+  - Supports all DNS record types (A, AAAA, MX, CNAME, TXT, NS, SOA, PTR, etc.)
+  - DNSSEC signing and validation
+  - Zone transfers (AXFR/IXFR) for primary/secondary server setups
+  - Access control lists (ACLs)
+  - Split-horizon DNS (different answers depending on where the query comes from)
+  - Dynamic DNS updates (DDNS)
+  - Response Policy Zones (RPZ) for DNS-based blocking
+
+  CONFIG FILE
+  -----------
+  Main config:    /etc/bind/named.conf
+  Zone files:     /etc/bind/zones/
+
+  EXAMPLE ZONE FILE ENTRY
+  -----------------------
+  google.com.    IN    A    142.250.74.46
+  (This tells the server: for google.com, the IPv4 address is 142.250.74.46)
+
+  PROS
+  ----
+  + Most widely supported and documented DNS server
+  + Extremely flexible and powerful
+  + Used by root servers and major ISPs
+
+  CONS
+  ----
+  - Complex configuration — steep learning curve
+  - Large attack surface due to feature set
+  - Has had several historical security vulnerabilities
+
+--------------------------------------------------------------------------------
+NSD  (Name Server Daemon) — by NLnet Labs
+--------------------------------------------------------------------------------
+
+  Developer:   NLnet Labs
+  Website:     nlnetlabs.nl
+  Type:        Authoritative ONLY (does not recurse)
+  Platform:    Linux, BSD, Unix
+
+  NSD is a lightweight, high-performance authoritative-only DNS server.
+  It is designed to do one thing and do it very well — serve authoritative
+  DNS responses as fast as possible. No recursion, no caching, no bloat.
+
+  NLnet Labs is a non-profit organisation based in the Netherlands focused
+  on open internet infrastructure. They also make Unbound (see recursors section).
+
+  USE CASE
+  --------
+  - Hosting authoritative DNS for domains where speed and security matter
+  - High-traffic environments needing maximum performance
+  - Security-conscious deployments (small codebase = smaller attack surface)
+
+  KEY FEATURES
+  ------------
+  - Authoritative only — deliberately no recursive resolver functionality
+  - Very high performance — handles millions of queries per second
+  - DNSSEC support
+  - Zone transfers supported
+  - Minimal codebase — easier to audit for security
+
+  PROS
+  ----
+  + Extremely fast and lightweight
+  + Small attack surface — does one job only
+  + Trusted by root zone operators and TLD operators
+  + Used by several root name servers
+
+  CONS
+  ----
+  - No recursion — you need a separate recursor if needed
+  - Less features than BIND9
+  - Smaller community than BIND9
+
+--------------------------------------------------------------------------------
+POWERDNS  (Authoritative Server)
+--------------------------------------------------------------------------------
+
+  Developer:   PowerDNS / Open-Xchange
+  Website:     powerdns.com
+  Type:        Authoritative (separate product for recursion — see below)
+  Platform:    Linux
+
+  PowerDNS Authoritative Server (pdns) is a modern, database-backed DNS server.
+  Unlike BIND9 and NSD which use flat zone files, PowerDNS can store DNS records
+  directly in a database (MySQL, PostgreSQL, SQLite, etc.) making it much easier
+  to manage at scale via APIs and web interfaces.
+
+  USE CASE
+  --------
+  - Hosting providers and registrars managing thousands of domains
+  - Environments where DNS records need to be managed programmatically via API
+  - Large-scale deployments needing a database backend
+
+  KEY FEATURES
+  ------------
+  - Database backends — MySQL, PostgreSQL, SQLite, Oracle, LDAP, and more
+  - Powerful REST API for managing DNS records programmatically
+  - DNSSEC support
+  - Lua scripting for custom DNS logic
+  - Geographic DNS — return different answers based on where the query comes from
+  - Webserver built in for stats and management
+
+  PROS
+  ----
+  + Database backend makes large-scale management much easier
+  + Excellent REST API
+  + Good performance
+  + Active development and commercial support available
+
+  CONS
+  ----
+  - More complex setup — requires a database
+  - Overkill for small/simple deployments
+
+--------------------------------------------------------------------------------
+TECHNITIUM DNS SERVER  (Authoritative)
+--------------------------------------------------------------------------------
+
+  Developer:   Technitium
+  Website:     technitium.com/dns
+  Type:        Authoritative + Recursive + Forwarder (all in one)
+  Platform:    Windows, Linux, macOS, Raspberry Pi
+
+  Technitium is a modern, all-in-one DNS server with a built-in web GUI.
+  It can act as an authoritative server, recursive resolver, and DNS forwarder
+  all at the same time. Designed to be easy to set up and manage.
+
+  USE CASE
+  --------
+  - Self-hosted DNS for home labs and small networks
+  - Privacy-focused DNS (supports all modern DNS protocols)
+  - Split-horizon DNS for home/office networks
+  - Alternative to Pi-hole with more DNS features
+
+  KEY FEATURES
+  ------------
+  - Full web-based GUI — no command line needed for management
+  - Supports DNS-over-HTTPS, DNS-over-TLS, DNS-over-QUIC, DNSCrypt
+  - Built-in ad blocking
+  - DNSSEC support
+  - Blocking lists support
+  - DNS caching
+  - Zone management via GUI
+
+  PROS
+  ----
+  + Easiest to set up of all DNS servers listed here
+  + Web GUI makes management very accessible
+  + Supports all modern encrypted DNS protocols out of the box
+  + Does everything — authoritative, recursive, forwarder in one
+
+  CONS
+  ----
+  - Less widely used — smaller community
+  - Less documentation than BIND9
+
+--------------------------------------------------------------------------------
+COREDNS  (Authoritative)
+--------------------------------------------------------------------------------
+
+  Developer:   CoreDNS authors / CNCF (Cloud Native Computing Foundation)
+  Website:     coredns.io
+  Type:        Authoritative + Recursive (plugin-based)
+  Platform:    Linux, macOS, Windows (Go binary)
+
+  CoreDNS is a modern, cloud-native DNS server written in Go.
+  It is plugin-based — almost all functionality is added via plugins.
+  It is the default DNS server inside Kubernetes clusters.
+
+  USE CASE
+  --------
+  - Kubernetes and containerised environments
+  - Cloud-native infrastructure
+  - Microservices DNS routing
+  - Service discovery inside clusters
+
+  KEY FEATURES
+  ------------
+  - Plugin architecture — extremely flexible and extensible
+  - Native Kubernetes integration — handles service discovery
+  - Supports DNS-over-TLS and DNS-over-HTTPS via plugins
+  - Lightweight Go binary — easy to deploy in containers
+  - Health checking and metrics built in
+
+  PROS
+  ----
+  + Default DNS in Kubernetes — extremely well supported in cloud-native environments
+  + Lightweight and fast
+  + Highly customisable via plugins
+  + Simple Corefile configuration format
+
+  CONS
+  ----
+  - Plugin-based means you need to know which plugins to enable
+  - Less suitable for traditional authoritative DNS hosting
+  - Smaller feature set compared to BIND9 for complex DNS scenarios
+
+================================================================================
+                           II. RECURSIVE RESOLVERS
+================================================================================
+
+  A recursive resolver does the LEGWORK of a DNS query on your behalf.
+  You ask it "what is the IP for google.com?" and it goes and finds out
+  by querying root servers, TLD servers, and authoritative servers in sequence.
+  It then caches the result so future queries for the same domain are faster.
+
+  Recursive resolvers are what most devices on your network talk to directly.
+
+--------------------------------------------------------------------------------
+BIND9  (as a Recursive Resolver)
+--------------------------------------------------------------------------------
+
+  Same software as above — BIND9 can be configured as a recursive resolver
+  instead of (or in addition to) an authoritative server.
+
+  When configured as a recursor it:
+  - Accepts queries from clients on your network
+  - Recurses through the DNS hierarchy to find answers
+  - Caches results according to TTL values
+  - Can validate DNSSEC signatures
+
+  USE CASE
+  --------
+  - Enterprise internal recursive DNS
+  - ISP resolver infrastructure
+  - Any environment already using BIND9 that also needs recursion
+
+  CONFIG NOTE
+  -----------
+  In named.conf set:   recursion yes;
+  And define which clients are allowed to use it via allow-recursion.
+
+--------------------------------------------------------------------------------
+UNBOUND  — by NLnet Labs
+--------------------------------------------------------------------------------
+
+  Developer:   NLnet Labs
+  Website:     nlnetlabs.nl/projects/unbound
+  Type:        Recursive + Validating ONLY (no authoritative)
+  Platform:    Linux, BSD, macOS, Windows
+
+  Unbound is the companion to NSD from NLnet Labs.
+  Where NSD handles authoritative DNS, Unbound handles recursive resolution.
+  It is a validating, recursive, caching DNS resolver focused on security
+  and privacy. It is one of the most trusted recursive resolvers available.
+
+  USE CASE
+  --------
+  - Privacy-focused recursive resolver for home or enterprise networks
+  - Pairing with NSD (NSD handles authoritative, Unbound handles recursion)
+  - Validating DNSSEC on your network
+  - Self-hosted resolver to avoid using your ISP's DNS
+
+  KEY FEATURES
+  ------------
+  - Full DNSSEC validation built in
+  - DNS-over-TLS support (as a client and server)
+  - Aggressive NSEC caching (reduces unnecessary queries)
+  - Query name minimisation — sends as little information as possible
+    to upstream servers (privacy feature — upstream only sees what it needs)
+  - Response rate limiting (protection against amplification attacks)
+  - Access control by subnet
+  - Can be used with DNS-over-HTTPS via a proxy
+
+  QUERY NAME MINIMISATION EXPLAINED
+  ----------------------------------
+  Normally a resolver asks "what is the IP for mail.google.com?" to every server.
+  With minimisation, it asks the root server only for ".com", then the TLD
+  server only for "google.com", then the authoritative server for "mail.google.com".
+  This means upstream servers learn as little about your queries as possible.
+
+  PROS
+  ----
+  + Excellent security and privacy features
+  + Strong DNSSEC support
+  + Trusted and widely used — very well audited
+  + Lightweight compared to BIND9
+  + Great for pairing with Pi-hole
+
+  CONS
+  ----
+  - No authoritative functionality — needs NSD or BIND9 if you need that too
+  - Configuration can be complex for advanced setups
+
+--------------------------------------------------------------------------------
+TECHNITIUM DNS SERVER  (as a Recursive Resolver)
+--------------------------------------------------------------------------------
+
+  Same software as above — Technitium handles recursion natively.
+  It will recurse from root servers just like Unbound or BIND9.
+  See the authoritative section above for full details.
+
+--------------------------------------------------------------------------------
+POWERDNS RECURSOR
+--------------------------------------------------------------------------------
+
+  Developer:   PowerDNS / Open-Xchange
+  Website:     powerdns.com
+  Type:        Recursive ONLY (separate from PowerDNS Authoritative)
+  Platform:    Linux
+
+  PowerDNS Recursor (pdns-recursor) is a separate product from the
+  PowerDNS Authoritative Server. It is a high-performance recursive resolver
+  designed for large-scale deployments such as ISPs and large enterprises.
+
+  USE CASE
+  --------
+  - ISP-scale recursive DNS infrastructure
+  - Large enterprise deployments needing very high query throughput
+  - Environments needing Lua scripting for custom DNS logic
+
+  KEY FEATURES
+  ------------
+  - Very high performance — designed for millions of queries per second
+  - Lua scripting for custom logic per query
+  - Response Policy Zones (RPZ) for DNS-based filtering
+  - DNSSEC validation
+  - DNS-over-HTTPS and DNS-over-TLS support
+  - Detailed statistics and monitoring
+
+  PROS
+  ----
+  + Exceptional performance at scale
+  + Flexible scripting via Lua
+  + Good RPZ support for filtering
+
+  CONS
+  ----
+  - Separate product from the authoritative server — more moving parts
+  - Overkill for small deployments
+
+================================================================================
+                         III. DNS FORWARDERS & CACHING
+================================================================================
+
+  A DNS forwarder receives DNS queries from clients and forwards them
+  to another DNS server (usually upstream) rather than recursing itself.
+  It also caches responses so repeated queries are answered locally without
+  going upstream again.
+
+  Forwarders sit between your devices and the internet's DNS infrastructure.
+  They are the most common DNS component in home and small office networks.
+
+--------------------------------------------------------------------------------
+DNSMASQ  — ISP Routers & Home Networks
+--------------------------------------------------------------------------------
+
+  Developer:   Simon Kelley
+  Website:     thekelleys.org.uk/dnsmasq
+  Type:        DNS Forwarder + Caching + DHCP
+  Platform:    Linux (embedded in most home routers and ISP equipment)
+
+  Dnsmasq is lightweight and does two jobs at once — DNS forwarding/caching
+  AND DHCP (assigning IP addresses to devices on your network).
+  It is almost certainly running on your home router right now.
+  ISPs embed it in their router firmware because it is tiny and efficient.
+
+  HOW IT WORKS ON YOUR ROUTER
+  ----------------------------
+  1. Your device asks the router "what is google.com?"
+  2. The router's dnsmasq checks its cache — if cached, answers immediately
+  3. If not cached, dnsmasq forwards the query to your ISP's DNS servers
+  4. Caches the result and returns it to your device
+
+  KEY FEATURES
+  ------------
+  - DNS forwarding and caching
+  - DHCP server
+  - Local hostname resolution (your devices by name on your LAN)
+  - Supports custom local DNS entries
+  - Very low memory footprint — designed for embedded systems
+
+  PROS
+  ----
+  + Extremely lightweight — runs on routers with very little RAM
+  + Combined DNS + DHCP in one service
+  + Simple to configure for basic use
+
+  CONS
+  ----
+  - No encrypted DNS support (no DoH, DoT, DoQ)
+  - Limited filtering capabilities
+  - Not suitable for large or complex deployments
+  - Queries forwarded to ISP are unencrypted by default
+
+--------------------------------------------------------------------------------
+PI-HOLE
+--------------------------------------------------------------------------------
+
+  Developer:   Pi-hole LLC
+  Website:     pi-hole.net
+  Type:        DNS Sinkhole + Forwarder + Caching + Ad Blocker
+  Platform:    Linux (originally designed for Raspberry Pi but runs anywhere)
+
+  Pi-hole acts as a DNS server for your whole network.
+  When a device asks for the IP of an ad server or tracker, Pi-hole
+  intercepts that query and blocks it — the ad never loads.
+  For legitimate domains it forwards the query upstream and caches the result.
+
+  HOW IT WORKS
+  ------------
+  1. Set Pi-hole as the DNS server for your router or devices
+  2. Every DNS query on your network goes through Pi-hole first
+  3. Pi-hole checks the query against its blocklists
+  4. If the domain is on a blocklist — it returns a dead address (blocked)
+  5. If the domain is clean — it forwards to your chosen upstream DNS
+  6. Results are cached for speed
+
+  KEY FEATURES
+  ------------
+  - Network-wide ad and tracker blocking (blocks ads on ALL devices including apps)
+  - Works on devices where you cannot install an ad blocker (smart TVs, phones)
+  - Web GUI with statistics — shows how many queries were blocked, by which device
+  - Custom blocklists and allowlists
+  - DNSSEC support (validates upstream responses)
+  - Can use encrypted upstream resolvers (DoH, DoT via configuration)
+  - Local DNS records for your home network devices
+  - Pairs very well with Unbound as a local recursive resolver
+
+  TYPICAL SETUP (privacy-focused home network)
+  ---------------------------------------------
+  Devices  →  Pi-hole (blocks ads, forwards clean queries)
+                →  Unbound (recursive resolver, talks directly to root servers)
+                   No ISP or third-party DNS involved at all
+
+  PROS
+  ----
+  + Blocks ads and trackers across your entire network without touching each device
+  + Excellent web dashboard
+  + Large community and blocklist ecosystem
+  + Free and open source
+
+  CONS
+  ----
+  - Requires a always-on device to run on (Raspberry Pi, old PC, VM, container)
+  - Does not encrypt DNS itself — needs configuration to use encrypted upstream
+  - Can break some websites if a legitimate domain ends up on a blocklist
+
+--------------------------------------------------------------------------------
+ADGUARD HOME
+--------------------------------------------------------------------------------
+
+  Developer:   AdGuard
+  Website:     adguard.com/adguard-home.html
+  Type:        DNS Sinkhole + Forwarder + Caching + Ad Blocker
+  Platform:    Linux, Windows, macOS, Raspberry Pi, Docker
+
+  AdGuard Home is similar to Pi-hole but with a more modern interface and
+  built-in support for encrypted DNS protocols out of the box.
+  It can act as a DNS-over-HTTPS and DNS-over-TLS server for your devices,
+  meaning your devices can connect to it securely even over Wi-Fi.
+
+  HOW IT COMPARES TO PI-HOLE
+  --------------------------
+  Pi-hole:       Older, larger community, more customisable, needs more config for DoH/DoT
+  AdGuard Home:  Newer, cleaner UI, native DoH/DoT/DoQ server built in, easier setup
+
+  KEY FEATURES
+  ------------
+  - Network-wide ad and tracker blocking
+  - Built-in DNS-over-HTTPS SERVER (your devices can connect to it via DoH)
+  - Built-in DNS-over-TLS SERVER
+  - Built-in DNS-over-QUIC SERVER
+  - Parental controls
+  - Per-client settings (different rules for different devices)
+  - Safe browsing protection
+  - DNSSEC validation
+  - Modern web GUI
+
+  PROS
+  ----
+  + Encrypted DNS built in — no extra config needed for DoH/DoT
+  + Cleaner and more modern interface than Pi-hole
+  + Per-device rules are easier to set up
+  + Also free and open source (self-hosted version)
+
+  CONS
+  ----
+  - Smaller community than Pi-hole
+  - Fewer third-party blocklist integrations than Pi-hole ecosystem
+
+================================================================================
+                            IV. DNS PROTOCOLS
+================================================================================
+
+  DNS queries have traditionally been sent in plaintext — anyone watching
+  your network traffic can see every domain you look up.
+  Modern DNS protocols solve this with encryption and other improvements.
+
+--------------------------------------------------------------------------------
+UDP PORT 53  — Traditional DNS (Unencrypted)
+--------------------------------------------------------------------------------
+
+  The original DNS protocol. Fast but completely unencrypted.
+
+  - UDP (User Datagram Protocol) — connectionless, fast, no handshake needed
+  - Port 53
+  - All DNS queries and responses are sent in plaintext
+  - Anyone between you and the DNS server can read, log, or modify your queries
+  - This includes your ISP, network administrators, anyone on the same Wi-Fi
+
+  USE CASE:  Still used for most internal DNS and legacy systems.
+             Fast and low overhead but offers zero privacy.
+
+--------------------------------------------------------------------------------
+TCP PORT 53  — Traditional DNS for Large Responses
+--------------------------------------------------------------------------------
+
+  DNS also uses TCP port 53 for:
+  - Responses larger than 512 bytes (too big for a single UDP packet)
+  - Zone transfers between DNS servers (AXFR/IXFR)
+  - When reliability is more important than speed
+
+  Still unencrypted — same privacy problems as UDP 53.
+
+--------------------------------------------------------------------------------
+DNS-OVER-TLS  (DoT)
+--------------------------------------------------------------------------------
+
+  Standard:    RFC 7858
+  Port:        853
+  Encryption:  TLS (same encryption used by HTTPS websites)
+
+  Wraps DNS queries inside a TLS encrypted connection.
+  Your ISP or network observer can see that you are making DNS queries
+  (they can see port 853 traffic) but cannot read what domains you are querying.
+
+  HOW IT WORKS
+  ------------
+  1. Your device establishes a TLS connection to the DNS server on port 853
+  2. DNS queries are sent encrypted inside that TLS tunnel
+  3. Responses come back encrypted
+
+  PROS
+  ----
+  + Strong encryption — queries cannot be read in transit
+  + Supported by many resolvers (Cloudflare 1.1.1.1, Quad9, Google, Unbound)
+  + Android natively supports DoT (called "Private DNS" in settings)
+
+  CONS
+  ----
+  - Port 853 is distinctive — network admins or ISPs can see you are using
+    encrypted DNS even if they cannot read the queries (but can block it)
+  - Slightly more overhead than plain UDP 53 due to TLS handshake
+
+--------------------------------------------------------------------------------
+DNS-OVER-HTTPS  (DoH)
+--------------------------------------------------------------------------------
+
+  Standard:    RFC 8484
+  Port:        443
+  Encryption:  HTTPS (TLS inside HTTP/2 or HTTP/3)
+
+  Sends DNS queries as HTTPS requests. Because it uses port 443 (the same
+  port as all normal web traffic) it blends in completely with regular browsing.
+  Even your ISP cannot easily distinguish DNS queries from normal web traffic.
+
+  HOW IT WORKS
+  ------------
+  1. Your device sends a DNS query as an HTTPS POST or GET request
+  2. Looks identical to normal web traffic on port 443
+  3. DNS server responds with an HTTPS response containing the DNS answer
+
+  PROS
+  ----
+  + Hardest to block or detect — looks like regular web traffic
+  + Supported natively in Firefox, Chrome, Edge, Windows 11
+  + Hides DNS queries even from network-level monitoring
+  + Supported by Cloudflare, Google, Quad9, NextDNS, AdGuard
+
+  CONS
+  ----
+  - More overhead than DoT (HTTP layer on top of TLS)
+  - Centralises DNS through big providers (privacy concern for some)
+  - Harder for network admins to inspect/filter (could bypass parental controls)
+  - Some corporate networks block or intercept it
+
+--------------------------------------------------------------------------------
+DNS-OVER-QUIC  (DoQ)
+--------------------------------------------------------------------------------
+
+  Standard:    RFC 9250
+  Port:        853 (UDP)
+  Encryption:  QUIC (same protocol used by HTTP/3)
+
+  The newest DNS encryption protocol. Uses QUIC — a modern transport protocol
+  that provides encryption and is faster than TCP because it avoids the
+  slow TCP handshake. QUIC was originally developed by Google and is now
+  used by HTTP/3.
+
+  HOW IT WORKS
+  ------------
+  - Similar to DoT but uses QUIC instead of TCP+TLS
+  - Faster connection establishment — 0-RTT handshake possible
+  - Better performance on unreliable connections (mobile networks)
+  - Built-in multiplexing — multiple queries without head-of-line blocking
+
+  PROS
+  ----
+  + Fastest encrypted DNS protocol
+  + Better on mobile and high-latency connections
+  + Supported by AdGuard Home, Technitium, some Cloudflare endpoints
+
+  CONS
+  ----
+  - Newest standard — least widely supported
+  - Some firewalls block UDP 853
+
+--------------------------------------------------------------------------------
+DNSCRYPT
+--------------------------------------------------------------------------------
+
+  Standard:    DNSCrypt Protocol (not an IETF standard — separate open protocol)
+  Port:        Usually 443 or 5443
+  Encryption:  X25519 key exchange + XSalsa20-Poly1305 or XChacha20-Poly1305
+
+  DNSCrypt was one of the first encrypted DNS protocols, predating DoT and DoH.
+  It not only encrypts DNS queries but also AUTHENTICATES the DNS server —
+  meaning it verifies you are talking to the real server and not an impostor.
+  This prevents DNS spoofing and man-in-the-middle attacks at the protocol level.
+
+  HOW IT WORKS
+  ------------
+  1. The DNS server publishes a public key (its fingerprint/stamp)
+  2. Your client verifies the server's identity using that public key
+  3. An encrypted channel is established
+  4. All queries and responses are encrypted and authenticated
+
+  DNS STAMPS
+  ----------
+  Servers are identified by a "DNS stamp" — a string starting with sdns://
+  that encodes the server address, protocol, and public key.
+  Example: sdns://AQcAAAAAAAAACTEyNy4wLjAuMQ...
+
+  TOOLS
+  -----
+  dnscrypt-proxy    The main client — runs locally and handles DNSCrypt, DoH, DoT
+                    Can be used with Pi-hole as an upstream resolver
+
+  PROS
+  ----
+  + Authentication — verifies you are talking to the real server
+  + Prevents DNS spoofing and MITM attacks
+  + Anonymised DNSCrypt option routes queries through a relay (like Tor for DNS)
+  + dnscrypt-proxy supports multiple protocols and relay networks
+
+  CONS
+  ----
+  - Not an IETF standard — less mainstream than DoT/DoH
+  - Smaller ecosystem of supporting servers
+  - Requires dnscrypt-proxy client — not natively built into OS or browsers
+
+================================================================================
+                         V. ISP SNOOPING & PRIVACY
+================================================================================
+
+  WHY YOUR ISP CAN SPY ON YOUR DNS
+  ----------------------------------
+
+  By default your ISP assigns you their DNS servers when you connect.
+  Every domain you visit goes through their DNS servers as a plaintext query.
+  Your ISP can:
+
+  - LOG every domain you query (and when, and how often)
+  - SELL this data to advertisers and data brokers
+  - Use it to BUILD a profile of your browsing habits
+  - INJECT ads or redirect certain domains
+  - THROTTLE or block certain domains
+  - Hand logs over to governments or law enforcement
+  - Redirect NXDOMAIN responses (failed lookups) to ad pages
+
+  Even if you switch to a different DNS provider (like 8.8.8.8 or 1.1.1.1)
+  but use plain UDP/TCP port 53, your ISP can still see all your DNS traffic
+  because it passes through their network unencrypted.
+
+  HOW TO STOP ISP DNS SNOOPING
+  -----------------------------
+
+  Option 1 — Use encrypted DNS (DoH or DoT)
+            Your ISP can see the connection but not what domains you query.
+            Use: Cloudflare 1.1.1.1, Quad9, NextDNS, or self-hosted.
+
+  Option 2 — Use a VPN
+            All your traffic including DNS is routed through the VPN tunnel.
+            Your ISP sees only encrypted VPN traffic.
+            The VPN provider becomes the new entity you have to trust.
+
+  Option 3 — Self-host a recursive resolver (Unbound)
+            Your resolver talks directly to root servers.
+            No third-party DNS provider at all — root servers only see
+            minimal query info (with query name minimisation enabled).
+
+  Option 4 — Use Tor
+            DNS is resolved at the Tor exit node — your ISP sees only
+            Tor traffic and learns nothing about your DNS queries.
+
+  WHAT ISPs CAN STILL SEE EVEN WITH ENCRYPTED DNS
+  -------------------------------------------------
+  - The IP addresses you connect to (SNI in TLS can reveal the domain too)
+  - How much data you transfer
+  - Timing patterns
+  - That you are using encrypted DNS (port 853 or QUIC traffic)
+
+  Note: Encrypted DNS protects your DNS queries specifically.
+        For full traffic privacy you need a VPN or Tor on top of that.
+
+================================================================================
+                              VI. DNSSEC
+================================================================================
+
+  DNSSEC = DNS Security Extensions
+  Standard: RFC 4033, 4034, 4035
+
+  DNSSEC adds DIGITAL SIGNATURES to DNS records.
+  It allows a resolver to verify that a DNS response is authentic and
+  has not been tampered with or spoofed in transit.
+
+  THE PROBLEM DNSSEC SOLVES
+  --------------------------
+  Without DNSSEC an attacker can intercept a DNS response and replace it
+  with a fake IP address — sending you to a malicious server instead of
+  the real one. This is called DNS cache poisoning or DNS spoofing.
+
+  HOW DNSSEC WORKS
+  ----------------
+  1. The domain owner signs their DNS records with a private key
+  2. The public key is published in DNS as a DNSKEY record
+  3. A chain of trust is established from the root zone (.) downward
+  4. Each level signs the key of the level below it
+  5. When your resolver receives a DNS response it verifies the signature
+  6. If the signature does not match — the response is rejected
+
+  CHAIN OF TRUST
+  --------------
+  Root zone (.)  →  signs .com  →  signs google.com  →  signs mail.google.com
+
+  Root zone is the ultimate trust anchor — its public key is hardcoded into
+  validating resolvers. Everything else chains back to it.
+
+  DNS RECORD TYPES ADDED BY DNSSEC
+  ---------------------------------
+  RRSIG      Cryptographic signature for a DNS record set
+  DNSKEY     Public key used to verify signatures
+  DS         Delegation Signer — links a child zone to its parent
+  NSEC       Proof that a domain does NOT exist (next secure record)
+  NSEC3      Hashed version of NSEC (prevents zone enumeration)
+
+  WHAT DNSSEC DOES AND DOES NOT DO
+  ----------------------------------
+  DOES:
+  + Verify DNS responses are authentic and unmodified
+  + Prevent DNS cache poisoning and spoofing
+  + Establish a verifiable chain of trust for DNS data
+
+  DOES NOT:
+  - Encrypt your DNS queries (DNSSEC is not privacy — use DoT/DoH for that)
+  - Protect against a malicious DNS server (it only verifies the data is real)
+  - Prevent your ISP from seeing your queries
+
+  DNSSEC VALIDATION
+  -----------------
+  Resolvers that validate DNSSEC:   Unbound, BIND9, Technitium, PowerDNS Recursor
+  Public resolvers with DNSSEC:     Quad9, Cloudflare 1.1.1.1, Google 8.8.8.8
+
+================================================================================
+                              VII. QUAD9
+================================================================================
+
+  Provider:    Quad9 Foundation (non-profit, based in Switzerland)
+  Website:     quad9.net
+  IPv4:        9.9.9.9   (primary)    149.112.112.112  (secondary)
+  IPv6:        2620:fe::fe             2620:fe::9
+  DoT:         dns.quad9.net port 853
+  DoH:         https://dns.quad9.net/dns-query
+
+  Quad9 is a free, non-profit public DNS resolver focused on security and privacy.
+  It is run by the Quad9 Foundation — not a commercial company — which means
+  it has no financial incentive to log or sell your DNS data.
+  It is headquartered in Switzerland which has strong privacy laws.
+
+  KEY FEATURES
+  ------------
+
+  Threat Blocking
+  ---------------
+  Quad9 maintains a blocklist of malicious domains compiled from 25+
+  threat intelligence partners. When you query a known malicious domain
+  (malware C2 servers, phishing sites, botnets) Quad9 blocks the response
+  before your device even connects. This happens at the DNS level —
+  no software installation needed.
+
+  DNSSEC Validation
+  -----------------
+  Quad9 validates DNSSEC signatures by default. If a DNS response fails
+  DNSSEC validation, Quad9 will not return it to you.
+
+  Privacy
+  -------
+  - Does not log your IP address permanently
+  - No advertising, no data selling
+  - Swiss jurisdiction — strong legal privacy protections
+  - GDPR compliant
+
+  Encrypted DNS Support
+  ---------------------
+  - DNS-over-TLS on port 853
+  - DNS-over-HTTPS on port 443
+  - DNSCrypt supported
+
+  QUAD9 VARIANTS
+  --------------
+  9.9.9.9          Security + DNSSEC — malicious domains blocked (recommended)
+  9.9.9.10         No blocking — DNSSEC only — for when you want validation without blocking
+  9.9.9.11         Security + DNSSEC + ECS (sends partial IP for geo-optimised responses)
+
+  PROS
+  ----
+  + Non-profit — no commercial interest in your data
+  + Swiss privacy law jurisdiction
+  + Free threat blocking — protects against malware and phishing at DNS level
+  + DNSSEC validation
+  + Supports all encrypted DNS protocols
+
+  CONS
+  ----
+  - Blocking can occasionally catch legitimate domains (rare)
+  - You are still trusting a third party — consider self-hosting for maximum privacy
+  - Threat blocklist is opaque — you cannot see exactly what is blocked and why
+
+================================================================================
+                         QUICK REFERENCE — DNS PORTS
+================================================================================
+
+  Protocol              Port      Transport    Encrypted
+  --------------------  --------  -----------  ---------
+  Traditional DNS       53        UDP + TCP    NO
+  DNS-over-TLS (DoT)    853       TCP          YES
+  DNS-over-QUIC (DoQ)   853       UDP (QUIC)   YES
+  DNS-over-HTTPS (DoH)  443       TCP          YES
+  DNSCrypt              443/5443  UDP + TCP    YES
+
+================================================================================
+                      QUICK REFERENCE — SOFTWARE SUMMARY
+================================================================================
+
+  Software          Type                    Best For
+  ----------------  ----------------------  ------------------------------------
+  BIND9             Auth + Recursive        Enterprise, ISPs, full control
+  NSD (NLnet)       Authoritative only      High-speed auth, security-focused
+  PowerDNS Auth     Authoritative only      Large scale, database-backed
+  Technitium        Auth + Recursive + Fwd  Home labs, easy GUI, all protocols
+  CoreDNS           Auth + Recursive        Kubernetes, cloud-native
+  Unbound (NLnet)   Recursive only          Privacy-focused resolving, DNSSEC
+  PowerDNS Recursor Recursive only          ISP-scale high performance
+  dnsmasq           Forwarder + Cache       Home routers, embedded systems
+  Pi-hole           Forwarder + Blocker     Network-wide ad blocking
+  AdGuard Home      Forwarder + Blocker     Ad blocking + native encrypted DNS
+
+================================================================================
