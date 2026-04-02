@@ -1,0 +1,74 @@
+================================================================================
+                         BASH vs ZSH — SHELL REFERENCE NOTES
+================================================================================
+OVERVIEW
+--------
+A shell is the program that reads your commands and runs them in the terminal.
+Linux/WSL can have multiple shells installed. The two most common are Bash and
+Zsh. They look similar but are different programs with different syntax and
+config files. Running the wrong shell for your config causes errors.
+
+Your setup:
+  Default shell (wrong one launching): Bash  — shown by: echo $SHELL -> /bin/bash
+  Correct shell for your config:       Zsh   — launched manually with: zsh
+  Kali Linux default shell:            Zsh
+
+================================================================================
+                              WHAT EACH SHELL IS
+================================================================================
+BASH (Bourne Again Shell)
+  - The default shell on most Linux systems
+  - Ships on virtually every Linux distro, always available
+  - Reliable and minimal — no frills, no themes
+  - Config file: ~/.bashrc
+  - Does NOT understand Zsh-specific commands (setopt, bindkey, zstyle, etc.)
+
+ZSH (Z Shell)
+  - Built on top of Bash but with many extras
+  - Supports plugins, custom themes, better tab-completion, prompt customization
+  - Default shell on macOS (since 2019) and Kali Linux
+  - Config file: ~/.zshrc
+  - Powers the fancy prompt you see on Kali (Oh My Zsh theme)
+
+================================================================================
+                            WHY SOURCING .ZSHRC IN BASH BROKE
+================================================================================
+WHAT HAPPENED
+  1. Your terminal was launching Bash even though your config (.zshrc) is
+     written for Zsh
+  2. Running: source ~/.zshrc inside Bash told Bash to read a Zsh config file
+  3. Bash does not know Zsh-only commands like setopt, bindkey, zstyle, autoload
+  4. Result: hundreds of errors — "command not found", "bad substitution", etc.
+  5. Your prompt also appeared stuck/wrong because the theme couldn't load
+
+THE FIX
+  Simply running: zsh
+  ...launched the correct shell, which knows how to read .zshrc properly.
+  Everything loaded as expected and the prompt updated correctly.
+
+================================================================================
+                              MAKING ZSH PERMANENT
+================================================================================
+Right now you have to type 'zsh' manually every time you open a terminal.
+To make Zsh your default shell permanently:
+
+  chsh -s $(which zsh)
+
+Then close and reopen your terminal. It will launch Zsh automatically from
+that point on and you will never need to type 'zsh' again.
+
+To verify your default shell was changed:
+  echo $SHELL
+  -> should now return /bin/zsh or /usr/bin/zsh
+
+================================================================================
+                              QUICK COMMAND REFERENCE
+================================================================================
+  echo $SHELL              check what shell is currently active
+  zsh                      manually launch Zsh in current session
+  bash                     manually launch Bash in current session
+  chsh -s $(which zsh)     set Zsh as your permanent default shell
+  source ~/.zshrc          reload Zsh config (run inside Zsh, not Bash)
+  cat ~/.zshrc             view your Zsh config file
+
+================================================================================
