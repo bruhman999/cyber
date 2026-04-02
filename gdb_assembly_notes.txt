@@ -1,0 +1,251 @@
+================================================================================
+                    ASSEMBLY & GDB DEBUGGING — BEGINNER NOTES
+================================================================================
+OVERVIEW — WHAT IS ALL OF THIS?
+--------------------------------
+When you write a program, you usually write it in a high-level language like
+Python or C. But computers don't actually understand those languages — they
+only understand binary (1s and 0s), also called machine code.
+
+Assembly language is the lowest level of human-readable code. Each line is
+basically one CPU instruction. There is almost no abstraction — you are
+directly telling the CPU what to do, one step at a time.
+
+This exercise involved:
+  1. Writing a factorial program in x86_64 assembly language
+  2. Assembling it into a real executable binary
+  3. Using GDB (a debugger) to watch the program run instruction by instruction
+  4. Hacking the program's memory at runtime without changing the source code
+
+================================================================================
+                         THE PROGRAM — FACTORIAL IN ASSEMBLY
+================================================================================
+WHAT IS FACTORIAL?
+  5 factorial (written 5!) means: 5 x 4 x 3 x 2 x 1 = 120
+  7 factorial (written 7!) means: 7 x 6 x 5 x 4 x 3 x 2 x 1 = 5040
+
+THE SOURCE FILE (fac.s)
+  Assembly source files use the .s extension.
+  The program was written for x86_64 architecture (standard 64-bit PC/WSL).
+
+  .global _start         tells the assembler where the program begins
+  .text                  marks the section containing actual code/instructions
+  .data                  marks the section containing variables stored in memory
+
+THE VARIABLES
+  n: .quad 5             a 64-bit variable called n, storing the value 5
+  result: .quad 0        a 64-bit variable called result, starting at 0
+  .quad means 64-bit (8 bytes). The book used 32-bit (.word), we used 64-bit.
+
+THE REGISTERS
+  Registers are tiny, ultra-fast storage slots inside the CPU itself.
+  x86_64 register names start with r (rax, rcx, rip, rdi, etc.)
+
+  rax    the main working register — used for calculations and return values
+  rcx    counter register — used to count down in the loop
+  rip    instruction pointer — always points to the NEXT instruction to run
+         (this is how the CPU knows where it is in the program)
+  rdi    used to pass the exit code when the program ends
+  r8     syscall number register — tells the OS what system call to make
+
+WHAT THE PROGRAM DOES STEP BY STEP
+  1. Load n (value 5) into rax
+  2. Copy rax into rcx (so both hold 5)
+  3. Check if rax <= 1. If yes, skip to end (nothing to multiply)
+  4. Loop: multiply rax by rcx, then decrement rcx by 1, repeat until rcx = 1
+  5. Store the final result (rax) into the result memory location
+  6. Exit the program cleanly via syscall
+
+================================================================================
+                    BUILDING THE PROGRAM — ASSEMBLE AND LINK
+================================================================================
+STEP 1 — ASSEMBLE
+  $ as -o fac.o fac.s
+
+  as        the GNU assembler
+  -o fac.o  output file name (object file)
+  fac.s     your source file
+
+  This converts your human-readable assembly into machine code, but it is not
+  yet a runnable program — it's an object file (.o), like a half-finished
+  product.
+
+STEP 2 — LINK
+  $ ld -o fac fac.o
+
+  ld        the GNU linker
+  -o fac    output file name (the final executable)
+  fac.o     the object file from the previous step
+
+  The linker takes the object file and turns it into a proper executable
+  that the operating system can actually run.
+
+STEP 3 — RUN (optional, to test without debugger)
+  $ ./fac
+  $ echo $?
+
+  echo $?   prints the exit code of the last program
+            for small factorials the result appears here (max 255 for exit codes)
+
+================================================================================
+                         WHAT IS GDB?
+================================================================================
+GDB stands for GNU Debugger. It lets you:
+  - Pause a program at any instruction (breakpoints)
+  - Step through code one instruction at a time
+  - Inspect the values of registers and memory at any moment
+  - Even CHANGE values in memory while the program is running
+
+Think of it like being able to freeze time inside a running program,
+look around at everything, change things, and then unpause it.
+
+STARTING GDB
+  $ gdb fac          loads the fac executable into gdb, does not run it yet
+
+EXITING GDB
+  (gdb) quit         exits gdb and returns to normal terminal
+                     IMPORTANT: gdb has its own prompt — shell commands like
+                     ls, cd, etc. do NOT work inside gdb
+
+NOTE: If you accidentally press Ctrl+Z in the terminal, gdb gets suspended.
+      Type fg to bring it back, or just start a new gdb session.
+
+================================================================================
+                         GDB COMMANDS USED
+================================================================================
+BREAKPOINTS — pausing the program at a specific instruction
+----------------------------------------------------------------
+  break *0x401000    set a breakpoint at memory address 0x401000
+                     the * means "at this exact address"
+                     when the program reaches this address, it freezes
+
+  disable 2          disable breakpoint number 2 (won't trigger anymore)
+  disable 3          disable breakpoint number 3
+
+  Breakpoints used in this exercise:
+    Breakpoint 1: 0x401000  — very start of program, before anything runs
+    Breakpoint 2: 0x40100a  — after n is loaded, before the loop check
+    Breakpoint 3: 0x40100e  — the jump instruction (jle) before the loop
+    Breakpoint 4: 0x40101d  — the end label, after loop finishes
+
+RUNNING THE PROGRAM
+----------------------------------------------------------------
+  run                start the program from the beginning
+                     if already running, gdb asks "start from beginning? y/n"
+                     type y to confirm restart
+
+  c  (or continue)   resume running until the next breakpoint
+  stepi              execute exactly ONE instruction, then pause again
+                     useful for watching the program change step by step
+
+VIEWING CODE AND REGISTERS
+----------------------------------------------------------------
+  disas              disassemble current function — shows assembly instructions
+                     the => arrow shows which instruction is about to execute
+
+  info registers rax rcx rip    show current values of those specific registers
+  i r rax                       shorthand version of the above (i r = info registers)
+
+VIEWING AND PRINTING MEMORY/VARIABLES
+----------------------------------------------------------------
+  print (long)n          print the value stored at the label n as a 64-bit number
+  p (long)result         shorthand — print result as 64-bit number
+  p &n                   print the MEMORY ADDRESS of n (where in RAM it lives)
+                         the & means "address of"
+
+  x/2xg 0x402000         examine memory starting at address 0x402000
+                         2   = show 2 units
+                         x   = display in hexadecimal
+                         g   = giant size (64-bit). book used w (32-bit word)
+                         so this shows 2 consecutive 64-bit values in hex
+
+MODIFYING MEMORY AT RUNTIME (the "hack")
+----------------------------------------------------------------
+  set {long}0x402000 = 7    write the value 7 into memory address 0x402000
+                            this changes n from 5 to 7 without editing source code
+                            {long} tells gdb to write a 64-bit value
+
+================================================================================
+                         THE EXERCISE WALKTHROUGH
+================================================================================
+PART 1 — OBSERVE THE FACTORIAL OF 5
+  1. Load gdb:              gdb fac
+  2. Set breakpoints:       break *0x401000 / *0x40100a / *0x40100e / *0x40101d
+  3. Run:                   run
+  4. At breakpoint 1:       disas → see the => arrow at first instruction
+                            i r rax rcx rip → all 0, program hasn't started yet
+  5. stepi forward:         watch rax become 5, then rcx become 5
+  6. Continue to bp 4:      c → arrive at end label
+                            i r rax → rax = 0x78 = 120 decimal = 5! correct!
+  7. stepi once more:       result gets written to memory
+                            p (long)result → should show 120
+
+PART 2 — HACK n TO 7 WITHOUT TOUCHING SOURCE CODE
+  1. Restart:               run → y
+  2. At breakpoint 1:       set {long}0x402000 = 7  (change n in memory)
+                            p (long)n → confirm it shows 7
+  3. Skip middle:           disable 2 / disable 3
+  4. Jump to end:           c → arrive at breakpoint 4
+  5. Step past store:       stepi
+  6. Check result:          p (long)result → shows 5040 = 7! correct!
+
+  You just hacked a running program's behavior without editing fac.s at all.
+  This is exactly what reverse engineers and security researchers do.
+
+================================================================================
+                         VIEWING THE BINARY — HEXDUMP & OBJDUMP
+================================================================================
+HEXDUMP
+  $ hexdump -C fac
+
+  Shows the raw bytes of the executable file in hexadecimal.
+  -C flag shows both hex values AND their ASCII representation side by side.
+  This is what the program looks like to the computer — pure bytes.
+
+OBJDUMP
+  $ objdump -s fac       shows all sections of the binary (text, data, etc.)
+  $ objdump -d fac       disassembles the binary back into assembly language
+                         useful for analyzing programs you don't have source for
+
+ANALYZING A REAL PROGRAM (ls)
+  $ whereis ls           find where the ls command lives on disk (/bin/ls)
+  $ objdump -d /bin/ls > ls.txt    disassemble ls and save output to a file
+  $ less ls.txt          read the file (arrow keys to scroll, q to quit)
+
+  This shows you the actual machine code of a real Linux command — the same
+  technique used in reverse engineering and malware analysis.
+
+================================================================================
+                         KEY CONCEPTS SUMMARY
+================================================================================
+  Assembly language    human-readable CPU instructions, one step above binary
+  Machine code         the actual binary (1s and 0s) the CPU executes
+  Register             tiny fast storage inside the CPU (rax, rcx, rip, etc.)
+  rip                  instruction pointer — always points to current instruction
+  .text section        part of the binary containing code/instructions
+  .data section        part of the binary containing variables/data
+  Object file (.o)     assembled but not yet linked — not runnable
+  Executable           fully linked binary that the OS can run
+  Breakpoint           a pause point set in gdb at a specific memory address
+  stepi                execute one single CPU instruction and pause
+  Hexdump              display raw file bytes in hex format
+  objdump              tool to inspect and disassemble binary files
+
+================================================================================
+                         DIFFERENCE FROM THE BOOK (ARM vs x86_64)
+================================================================================
+  The book used a Raspberry Pi running 32-bit ARM assembly.
+  This exercise used x86_64 (standard PC/WSL).
+
+  Book (ARM32)    →    This exercise (x86_64)
+  ------------         ----------------------
+  r0               →   rax
+  r1               →   rcx
+  pc               →   rip
+  svc              →   syscall
+  ble              →   jle
+  bne              →   jne
+  .word (32-bit)   →   .quad (64-bit)
+  xw (32-bit)      →   xg (64-bit) in gdb examine command
+
+================================================================================
