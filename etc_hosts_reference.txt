@@ -1,0 +1,206 @@
+================================================================================
+                        /etc/hosts — REFERENCE & EXPLANATION
+================================================================================
+OVERVIEW
+--------
+/etc/hosts is a plain text file on Linux (and every other operating system)
+that maps hostnames to IP addresses locally on your machine. It is one of
+the first places your system checks when you try to visit a website or connect
+to a hostname — before it ever asks a DNS server.
+
+Think of it as your own personal phonebook that lives on your machine.
+When you type a hostname into a browser or terminal, your system checks
+this file first. If it finds a match, it uses that IP immediately and
+never reaches out to the internet for DNS at all.
+
+Location:     /etc/hosts
+Permissions:  Requires root/sudo to edit
+Format:       <IP address>    <hostname>
+
+================================================================================
+                        HOW DNS RESOLUTION WORKS
+================================================================================
+FLOW — What happens when you type a hostname
+---------------------------------------------
+When you type "vtcsec" into Firefox or run a command against it, your
+system goes through this process in order:
+
+  Step 1   Check /etc/hosts for a matching entry
+           If found -> use that IP immediately, stop here
+
+  Step 2   Check /etc/resolv.conf for your DNS server
+           Send a DNS query to your router or ISP's DNS server
+
+  Step 3   DNS server looks up the hostname on the internet
+           Returns the IP address if found
+
+  Step 4   If nothing resolves -> connection fails
+           "We're having trouble finding that site"
+
+This is exactly what happened with vtcsec:
+  - Firefox tried to visit vtcsec
+  - /etc/hosts had no entry for it
+  - DNS query went out to the internet
+  - The internet has no record of vtcsec (it is a local lab hostname)
+  - Firefox returned "We can't connect to the server at vtcsec"
+
+The fix was adding the entry to /etc/hosts so Step 1 caught it and
+pointed it directly to 10.0.2.8 without ever needing DNS.
+
+================================================================================
+                        THE /etc/hosts FILE — EXPLAINED
+================================================================================
+WHAT IT LOOKS LIKE
+------------------
+  127.0.0.1       localhost
+  127.0.1.1       kali
+  ::1             localhost ip6-localhost ip6-loopback
+
+  10.0.2.8        vtcsec
+
+Each line has two parts:
+  Column 1    The IP address to resolve to
+  Column 2    The hostname that maps to that IP
+  (Optional)  You can add aliases after the hostname, separated by spaces
+
+The lines starting with # are comments and are ignored.
+
+127.0.0.1 is called the loopback address — it always points to your
+own machine. That is why localhost always refers to yourself.
+
+WHY YOU ADDED THAT LINE
+------------------------
+Your lab has a target machine at IP 10.0.2.8. The WordPress site on that
+machine was configured to use the hostname "vtcsec" instead of a raw IP.
+
+When WordPress is installed, it stores the site URL in its database. If
+that URL was set to http://vtcsec during installation, then WordPress will
+redirect you to http://vtcsec whenever you log in or navigate the site —
+even if you originally went there by IP address.
+
+So when WPScan found credentials and you tried to use them, WordPress
+redirected your browser to http://vtcsec and your machine had no idea
+what vtcsec was. Adding the line:
+
+  10.0.2.8    vtcsec
+
+Told your Kali machine "whenever you see vtcsec, go to 10.0.2.8"
+and the problem was solved.
+
+================================================================================
+                        WHEN DO YOU NEED TO ADD TO /etc/hosts
+================================================================================
+
+IN CTF AND LAB ENVIRONMENTS
+-----------------------------
+This is extremely common in lab-based hacking challenges. Always add an
+entry when:
+
+  - A web application redirects you to a hostname instead of an IP
+  - A target machine has a hostname configured (common in HackTheBox, TryHackMe)
+  - You get a "can't find server" error after following a redirect
+  - WPScan, Gobuster, or another tool returns hostname-based URLs that fail
+  - A virtual host is configured on the target web server
+
+IN REAL PENETRATION TESTING
+-----------------------------
+  - Testing internal corporate applications that use internal hostnames
+  - The target network has no internal DNS accessible to your machine
+  - You are testing from outside the network and need to simulate internal DNS
+  - You find a hostname in a certificate, config file, or source code and
+    need to resolve it to the target IP
+
+GENERAL SITUATIONS
+------------------
+  - You want to block a website by pointing its hostname to 127.0.0.1
+    (a common parental control or ad-blocking trick)
+  - You are developing a website locally and want mysite.com to point
+    to your own machine during development
+  - You want to override where a domain resolves to for testing
+
+================================================================================
+                        COMMANDS — VIEWING AND EDITING
+================================================================================
+
+VIEW the hosts file
+-------------------
+  cat /etc/hosts                 Print the entire file to terminal
+  less /etc/hosts                Scroll through the file
+
+EDIT the hosts file (requires sudo)
+------------------------------------
+  sudo nano /etc/hosts           Open in nano text editor (easiest)
+  sudo vim /etc/hosts            Open in vim
+
+  In nano:
+  Navigate to the bottom of the file
+  Add your line:   10.0.2.8    vtcsec
+  Save:            Ctrl+X  then  Y  then  Enter
+
+ADD an entry from the command line (without opening editor)
+------------------------------------------------------------
+  echo "10.0.2.8 vtcsec" | sudo tee -a /etc/hosts
+
+  echo "10.0.2.8 vtcsec"    Creates the text to add
+  |                          Pipes it into the next command
+  sudo tee -a /etc/hosts     Appends it to /etc/hosts as root
+                             (-a means append, not overwrite)
+
+  Why not just use >>?
+  echo "10.0.2.8 vtcsec" >> /etc/hosts would fail with permission denied
+  because >> runs as your current user who cannot write to /etc/hosts.
+  Using tee with sudo runs the write operation as root.
+
+VERIFY it worked
+----------------
+  ping vtcsec                    Should ping 10.0.2.8 if entry is correct
+  cat /etc/hosts | grep vtcsec   Confirm the line is there
+
+================================================================================
+                        MULTIPLE HOSTNAMES — VIRTUAL HOSTS
+================================================================================
+WHAT ARE VIRTUAL HOSTS
+-----------------------
+A single web server at one IP address can host multiple different websites,
+each with a different hostname. This is called virtual hosting and is
+extremely common in CTF machines and real web servers.
+
+Example: 10.0.2.8 might host:
+  http://vtcsec          The main site
+  http://admin.vtcsec    A hidden admin panel
+  http://blog.vtcsec     A blog on the same server
+
+Each of these needs its own /etc/hosts entry:
+
+  10.0.2.8    vtcsec
+  10.0.2.8    admin.vtcsec
+  10.0.2.8    blog.vtcsec
+
+HOW TO DISCOVER VIRTUAL HOSTS
+------------------------------
+  gobuster vhost -u http://vtcsec -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+
+  vhost     Virtual host brute-forcing mode
+  -u        Base URL
+  -w        Wordlist of subdomain names to try
+
+  What it does:
+  Sends requests with different Host headers to the target IP and looks
+  for responses that differ from the default — revealing hidden virtual hosts.
+
+================================================================================
+                        QUICK REFERENCE
+================================================================================
+
+  File location:              /etc/hosts
+  Requires sudo to edit:      Yes
+  Checked before DNS:         Yes — always
+  Format:                     <IP>    <hostname>
+  View file:                  cat /etc/hosts
+  Edit file:                  sudo nano /etc/hosts
+  Add entry via command:      echo "10.0.2.8 vtcsec" | sudo tee -a /etc/hosts
+  Verify entry works:         ping vtcsec
+  Common in CTF machines:     Yes — almost always needed on HackTheBox/TryHackMe
+  Affects only your machine:  Yes — other machines on the network are not affected
+
+================================================================================

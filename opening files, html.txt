@@ -1,0 +1,25 @@
+# In a browser (most common)
+firefox file.html
+chromium file.html
+xdg-open file.html        # opens with default browser
+
+# View the raw HTML code in terminal
+cat file.html
+nano file.html
+vim file.html
+less file.html
+
+# Run a local web server and open it
+python3 -m http.server 8080
+# then go to browser and type: localhost:8080
+
+# Text-based browsers (view website inside terminal)
+firefox https://google.com
+chromium https://google.com
+
+# Terminal only (no GUI)
+curl https://google.com          # dumps raw HTML
+wget https://google.com          # downloads the page
+lynx https://google.com          # text browser, navigate in terminal
+w3m https://google.com           # another text browser
+elinks https://google.com        # another text browser
