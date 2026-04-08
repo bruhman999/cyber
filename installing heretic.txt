@@ -1,0 +1,233 @@
+================================================================================
+                    HERETIC — SETUP & USAGE REFERENCE NOTES
+================================================================================
+WHAT IS HERETIC?
+----------------
+Heretic is a tool that removes safety restrictions (called "alignment" or
+"censorship") from open-source AI language models. It works by modifying the
+model's internal weights using a technique called "abliteration" — it finds
+the part of the model responsible for refusing requests and removes it.
+
+The result is a local AI model that runs entirely on YOUR machine with no
+filters, no refusals, and no internet connection required after setup.
+It does NOT modify cloud AI services like ChatGPT or Claude — only local
+open-source models that you download and run yourself.
+
+KEY TERMS:
+  Model          the AI brain — a large file containing billions of numbers
+  Parameters     the "weights" inside the model that control its behavior
+  Abliteration   the process of removing refusal behavior from a model
+  KL Divergence  measures how much the model changed — lower = better quality
+  Refusals       when an AI refuses to answer something
+  Quantization   compressing the model to use less VRAM (some quality loss)
+  BNB_4BIT       4-bit quantization using bitsandbytes — cuts VRAM in half
+  Trial          one test run of abliteration parameters during optimization
+  LoRA           a method of applying small targeted changes to a model
+
+================================================================================
+                         SYSTEM REQUIREMENTS
+================================================================================
+  OS:        Windows (PowerShell) or Linux
+  Python:    3.10 or higher
+  PyTorch:   2.2 or higher
+  GPU:       NVIDIA GPU strongly recommended (CUDA support required for speed)
+  VRAM:      8GB minimum for 8B models with quantization
+  RAM:       16GB+ recommended (48GB is more than enough)
+  Storage:   ~20GB free for model download and saving output
+
+YOUR SETUP:
+  Python:    3.13.12
+  GPU:       MSI GeForce RTX 3070 LHR 8GB
+  RAM:       48GB
+  OS:        Windows (PowerShell)
+  CUDA:      cu124 (CUDA 12.4)
+
+================================================================================
+                         STEP 1 — INSTALL PYTHON
+================================================================================
+Download Python 3.10 or higher from python.org
+IMPORTANT: Do NOT use the Microsoft Store version — download the .exe installer
+Check "Add Python to PATH" during installation
+
+Verify after install:
+  python --version
+  -> Should show Python 3.13.12 or similar
+
+NOTE: Python 3.13 works but PyTorch support for it is newer — if you run into
+issues, Python 3.11 is the most stable version for ML/AI work.
+
+================================================================================
+                    STEP 2 — INSTALL PYTORCH (GPU VERSION)
+================================================================================
+PyTorch is the AI framework that Heretic uses to load and modify models.
+You need the GPU version that matches your CUDA version for best performance.
+
+For RTX 3070 with CUDA 12.4 (your setup):
+  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+For CPU only (much slower, not recommended):
+  pip install torch torchvision torchaudio
+
+To find your CUDA version: nvidia-smi in PowerShell
+
+Verify PyTorch installed correctly:
+  python -c "import torch; print(torch.cuda.is_available())"
+  -> Should print: True (means GPU is detected)
+
+================================================================================
+                    STEP 3 — INSTALL HERETIC
+================================================================================
+  pip install -U heretic-llm
+
+The -U flag means "upgrade" — installs the latest version even if already
+installed. Safe to run again any time to update Heretic.
+
+================================================================================
+                    STEP 4 — HUGGING FACE ACCOUNT & TOKEN
+================================================================================
+Hugging Face is the platform where AI models are hosted and downloaded from.
+Some models like Llama require you to create an account and accept a license
+before you can download them.
+
+CREATE AN ACCOUNT:
+  1. Go to huggingface.co
+  2. Click Sign Up and create a free account
+
+REQUEST ACCESS TO LLAMA:
+  1. Go to huggingface.co/meta-llama/Llama-3.1-8B-Instruct
+  2. Click "Expand to review and access"
+  3. Fill out the form and submit
+  4. Approval is usually instant but can take up to 24 hours
+
+CREATE A READ TOKEN:
+  1. Go to huggingface.co → click profile picture → Settings
+  2. Click Access Tokens → New Token
+  3. Select Classic token type → Read permission
+  4. Click Create and COPY the token immediately
+  5. Store it somewhere safe — you won't see it again
+
+  Token format looks like: hf_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  WARNING: Never share your token publicly — treat it like a password
+           Regenerate immediately at huggingface.co if exposed
+
+LOGIN WITH YOUR TOKEN:
+  hf auth login --token hf_yourTokenHere
+
+  NOTE: Do not use the interactive login prompt in PowerShell as it has
+  paste issues. Always use --token flag with the token directly inline.
+
+================================================================================
+                    STEP 5 — RUNNING HERETIC
+================================================================================
+BASIC COMMAND (without quantization — needs full VRAM):
+  heretic meta-llama/Llama-3.1-8B-Instruct
+
+WITH QUANTIZATION (recommended for 8GB VRAM cards like RTX 3070):
+  heretic --model meta-llama/Llama-3.1-8B-Instruct --quantization BNB_4BIT
+
+  BNB_4BIT reduces VRAM usage by roughly half, allowing 8B models to fit
+  comfortably on 8GB cards. There is a small quality tradeoff.
+
+WHAT HAPPENS WHEN YOU RUN IT:
+  1. Heretic detects your GPU and confirms CUDA is available
+  2. Downloads the model from Hugging Face (~16GB for Llama 3.1 8B)
+     NOTE: Model is cached after first download — won't re-download next time
+  3. Loads the model into VRAM
+  4. Downloads "good" and "bad" prompt datasets for calibration
+  5. Benchmarks your GPU to find optimal batch size
+  6. Runs optimization trials (default ~160 trials)
+     Each trial tests different ablation parameters
+     Tries to minimize refusals while keeping model quality high
+  7. Presents results — shows all trials sorted by best score
+  8. You pick a trial using arrow keys and press Enter
+
+================================================================================
+                    STEP 6 — CHOOSING A TRIAL
+================================================================================
+After trials finish you see a list like:
+
+  [Trial 158] Refusals: 2/100, KL divergence: 0.0806   <- BEST BALANCE
+  [Trial 78]  Refusals: 4/100, KL divergence: 0.0225
+  [Trial 115] Refusals: 6/100, KL divergence: 0.0199
+
+HOW TO READ THE RESULTS:
+  Refusals      how many times out of 100 the model still refused a request
+                Lower is better — 2/100 means almost fully uncensored
+  KL Divergence how much the model's intelligence was damaged
+                Lower is better — closer to 0 means less damage to quality
+
+CHOOSING THE RIGHT TRIAL:
+  The top result is usually pre-selected as the best balance.
+  If you want FEWER refusals:  pick a trial with lower refusal count
+                               (accept higher KL divergence tradeoff)
+  If you want BETTER quality:  pick a trial with lower KL divergence
+                               (accept slightly more refusals)
+
+  For most use cases: pick the trial Heretic highlights at the top.
+
+Use ARROW KEYS to select, press ENTER to confirm.
+
+================================================================================
+                    STEP 7 — SAVING THE MODEL
+================================================================================
+After selecting a trial, Heretic asks what to do with the model:
+  - Save to local folder
+  - Upload to Hugging Face
+  - Chat with it to test
+  - Any combination of the above
+
+TO SAVE LOCALLY:
+  Choose save and enter a path:
+  C:\Users\YourName\Documents\llama-heretic
+
+  Heretic will merge the LoRA adapters into the full model and save all files.
+  NOTE: Requires ~15GB RAM for the merge process — your 48GB is more than enough
+  NOTE: The saved model is the full unquantized version even if you ran with BNB_4BIT
+
+================================================================================
+                    LAUNCHING AND CHATTING WITH THE MODEL
+================================================================================
+TO CHAT VIA HERETIC DIRECTLY:
+  heretic --model meta-llama/Llama-3.1-8B-Instruct --quantization BNB_4BIT
+
+  After trials, select a trial and choose "Chat" option.
+  Type your messages and press Enter to get responses.
+  Type: exit  or press Ctrl+C to quit the chat.
+
+TO LOAD YOUR SAVED MODEL IN LMSTUDIO (recommended for better UI):
+  1. Download LM Studio from lmstudio.ai (free)
+  2. Open LM Studio → My Models → Load from folder
+  3. Point it to C:\Users\YourName\Documents\llama-heretic
+  4. Start chatting with a full GUI interface
+
+TO LOAD IN OLLAMA:
+  ollama serve
+  ollama run /path/to/saved/model
+
+================================================================================
+                         LIMITATIONS
+================================================================================
+  No internet access    model only knows info from training cutoff (early 2024)
+  No memory             each session starts fresh, forgets previous conversations
+  Speed                 responses take a few seconds on RTX 3070, varies by length
+  Size                  8B model is capable but less powerful than GPT-4 or Claude
+  Quantization loss     BNB_4BIT slightly reduces quality compared to full model
+  Terminal only         Heretic's built-in chat is command line — use LM Studio
+                        for a proper interface
+
+================================================================================
+                         QUICK REFERENCE COMMANDS
+================================================================================
+  python --version                              check Python version
+  pip install -U heretic-llm                    install or update Heretic
+  hf auth login --token hf_yourtoken           login to Hugging Face
+  heretic --model <modelname>                   run Heretic on a model
+  heretic --model <modelname> --quantization BNB_4BIT    run with 4-bit quant
+  heretic --help                                see all available options
+
+RECOMMENDED MODELS FOR RTX 3070 8GB:
+  meta-llama/Llama-3.1-8B-Instruct    best quality, requires HF approval
+  Qwen/Qwen2.5-7B-Instruct            no approval needed, similar quality
+  Qwen/Qwen3-4B-Instruct-2507         smaller, faster, good for testing
+
+================================================================================
