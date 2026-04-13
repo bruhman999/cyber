@@ -1,0 +1,29 @@
+# Search inside a single file
+grep "error" /var/log/syslog
+
+# Case insensitive
+grep -i "error" /var/log/syslog
+
+# Search entire folder recursively
+grep -r "password" /etc/
+
+# Show line numbers
+grep -n "failed" /var/log/auth.log
+
+# Search only specific file types
+grep -r "error" /var/log/ --include="*.log"
+
+# Invert — show lines that DON'T match
+grep -v "debug" /var/log/syslog
+
+# Show 3 lines before and after the match (context)
+grep -A 3 -B 3 "error" /var/log/syslog
+
+# Search for multiple terms
+grep -E "error|failed|denied" /var/log/syslog
+
+# Count how many matches
+grep -c "failed" /var/log/auth.log
+
+# Show only filenames that contain the match
+grep -rl "password" /etc/
