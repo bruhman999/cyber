@@ -1,0 +1,65 @@
+LINUX TERMINAL SHORTCUTS
+
+NAVIGATION — MOVE AROUND THE LINE
+  Ctrl + A              Jump to beginning of line
+  Ctrl + E              Jump to end of line
+  Ctrl + F              Move forward one character
+  Ctrl + B              Move backward one character
+  Alt + F               Move forward one word
+  Alt + B               Move backward one word
+
+EDITING — MODIFY TEXT
+  Ctrl + D              Delete character under cursor
+  Ctrl + H              Delete character before cursor (like Backspace)
+  Ctrl + K              Cut from cursor to end of line
+  Ctrl + U              Cut from cursor to beginning of line
+  Ctrl + W              Cut the word before cursor
+  Alt + D               Cut the word after cursor
+  Ctrl + Y              Paste (yank) last cut text
+  Alt + .               Paste last argument of previous command
+  Ctrl + T              Swap current and previous character
+  Alt + T               Swap current and previous word
+  Alt + U               Uppercase word from cursor
+  Alt + L               Lowercase word from cursor
+  Alt + C               Capitalize word from cursor
+
+HISTORY — REUSE PREVIOUS COMMANDS
+  Ctrl + P  /  ↑        Previous command in history
+  Ctrl + N  /  ↓        Next command in history
+  Ctrl + R              Reverse search through history
+  Ctrl + S              Forward search through history
+  Ctrl + G              Cancel history search
+  !!                    Repeat last command
+  !n                    Run command number n from history
+  !string               Run last command starting with string
+  history               Show all command history
+  history | grep ssh    Search history for a keyword
+
+PROCESS CONTROL — MANAGE RUNNING PROGRAMS
+  Ctrl + C              Kill current process (SIGINT)
+  Ctrl + Z              Suspend current process (background it)
+  Ctrl + D              Send EOF / exit shell if line is empty
+  fg                    Resume last suspended process in foreground
+  bg                    Resume last suspended process in background
+  jobs                  List suspended / background jobs
+
+SCREEN & TERMINAL
+  Ctrl + L              Clear screen (like typing clear)
+  Ctrl + S              Pause terminal output (scroll lock)
+  Ctrl + Q              Resume terminal output
+  Shift + PgUp          Scroll terminal up
+  Shift + PgDn          Scroll terminal down
+  Ctrl + Alt + T        Open new terminal (most desktop environments)
+
+TAB COMPLETION & WILDCARDS
+  Tab                   Autocomplete file, folder or command name
+  Tab Tab               Show all possible completions
+  *                     Wildcard — matches any string  (ls *.txt)
+  ?                     Wildcard — matches one character  (ls file?.txt)
+
+SHORTCUTS AS COMMANDS
+  clear                 Clear the screen
+  reset                 Reset terminal if it gets corrupted
+  exit  /  logout       Close current terminal session
+  Ctrl + X then Ctrl + EOpen current line in $EDITOR to edit
+
