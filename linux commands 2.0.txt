@@ -16,7 +16,7 @@ BASIC FILE & DIRECTORY COMMANDS
   rm <file>                      Delete a file
   rm -r <folder>                 Delete a folder and its contents
   cp <source> <destination>      Copy files or directories
-  mv <source> <destination>      Move or rename files/directories
+  mv <source> <destination>      Move or RENAME files/directories
   gunzip <file>                  Extract/decompress a .gz file
   man <command>                  Display the manual for a command (e.g. man hydra)
   sudo chown kali:kali .         Fix ownership so your kali user can access and modify the directory
@@ -29,7 +29,7 @@ BASIC FILE & DIRECTORY COMMANDS
   tee                            Takes input and writes it to a file
   -a                             Flag means append add to existing instead of overwriting
   diff                           Shows the difference of a file (diff file1.txt file2.txt)
-
+  hostname -I                    Lists ip addresses
 --------------------------------------------------------------------------------
 FLAGS — COMMON FLAGS EXPLAINED
 --------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ WILDCARDS — PATTERN MATCHING
 
   The most commonly used wildcard. Matches any number of any characters.
 
-  ls *.txt                    List all files ending in .txt
+  ls *.txt                    List all files ending in .txt         ***********
   ls scan*                    List all files starting with "scan"
   ls *2024*                   List all files with "2024" anywhere in the name
   rm *.log                    Delete all .log files in current directory
@@ -253,7 +253,7 @@ FILE PERMISSIONS — CHMOD
   NUMERIC MODE
   ------------
 
-  chmod 777 <file>               rwxrwxrwx — everyone has full access (dangerous)
+  chmod 777 <file>               rwxrwxrwx — everyone has full access (dangerous)    *********
   chmod 755 <file>               rwxr-xr-x — owner full, others read/execute
   chmod 700 <file>               rwx------ — owner only, no one else can access
   chmod 644 <file>               rw-r--r-- — owner read/write, others read only
@@ -301,7 +301,7 @@ REDIRECTS & PIPES
 --------------------------------------------------------------------------------
 
   >     Output redirect — send output to a file (overwrites existing content)
-  >>    Append redirect — add output to the end of a file
+  >>    Append redirect — add output to the end of a file            ************
   <     Input redirect  — feed a file into a command as input
   |     Pipe            — send output of one command directly into another
 
@@ -363,7 +363,7 @@ REDIRECTS & PIPES
   SPECIAL REDIRECTS
   -----------------
 
-  2>/dev/null          Suppress error messages — send errors to nowhere
+  2>/dev/null          Suppress error messages — send errors to nowhere  ***********
   2>&1                 Redirect errors to the same place as normal output
   tee <file>           Show output in terminal AND save to file simultaneously
 
@@ -403,6 +403,63 @@ NETWORKING COMMANDS
   nslookup <domain>              Get basic DNS information for a domain
   dig <domain>                   Retrieve detailed DNS information
   whois <domain>                 Fetch domain registration details
+  hostname -I                    Displays all ips quick and fast ******
+--------------------------------------------------------------------------------
+HTML FILES & WEB BROWSING FROM TERMINAL
+--------------------------------------------------------------------------------
+
+  OPENING HTML FILES IN A BROWSER
+  --------------------------------
+
+  firefox file.html              Open a local HTML file in Firefox
+  chromium file.html             Open a local HTML file in Chromium
+  xdg-open file.html             Open with the system default browser
+
+  VIEWING RAW HTML CODE IN TERMINAL
+  ----------------------------------
+
+  cat file.html                  Print the entire HTML file contents to terminal
+  nano file.html                 Open and edit the HTML file in nano
+  vim file.html                  Open and edit the HTML file in vim
+  less file.html                 Scroll through the HTML file (q to quit)
+
+  RUNNING A LOCAL WEB SERVER
+  --------------------------
+
+  python3 -m http.server 8080    Serve current directory over HTTP on port 8080
+                                 Then open browser and go to: localhost:8080
+                                 Useful for hosting and testing local HTML files
+                                 without needing Apache or Nginx installed
+
+  OPENING WEBSITES FROM TERMINAL
+  --------------------------------
+
+  firefox https://google.com     Open a website in Firefox GUI browser
+  chromium https://google.com    Open a website in Chromium GUI browser
+
+  TERMINAL-ONLY BROWSERS (NO GUI NEEDED)
+  ---------------------------------------
+
+  These tools let you browse entirely inside the terminal with no desktop required.
+  Useful when working on a headless server or over SSH.
+
+  lynx https://google.com        Text-based browser — navigate fully in terminal
+  w3m https://google.com         Lightweight text browser with mouse support
+  elinks https://google.com      Feature-rich text browser with color support
+
+  Install if not present:
+  sudo apt install lynx
+  sudo apt install w3m
+  sudo apt install elinks
+
+  FETCHING & DOWNLOADING FROM TERMINAL
+  --------------------------------------
+
+  curl https://google.com        Fetch and dump raw HTML source to terminal
+  wget https://google.com        Download a webpage or file to current directory
+
+  curl is best for quickly viewing page source or sending custom HTTP requests.
+  wget is best for downloading files, pages, or entire websites to disk.
 
 --------------------------------------------------------------------------------
 SCANNING & ENUMERATION
