@@ -1,0 +1,177 @@
+================================================================
+HOW TO BROWSE WITHOUT ISP KNOWING
+================================================================
+Date: April 18, 2026
+
+----------------------------------------------------------------
+OPTION 1 — VPN (Easiest, Good Privacy)
+----------------------------------------------------------------
+You ALREADY have Windscribe installed on your machine.
+
+How it works:
+  Your Device → [encrypted tunnel] → VPN Server → Website
+  ISP only sees: "User connected to VPN server IP"
+  ISP cannot see: What sites you visit
+
+How to use Windscribe:
+  1. Open Windscribe
+  2. Connect to any server
+  3. All traffic is now hidden from ISP
+
+Windscribe specifics:
+  ✅ Has a free tier (10GB/month)
+  ✅ Has a firewall/kill switch feature
+  ✅ Supports custom DNS (point it to 10.0.0.50)
+  ✅ Already installed on your machine
+  ⚠️  Windscribe can see your traffic instead of ISP
+     so you are trusting them instead
+  ⚠️  VPN slows connection slightly
+
+IMPORTANT — Use your Pi-hole with Windscribe:
+  In Windscribe settings → set custom DNS to 10.0.0.50
+  This keeps Pi-hole ad blocking active while using VPN
+
+----------------------------------------------------------------
+OPTION 2 — TOR BROWSER (Strong Anonymity, Slow)
+----------------------------------------------------------------
+How it works:
+  Your Device → Node 1 → Node 2 → Node 3 → Website
+  Each node only knows the previous and next hop
+  Nobody knows both who you are AND what you visit
+
+  ISP sees: "User connected to Tor network"
+  ISP cannot see: What sites you visit
+
+How to use:
+  1. Download Tor Browser from torproject.org
+  2. Install and open it
+  3. Browse normally — no configuration needed
+
+  ✅ Free
+  ✅ Very strong anonymity
+  ✅ Built in ECH and DNS over Tor
+  ❌ Very slow (traffic bounces through 3 nodes)
+  ❌ Some sites block Tor exit nodes
+  ❌ ISP can see you USE Tor (not what you visit)
+  ❌ Not good for streaming or large downloads
+
+To hide that you use Tor from ISP:
+  Use Tor Bridges (obfs4):
+  1. Open Tor Browser
+  2. Connection settings → Use a bridge
+  3. Select obfs4
+  4. ISP just sees random encrypted traffic
+
+----------------------------------------------------------------
+OPTION 3 — VPN OVER TOR (Maximum Privacy)
+----------------------------------------------------------------
+How it works:
+  Device → Tor Network → VPN Server → Website
+
+  ✅ ISP cannot see you use VPN
+  ✅ VPN cannot see your real IP
+  ✅ Extremely private
+  ❌ Very slow
+  ❌ Complex to set up
+  ❌ Overkill for most people
+
+----------------------------------------------------------------
+OPTION 4 — I2P (Invisible Internet Project)
+----------------------------------------------------------------
+Alternative to Tor, designed for internal anonymous network
+
+  ✅ Highly anonymous
+  ✅ Decentralized
+  ❌ Harder to set up
+  ❌ Mostly for accessing I2P sites (.i2p domains)
+  ❌ Not great for regular web browsing
+  ❌ Small user base
+
+----------------------------------------------------------------
+OPTION 5 — RESIDENTIAL PROXY
+----------------------------------------------------------------
+Routes your traffic through another person's real home IP
+
+  ✅ Looks like normal home traffic to ISP
+  ✅ Very hard to detect
+  ❌ Costs money
+  ❌ Slower than direct connection
+  ❌ Trust issues with proxy provider
+
+----------------------------------------------------------------
+WHAT EACH OPTION HIDES FROM ISP
+----------------------------------------------------------------
+
+Method          Hides Sites?  Hides IP?  Hides Usage?  Speed
+──────────────────────────────────────────────────────────────
+Nothing         ❌            ❌         ❌            Fast
+Pi-hole+Crypt   ✅ DNS only   ❌         ❌            Fast
+VPN             ✅            ✅         ⚠️ Sees VPN   Good
+Tor             ✅            ✅         ⚠️ Sees Tor   Slow
+Tor + Bridges   ✅            ✅         ✅            Slow
+VPN over Tor    ✅            ✅         ✅            Very Slow
+I2P             ✅            ✅         ✅            Slow
+
+----------------------------------------------------------------
+BEST OPTION FOR YOU RIGHT NOW
+----------------------------------------------------------------
+You already have everything you need:
+
+  STEP 1: Enable Windscribe VPN
+    - Already installed
+    - Connect to a server
+    - Set DNS to 10.0.0.50 in Windscribe settings
+
+  STEP 2: Enable ECH in Firefox
+    - about:config
+    - network.dns.echconfig.enabled → TRUE
+    - network.dns.use_https_rr_as_altsvc → TRUE
+
+  STEP 3: Your existing Pi-hole + DNSCrypt + Quad9
+    - Already running and secured
+
+This combination means:
+  ✅ ISP cannot see your DNS queries (DNSCrypt)
+  ✅ ISP cannot see sites you visit (VPN)
+  ✅ ISP cannot see SNI (ECH)
+  ✅ Ads blocked everywhere (Pi-hole)
+  ✅ Malware domains blocked (Quad9)
+  ✅ No DNS logging (Quad9)
+
+----------------------------------------------------------------
+IMPORTANT THINGS TO UNDERSTAND
+----------------------------------------------------------------
+1. NO method is 100% anonymous
+   - Your device, browser, and behavior can still
+     identify you (browser fingerprinting)
+   - Logging into Google/Facebook etc immediately
+     identifies you regardless of VPN or Tor
+
+2. VPNs shift trust dont eliminate it
+   - Instead of ISP seeing your traffic
+     the VPN provider sees it
+   - Choose a VPN with a no-logs policy
+   - Windscribe has a no-logs policy ✅
+
+3. Browser fingerprinting can still track you
+   - Your browser leaks: screen size, fonts,
+     plugins, timezone, language etc
+   - Fix: Use Firefox with arkenfox user.js
+     or use Tor Browser
+
+4. Metadata is still visible
+   - Even with VPN+Tor ISP sees:
+     How much data you transfer
+     When you are online
+     That you use a VPN or Tor
+
+----------------------------------------------------------------
+RECOMMENDED FULL PRIVACY STACK
+----------------------------------------------------------------
+  Browser:    Firefox with ECH enabled + uBlock Origin
+  VPN:        Windscribe (already installed)
+  DNS:        Pi-hole → DNSCrypt → Quad9 (already running)
+  Sensitive:  Tor Browser for anything that needs
+              maximum anonymity
+
+================================================================
