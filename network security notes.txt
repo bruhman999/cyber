@@ -1,0 +1,441 @@
+================================================================================
+                        NETWORK SECURITY REFERENCE NOTES
+                          Linux & Windows — Ports, Tools & Firewall
+================================================================================
+
+
+================================================================================
+  SECTION 1 — LINUX NETWORK SCANNING TOOLS
+================================================================================
+
+--------------------------------------------------------------------------------
+  ss -tuln
+--------------------------------------------------------------------------------
+  The modern replacement for netstat. Faster and more accurate.
+  Ships with most Linux distros by default.
+
+  Flags:
+    -t    show TCP connections
+    -u    show UDP connections
+    -l    show only LISTENING ports (services waiting for connections)
+    -n    show raw numbers instead of resolving names (faster, clearer)
+
+  Usage:
+    ss -tuln                        basic scan, listening ports only
+    ss -tulnp                       add -p to show which process owns each port
+    sudo ss -tulnp                  run as root to see ALL process names
+    ss -tuln | grep :80             filter for a specific port
+    ss -s                           summary of socket statistics
+
+  Example output:
+    tcp   LISTEN  0.0.0.0:22     0.0.0.0:*     users:(("sshd",pid=1234))
+    |      |           |              |                    |
+    proto  state    local addr     remote addr          process
+
+  What to look for:
+    - 0.0.0.0:PORT means exposed to ALL network interfaces (visible on LAN)
+    - 127.0.0.1:PORT means localhost only (safe, not reachable from outside)
+    - :::PORT means exposed on all IPv6 interfaces
+
+--------------------------------------------------------------------------------
+  netstat -tuln
+--------------------------------------------------------------------------------
+  The older classic tool. Still works but ss is preferred on modern systems.
+  May need to be installed: sudo apt install net-tools
+
+  Flags: same meaning as ss (-t -u -l -n)
+
+  Usage:
+    netstat -tuln                   basic listening port scan
+    netstat -tulnp                  include process names (run with sudo)
+    netstat -an                     all connections, all states
+    netstat -rn                     show routing table
+    netstat -s                      network statistics per protocol
+
+  Key difference from ss:
+    On some systems netstat may miss certain socket types that ss catches.
+    If results differ between the two, trust ss.
+
+--------------------------------------------------------------------------------
+  lsof -i
+--------------------------------------------------------------------------------
+  lsof = "list open files" — on Linux, network sockets are treated as files.
+  Very powerful for pinpointing exactly which process owns a connection.
+
+  Usage:
+    lsof -i                         all open network connections
+    lsof -i :1313                   what is using port 1313 specifically
+    lsof -i :80                     what is using port 80
+    lsof -i TCP                     only TCP connections
+    lsof -i UDP                     only UDP connections
+    lsof -i TCP:22                  TCP connections on port 22 only
+    lsof -i -n -P                   no hostname/port name resolution (faster)
+    sudo lsof -i -n -P              run as root for full process visibility
+    lsof -i @10.0.0.1               connections to/from a specific IP
+
+  Example — check what is running on port 1313:
+    sudo lsof -i :1313
+    -> COMMAND   PID   USER   TYPE   NODE NAME
+    -> hugo      8821  neo    IPv4   TCP  *:1313 (LISTEN)
+    This tells you hugo (a static site server) is listening on 1313.
+
+  Tip: combine with grep:
+    sudo lsof -i | grep LISTEN      show only listening services
+    sudo lsof -i | grep ESTABLISHED show only active connections
+
+--------------------------------------------------------------------------------
+  Other useful Linux scanning commands
+--------------------------------------------------------------------------------
+    sudo ss -tulnp                  best all-around quick scan
+    sudo netstat -tulnp             alternative if ss not available
+    sudo lsof -i -n -P              full connection list with process names
+    cat /proc/net/tcp               raw TCP socket info (advanced)
+    sudo nmap -sS localhost         scan your own machine with nmap
+    sudo nmap -sU -p 1-1024 localhost  scan UDP ports locally
+    watch -n 2 ss -tuln             live refresh scan every 2 seconds
+    sudo iptables -L -n -v          view current iptables firewall rules
+
+
+================================================================================
+  SECTION 2 — PORT REFERENCE
+================================================================================
+
+--------------------------------------------------------------------------------
+  PORTS TO WATCH OUT FOR — Suspicious or Dangerous
+--------------------------------------------------------------------------------
+  These ports being open and exposed to the internet or LAN is a red flag
+  unless you have a very specific reason for them to be open.
+
+  Port    Protocol    Service              Why it's dangerous
+  ------  ----------  -------------------  ------------------------------------
+  21      TCP         FTP                  Sends credentials in plaintext.
+                                           Use SFTP or SCP instead.
+
+  23      TCP         Telnet               Completely unencrypted remote access.
+                                           Everything including passwords is
+                                           visible on the network. Never use.
+
+  25      TCP         SMTP                 Mail relay — if open and misconfigured
+                                           your machine can be used to send spam.
+
+  135     TCP         Windows RPC          Common target for exploits.
+                                           Should never be exposed to internet.
+
+  139/445 TCP         SMB (Windows shares) EternalBlue exploit used this port.
+                                           Caused WannaCry ransomware outbreak.
+                                           Never expose to internet.
+
+  1433    TCP         MSSQL                Database port. If exposed publicly,
+                                           brute force attacks are constant.
+
+  3306    TCP         MySQL/MariaDB        Same as above. Should be localhost
+                                           only unless intentionally remote.
+
+  3389    TCP         RDP (Windows)        Remote Desktop. Heavily targeted for
+                                           brute force and ransomware delivery.
+                                           If open, use a VPN in front of it.
+
+  4444    TCP         Metasploit default   Default listener port for Metasploit
+                                           reverse shells. Seeing this open is
+                                           a serious red flag.
+
+  5900    TCP         VNC                  Remote desktop, often poorly secured.
+                                           Should never be open to internet.
+
+  6666/   TCP         IRC / malware C2     Old IRC ports, also used by some
+  6667                                     malware for command and control.
+
+  8080    TCP         HTTP alternate       Often used by misconfigured web
+                                           servers or proxies. Not inherently
+                                           dangerous but worth checking.
+
+  9001    TCP         Tor / misc           Tor relay port. Fine if intentional
+                                           but suspicious if unexpected.
+
+  31337   TCP         Back Orifice         Classic backdoor/hacking tool port.
+                                           Seeing this is a serious red flag.
+
+  General rule:
+    Any port bound to 0.0.0.0 (all interfaces) that you did not intentionally
+    open should be investigated immediately.
+
+--------------------------------------------------------------------------------
+  PORTS THAT ARE NORMAL / NEUTRAL
+--------------------------------------------------------------------------------
+  These are commonly seen in netstat/ss output and are generally fine.
+
+  Port    Protocol    Service              Notes
+  ------  ----------  -------------------  ------------------------------------
+  22      TCP         SSH                  Secure remote access. Fine to have
+                                           open but use key auth, not passwords.
+                                           Consider changing from default 22.
+
+  53      TCP/UDP     DNS                  Normal if you run Pi-hole, bind, or
+                                           dnsmasq. Also used by Tailscale's
+                                           magic DNS (10.255.255.254:53).
+
+  67/68   UDP         DHCP                 IP address assignment. Normal on
+                                           routers and some servers.
+
+  80      TCP         HTTP                 Web server. Fine if intentional.
+                                           Ideally redirect to HTTPS (443).
+
+  123     UDP         NTP                  Time synchronization. Normal.
+
+  323     UDP         chronyd              Local NTP daemon. Localhost only.
+                                           Completely normal on Fedora/RHEL.
+
+  443     TCP         HTTPS                Encrypted web traffic. Normal for
+                                           any web server or app with SSL.
+
+  631     TCP/UDP     CUPS printing        Local print server. Localhost only
+                                           is fine. Exposed to LAN is okay if
+                                           you share a printer.
+
+  1194    UDP         OpenVPN              VPN tunnel port. Normal if you run
+                                           an OpenVPN server.
+
+  3000    TCP         Dev servers          Common default for Node.js, Grafana,
+                                           and other dev tools. Fine locally.
+
+  5353    UDP         mDNS / Avahi         Local network discovery. Normal.
+                                           Used by printers, Chromecast, etc.
+
+  8096    TCP         Jellyfin             Media server default port.
+
+  9050    TCP         Tor SOCKS proxy      Local Tor proxy. Localhost only.
+                                           Fine if you use Tor. Disable if not.
+
+  41641   UDP         Tailscale WireGuard  Tailscale VPN tunnel. Normal if
+                                           Tailscale is installed.
+
+  51820   UDP         WireGuard            WireGuard VPN. Normal if you run
+                                           a WireGuard server or client.
+
+
+================================================================================
+  SECTION 3 — UFW FIREWALL (Linux)
+================================================================================
+
+  UFW = Uncomplicated Firewall. A user-friendly frontend for iptables.
+  Available on Debian/Ubuntu/Kali. Fedora uses firewalld instead (see below).
+
+--------------------------------------------------------------------------------
+  Install and enable UFW
+--------------------------------------------------------------------------------
+    sudo apt install ufw            install (already on most Debian systems)
+    sudo ufw status                 check if ufw is active
+    sudo ufw enable                 turn ufw on (survives reboots)
+    sudo ufw disable                turn ufw off
+    sudo ufw status verbose         detailed status with all rules listed
+    sudo ufw status numbered        show rules with numbers (needed to delete)
+
+  IMPORTANT: Set a default deny rule BEFORE enabling, or you may lock yourself
+  out if SSH is your only access to the machine.
+
+--------------------------------------------------------------------------------
+  Default policies — set these first
+--------------------------------------------------------------------------------
+    sudo ufw default deny incoming      block all inbound by default
+    sudo ufw default allow outgoing     allow all outbound by default
+
+  This means nothing can connect TO your machine unless you explicitly allow it.
+  Your machine can still connect OUT to anything freely.
+
+--------------------------------------------------------------------------------
+  Allowing ports and services
+--------------------------------------------------------------------------------
+  By service name (UFW knows common services):
+    sudo ufw allow ssh                  allow SSH (port 22)
+    sudo ufw allow http                 allow HTTP (port 80)
+    sudo ufw allow https                allow HTTPS (port 443)
+
+  By port number:
+    sudo ufw allow 22                   allow port 22 TCP and UDP
+    sudo ufw allow 22/tcp               allow port 22 TCP only
+    sudo ufw allow 1194/udp             allow OpenVPN UDP port
+
+  By port range:
+    sudo ufw allow 6000:6007/tcp        allow a range of ports
+
+  From a specific IP only:
+    sudo ufw allow from 10.0.0.1        allow all traffic from this IP
+    sudo ufw allow from 10.0.0.1 to any port 22    allow SSH from one IP only
+
+  From a subnet:
+    sudo ufw allow from 10.0.0.0/24     allow entire local subnet
+
+--------------------------------------------------------------------------------
+  Blocking ports
+--------------------------------------------------------------------------------
+    sudo ufw deny 23                    block Telnet
+    sudo ufw deny 21                    block FTP
+    sudo ufw deny from 192.168.1.50     block a specific IP entirely
+
+--------------------------------------------------------------------------------
+  Deleting rules
+--------------------------------------------------------------------------------
+    sudo ufw status numbered            first, list rules with numbers
+    sudo ufw delete 3                   delete rule number 3
+    sudo ufw delete allow 80            delete by rule description
+
+--------------------------------------------------------------------------------
+  Practical example — basic secure server setup
+--------------------------------------------------------------------------------
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    sudo ufw allow ssh
+    sudo ufw allow http
+    sudo ufw allow https
+    sudo ufw enable
+    sudo ufw status verbose
+
+  This setup:
+    - Blocks everything inbound except SSH, HTTP, HTTPS
+    - Allows all outbound traffic
+    - Is active and persistent across reboots
+
+--------------------------------------------------------------------------------
+  UFW with non-standard SSH port
+--------------------------------------------------------------------------------
+  If you changed SSH to run on port 2222 (like neo's setup):
+    sudo ufw allow 2222/tcp
+    sudo ufw deny 22                    optionally block default port too
+
+  Always allow your SSH port BEFORE enabling UFW if connecting remotely.
+
+--------------------------------------------------------------------------------
+  Logging
+--------------------------------------------------------------------------------
+    sudo ufw logging on                 enable logging
+    sudo ufw logging off                disable logging
+    sudo cat /var/log/ufw.log           view the log
+    sudo tail -f /var/log/ufw.log       watch log in real time
+
+--------------------------------------------------------------------------------
+  Fedora / RHEL — firewalld instead of UFW
+--------------------------------------------------------------------------------
+  Fedora uses firewalld, not UFW. Different commands, same idea.
+
+    sudo systemctl start firewalld      start firewalld
+    sudo systemctl enable firewalld     start on boot
+    sudo firewall-cmd --state           check if running
+
+  Allow a service:
+    sudo firewall-cmd --permanent --add-service=ssh
+    sudo firewall-cmd --permanent --add-service=http
+    sudo firewall-cmd --permanent --add-service=https
+
+  Allow a port:
+    sudo firewall-cmd --permanent --add-port=2222/tcp
+    sudo firewall-cmd --permanent --add-port=51820/udp
+
+  Remove a rule:
+    sudo firewall-cmd --permanent --remove-service=http
+
+  Apply changes (required after every --permanent change):
+    sudo firewall-cmd --reload
+
+  List all active rules:
+    sudo firewall-cmd --list-all
+
+
+================================================================================
+  SECTION 4 — WINDOWS NETWORK SCANNING
+================================================================================
+
+--------------------------------------------------------------------------------
+  netstat (Command Prompt / PowerShell)
+--------------------------------------------------------------------------------
+    netstat -an                     all connections and listening ports
+    netstat -ano                    same but includes PID (process ID)
+    netstat -anob                   includes executable name (run as admin)
+    netstat -b                      show executable for each connection (admin)
+    netstat -f                      show fully qualified domain names
+
+  Finding what owns a port:
+    netstat -ano | findstr :443     find what is using port 443
+    tasklist | findstr 1234         find process name by PID number 1234
+
+  Example workflow:
+    1. netstat -ano | findstr :4444         spot something on port 4444
+    2. Note the PID in the last column, e.g. 9821
+    3. tasklist | findstr 9821             see what process that is
+
+--------------------------------------------------------------------------------
+  PowerShell network commands
+--------------------------------------------------------------------------------
+    Get-NetTCPConnection                            all TCP connections
+    Get-NetTCPConnection -State Listen              listening ports only
+    Get-NetTCPConnection -LocalPort 443             who is using port 443
+    Get-NetUDPEndpoint                              UDP connections
+    Test-NetConnection google.com -Port 443         test if port is reachable
+    Test-NetConnection 10.0.0.1 -Port 22            test SSH to a local machine
+
+--------------------------------------------------------------------------------
+  Windows Firewall — basic management
+--------------------------------------------------------------------------------
+  Via GUI:
+    Windows Defender Firewall with Advanced Security
+    -> search for it in Start menu
+
+  Via Command Line (run as administrator):
+    netsh advfirewall show allprofiles          view current firewall state
+    netsh advfirewall set allprofiles state on  turn firewall on
+    netsh advfirewall set allprofiles state off turn firewall off (not advised)
+
+  Block a port:
+    netsh advfirewall firewall add rule name="Block Port 23" ^
+      dir=in action=block protocol=TCP localport=23
+
+  Allow a port:
+    netsh advfirewall firewall add rule name="Allow SSH" ^
+      dir=in action=allow protocol=TCP localport=22
+
+  Via PowerShell:
+    New-NetFirewallRule -DisplayName "Block Telnet" -Direction Inbound ^
+      -LocalPort 23 -Protocol TCP -Action Block
+
+    Get-NetFirewallRule | Where-Object {$_.Enabled -eq "True"}  view active rules
+
+
+================================================================================
+  QUICK REFERENCE CHEAT SHEET
+================================================================================
+
+  LINUX SCANNING
+  --------------
+  sudo ss -tulnp                      best all-around port scan
+  sudo netstat -tulnp                 alternative classic scan
+  sudo lsof -i :PORT                  what is using a specific port
+  sudo lsof -i | grep LISTEN          all listening services with process names
+  watch -n 2 sudo ss -tulnp           live updating scan every 2 seconds
+
+  UFW FIREWALL (Kali / Debian / Ubuntu)
+  --------------------------------------
+  sudo ufw status verbose             check firewall status
+  sudo ufw default deny incoming      block all inbound (set first)
+  sudo ufw default allow outgoing     allow all outbound
+  sudo ufw allow 22/tcp               open SSH port
+  sudo ufw allow 2222/tcp             open custom SSH port (neo's setup)
+  sudo ufw enable                     activate firewall
+  sudo ufw status numbered            list rules with numbers
+  sudo ufw delete 3                   delete rule number 3
+
+  FIREWALLD (Fedora / RHEL)
+  -------------------------
+  sudo firewall-cmd --state           check if running
+  sudo firewall-cmd --list-all        view all active rules
+  sudo firewall-cmd --permanent --add-port=2222/tcp   open a port
+  sudo firewall-cmd --reload          apply changes
+
+  WINDOWS SCANNING
+  ----------------
+  netstat -ano                        all connections with PIDs
+  netstat -ano | findstr :PORT        filter for specific port
+  tasklist | findstr PID              find process name by PID
+  Get-NetTCPConnection -State Listen  PowerShell listening ports
+
+================================================================================
+  Personal Reference Notes — Network Security
+================================================================================
