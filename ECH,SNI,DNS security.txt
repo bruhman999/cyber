@@ -1,0 +1,192 @@
+================================================================
+DNS PRIVACY & SECURITY NOTES
+================================================================
+Date: April 18, 2026
+
+----------------------------------------------------------------
+WHAT IS DNS
+----------------------------------------------------------------
+DNS (Domain Name System) is like a phonebook for the internet.
+When you type "google.com" your computer asks a DNS server
+"what is the IP address for google.com?" and it responds with
+the actual IP like 142.250.80.46. Your browser then connects.
+
+Without any protection this entire process is:
+  - Unencrypted
+  - Visible to your ISP
+  - Visible to anyone on your network
+  - Can be tampered with (DNS spoofing/hijacking)
+
+----------------------------------------------------------------
+WHAT IS SNI (Server Name Indication)
+----------------------------------------------------------------
+SNI is part of the TLS/HTTPS handshake process.
+
+When you connect to a website over HTTPS, before the encrypted
+connection is established, your browser sends the website name
+in PLAINTEXT so the server knows which certificate to use.
+
+Example:
+  You type: https://gmail.com
+  Your browser sends in plaintext: "gmail.com"
+  THEN the encrypted connection starts
+
+This means:
+  ✅ The actual content of your browsing is encrypted
+  ❌ BUT the website name (gmail.com) is visible to:
+     - Your ISP
+     - Anyone monitoring your network
+     - Government agencies
+     - Your router/switch
+
+Think of it like a sealed letter — the contents are private
+but the name on the envelope is visible to everyone who
+handles it.
+
+----------------------------------------------------------------
+WHAT IS ECH (Encrypted Client Hello)
+----------------------------------------------------------------
+ECH is the fix for the SNI problem. It encrypts the entire
+TLS handshake including the website name so nobody can see
+what site you're connecting to just from network traffic.
+
+Without ECH:
+  ISP sees → "User connected to gmail.com at 2:35pm"
+
+With ECH:
+  ISP sees → "User connected to... [encrypted, unknown]"
+
+Current status of ECH:
+  ✅ Firefox supports it (enable in about:config)
+  ✅ Chrome/Brave supports it
+  ✅ Cloudflare supports it on their sites
+  ❌ Most websites don't support it yet
+  ❌ Many ISPs actively block ECH handshakes
+  ⚠️  Still being rolled out across the internet
+
+How to enable ECH in Firefox:
+  1. Type about:config in address bar
+  2. Search: network.dns.echconfig.enabled
+  3. Set to TRUE
+  4. Search: network.dns.use_https_rr_as_altsvc
+  5. Set to TRUE
+
+----------------------------------------------------------------
+WHAT IS DNSCRYPT
+----------------------------------------------------------------
+DNSCrypt encrypts your DNS queries between your machine
+and the DNS resolver so nobody can see or tamper with them.
+
+Without DNSCrypt:
+  Your computer → [plaintext DNS query] → DNS server
+  ISP can see every domain you look up
+
+With DNSCrypt:
+  Your computer → [encrypted DNS query] → DNS server
+  ISP only sees encrypted traffic to DNS server IP
+
+DNSCrypt also:
+  ✅ Prevents DNS spoofing/poisoning
+  ✅ Verifies responses are from real DNS server
+  ✅ Prevents man in the middle attacks on DNS
+
+----------------------------------------------------------------
+WHAT IS QUAD9
+----------------------------------------------------------------
+Quad9 (9.9.9.9) is a secure privacy focused DNS resolver that:
+  ✅ Blocks known malicious domains automatically
+  ✅ Does not log your IP address
+  ✅ Does not sell your data
+  ✅ Supports DNSCrypt
+  ✅ Supports DNS over HTTPS (DoH)
+  ✅ Supports DNS over TLS (DoT)
+  ✅ Non-profit organization (more trustworthy)
+  ✅ Blocks malware, phishing, botnets at DNS level
+
+----------------------------------------------------------------
+YOUR SETUP: PIHOLE + DNSCRYPT + QUAD9
+----------------------------------------------------------------
+
+Your DNS chain looks like this:
+
+  Your Device
+      ↓
+  Pi-hole (10.0.0.50)        ← Blocks ads/tracking domains
+      ↓
+  DNSCrypt                   ← Encrypts the DNS query
+      ↓
+  Quad9 (9.9.9.9)           ← Resolves + blocks malicious domains
+      ↓
+  Website IP returned
+
+This is a VERY solid DNS setup. Here is what each layer does:
+
+  Pi-hole:
+    ✅ Blocks ads network wide for all devices
+    ✅ Blocks tracking domains
+    ✅ Logs queries locally for your own monitoring
+    ✅ Customizable blocklists
+
+  DNSCrypt:
+    ✅ Encrypts DNS queries
+    ✅ Prevents ISP from seeing your DNS lookups
+    ✅ Prevents DNS tampering/spoofing
+    ✅ Authenticates DNS server responses
+
+  Quad9:
+    ✅ Private DNS resolver (no logging)
+    ✅ Blocks malware/phishing domains
+    ✅ Extra layer of security on top of Pi-hole
+
+----------------------------------------------------------------
+IS YOUR DNS FULLY SECURED?
+----------------------------------------------------------------
+
+SHORT ANSWER: Yes, your DNS is very well secured.
+
+FULL ANSWER:
+
+  DNS layer:
+  ✅ Queries are encrypted (DNSCrypt)
+  ✅ ISP cannot see what domains you look up
+  ✅ Ads and trackers blocked (Pi-hole)
+  ✅ Malware domains blocked (Quad9)
+  ✅ DNS responses are authenticated
+  ✅ No DNS logging by upstream resolver
+
+----------------------------------------------------------------
+CAN YOUR ISP STILL SEE WHAT SITES YOU VISIT?
+----------------------------------------------------------------
+
+YES — partially. Here is exactly what they can and cannot see:
+
+  WHAT YOUR ISP CAN STILL SEE:
+  ❌ The IP address of every website you visit
+     (Even with encrypted DNS, you still connect to the
+     server's IP and ISP sees that connection)
+  ❌ SNI hostname in TLS handshake
+     (Unless the site supports ECH and your browser uses it)
+  ❌ How much data you transfer
+  ❌ Timing of your connections
+  ❌ Which IP addresses you connect to
+  ❌ Rough idea of sites visited via IP geolocation
+
+  WHAT YOUR ISP CANNOT SEE WITH YOUR SETUP:
+  ✅ Your DNS queries (encrypted by DNSCrypt)
+  ✅ Content of your browsing (HTTPS encrypts this)
+  ✅ Specific pages you visit within a site
+  ✅ What you search for
+  ✅ Login credentials
+
+  REAL WORLD EXAMPLE:
+  You visit https://reddit.com/r/privacy
+
+  Without your setup ISP sees:
+    - DNS query for reddit.com
+    - SNI: reddit.com
+    - IP connection to Reddit servers
+    - Data transfer amount
+
+  With your setup ISP sees:
+    - Encrypted DNS query (cannot read it)
+    - SNI: reddit.com
