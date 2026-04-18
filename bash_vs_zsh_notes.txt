@@ -1,18 +1,17 @@
 ================================================================================
-                         BASH vs ZSH — SHELL REFERENCE NOTES
+                    SHELL REFERENCE NOTES — BASH, ZSH, KSH & MORE
 ================================================================================
 OVERVIEW
 --------
 A shell is the program that reads your commands and runs them in the terminal.
-Linux/WSL can have multiple shells installed. The two most common are Bash and
-Zsh. They look similar but are different programs with different syntax and
+Linux/WSL can have multiple shells installed. The most common are Bash, Zsh,
+and Ksh. They look similar but are different programs with different syntax and
 config files. Running the wrong shell for your config causes errors.
 
 Your setup:
   Default shell (wrong one launching): Bash  — shown by: echo $SHELL -> /bin/bash
   Correct shell for your config:       Zsh   — launched manually with: zsh
   Kali Linux default shell:            Zsh
-
 ================================================================================
                               WHAT EACH SHELL IS
 ================================================================================
@@ -24,11 +23,68 @@ BASH (Bourne Again Shell)
   - Does NOT understand Zsh-specific commands (setopt, bindkey, zstyle, etc.)
 
 ZSH (Z Shell)
-  - Built on top of Bash but with many extras
+  - Built on top of ideas from Bash, Ksh, and Csh — combines the best of each
   - Supports plugins, custom themes, better tab-completion, prompt customization
   - Default shell on macOS (since 2019) and Kali Linux
   - Config file: ~/.zshrc
   - Powers the fancy prompt you see on Kali (Oh My Zsh theme)
+  - Best choice for daily use on modern Linux desktops
+
+KSH (Korn Shell)
+  - Developed at AT&T Bell Labs in the 1980s by David Korn
+  - Designed as a superset of the original Bourne shell (sh)
+  - Very POSIX compliant, lightweight, and reliable
+  - Common in enterprise environments, legacy Unix, AIX, and Solaris systems
+  - Many older corporate shell scripts were written specifically for Ksh
+  - Config file: ~/.kshrc
+  - Two main versions: ksh88, ksh93 (ksh93 is current), and mksh (MirBSD Korn Shell)
+  - Install on Kali/Debian:  sudo apt install ksh
+  - Install on Fedora:       sudo dnf install ksh
+
+FISH (Friendly Interactive Shell)
+  - Modern shell focused on user-friendliness out of the box
+  - Has syntax highlighting, autosuggestions, and tab-completion with zero config
+  - Does NOT follow POSIX standards — fish scripts are NOT compatible with
+    bash/sh scripts, which can cause problems in some environments
+  - Config file: ~/.config/fish/config.fish
+  - Good for beginners who want a nice experience without setup work
+  - Install on Kali/Debian:  sudo apt install fish
+  - Install on Fedora:       sudo dnf install fish
+
+DASH (Debian Almquist Shell)
+  - Extremely lightweight and fast
+  - Used as /bin/sh on Debian and Ubuntu — it is what runs your system scripts
+  - Strictly POSIX — no interactive features, no themes, no extras
+  - Not meant for daily interactive use, but very important under the hood
+  - If a script runs with #!/bin/sh it is likely running Dash on Debian systems
+
+TCSH / CSH (TENEX C Shell / C Shell)
+  - Syntax based on the C programming language instead of Bourne shell syntax
+  - Was popular in the 1980s-90s, especially on BSD systems
+  - Mostly considered outdated now — avoid writing new scripts in Csh/Tcsh
+  - Still available and sometimes seen on older Unix systems
+  - Config file: ~/.tcshrc or ~/.cshrc
+
+SH (Bourne Shell)
+  - The original Unix shell, ancestor of Bash, Ksh, and Dash
+  - On modern Linux, /bin/sh is usually a symlink to Bash or Dash, not true sh
+  - Scripts written for sh are the most portable across all Unix-like systems
+  - Not used interactively — only relevant for writing portable scripts
+
+================================================================================
+                         SHELL COMPARISON AT A GLANCE
+================================================================================
+
+  Shell   | Interactive Use | Scripting  | POSIX  | Modern Features
+  --------|-----------------|------------|--------|------------------
+  Bash    | Good            | Excellent  | Yes    | Moderate
+  Zsh     | Excellent       | Excellent  | Mostly | Best
+  Ksh     | Moderate        | Excellent  | Yes    | Minimal
+  Fish    | Excellent       | Limited*   | No     | Best
+  Dash    | Poor            | Good       | Yes    | None
+  Tcsh    | Moderate        | Poor       | No     | Minimal
+
+  * Fish scripts use their own syntax, not compatible with bash/sh
 
 ================================================================================
                             WHY SOURCING .ZSHRC IN BASH BROKE
@@ -61,14 +117,32 @@ To verify your default shell was changed:
   echo $SHELL
   -> should now return /bin/zsh or /usr/bin/zsh
 
+The same command works for any shell — just swap zsh for ksh, fish, etc:
+  chsh -s $(which ksh)
+  chsh -s $(which fish)
+
+Make sure the shell is listed in /etc/shells first or chsh will reject it:
+  cat /etc/shells
+  echo $(which ksh) | sudo tee -a /etc/shells   <- adds it if missing
+
 ================================================================================
                               QUICK COMMAND REFERENCE
 ================================================================================
-  echo $SHELL              check what shell is currently active
+  echo $SHELL              check what shell is currently set as default
+  echo $0                  check what shell is actually running right now
   zsh                      manually launch Zsh in current session
   bash                     manually launch Bash in current session
+  ksh                      manually launch Ksh in current session
+  fish                     manually launch Fish in current session
   chsh -s $(which zsh)     set Zsh as your permanent default shell
+  chsh -s $(which ksh)     set Ksh as your permanent default shell
+  chsh -s $(which fish)    set Fish as your permanent default shell
   source ~/.zshrc          reload Zsh config (run inside Zsh, not Bash)
+  source ~/.bashrc         reload Bash config
+  source ~/.kshrc          reload Ksh config
   cat ~/.zshrc             view your Zsh config file
+  cat /etc/shells          list all valid shells installed on the system
+  which zsh                show the full path to the Zsh binary
+  which ksh                show the full path to the Ksh binary
 
 ================================================================================
