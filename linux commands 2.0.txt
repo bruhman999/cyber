@@ -30,6 +30,136 @@ BASIC FILE & DIRECTORY COMMANDS
   -a                             Flag means append add to existing instead of overwriting
   diff                           Shows the difference of a file (diff file1.txt file2.txt)
   hostname -I                    Lists ip addresses
+  cd -                           do this instead of cd .. cd ..
+  mkdir -p ./bee{a,b}/{x,y}      create multiple combinations of folders
+  touch file{a..10}.txt          create multiple files
+  history 5                      print last 5 commands
+  chsh -s $(which zsh)           set Zsh as your permanent default shell
+--------------------------------------------------------------------------------
+VIEWING FILE CONTENT — HEAD & TAIL
+--------------------------------------------------------------------------------
+
+  These commands let you quickly view parts of files without opening them fully.
+  Extremely useful for logs, large files, and pipelines.
+
+  HEAD — View the beginning of a file
+  -----------------------------------
+
+  head <file>                  Show first 10 lines (default)
+  head -n 5 <file>             Show first 5 lines
+  head -20 <file>              Show first 20 lines (shorthand)
+  
+  Example:
+  head access.log              Quickly preview a log file
+
+  TAIL — View the end of a file
+  ------------------------------
+
+  tail <file>                  Show last 10 lines (default)
+  tail -n 5 <file>             Show last 5 lines
+  tail -20 <file>              Show last 20 lines
+
+  FOLLOW MODE (LIVE LOGS)
+  ------------------------
+
+  tail -f <file>               Follow file in real-time (live updates)
+                               Great for watching logs as they update
+
+  Example:
+  tail -f /var/log/syslog
+
+  USING WITH PIPES
+  -----------------
+
+  cat file.txt | tail -5       Show last 5 lines of file
+  grep "error" log.txt | tail  Show last matching error entries
+  dmesg | tail                 Show most recent kernel messages
+
+  PRACTICAL USE CASES
+  --------------------
+
+  tail -f access.log           Monitor web server traffic live
+  tail -n 50 auth.log          Check last 50 authentication attempts
+  ps aux | tail                See last processes in long output
+
+  TIP
+  ----
+
+  You usually DON'T need cat with tail/head:
+  tail -5 file.txt             (better than: cat file.txt | tail -5)
+--------------------------------------------------------------------------------
+FINDING COMMANDS & PATHS
+--------------------------------------------------------------------------------
+
+  These commands help you locate where programs are installed and how they are run.
+  Useful for troubleshooting, scripting, and understanding what’s actually executing.
+
+  WHICH — Find the path of a command
+  -----------------------------------
+
+  which <command>              Show the full path of the executable
+
+  Examples:
+  which python3                /usr/bin/python3
+  which nmap                   /usr/bin/nmap
+  which bash                   /usr/bin/bash
+
+  Notes:
+  - Only finds commands available in your PATH
+  - If nothing prints, the command is not installed or not in PATH
+
+  TYPE — Identify how a command is interpreted
+  --------------------------------------------
+
+  type <command>               Show if command is alias, builtin, or file
+
+  Examples:
+  type cd                      cd is a shell builtin
+  type ls                      ls is /usr/bin/ls
+  type ll                      ll is an alias for ls -la
+
+  Useful for detecting aliases or overridden commands
+
+  WHEREIS — Locate binary, source, and manual pages
+  --------------------------------------------------
+
+  whereis <command>            Show multiple locations related to a command
+
+  Example:
+  whereis nmap                 nmap: /usr/bin/nmap /usr/share/nmap
+
+  Shows:
+  - Binary location
+  - Source files (if present)
+  - Man pages
+
+  COMMAND -V — Detailed command info
+  ----------------------------------
+
+  command -v <command>         Show how the shell resolves a command
+
+  Example:
+  command -v python3           /usr/bin/python3
+
+  Works well in scripts (more reliable than which)
+
+  ECHO $PATH — View search paths
+  -------------------------------
+
+  echo $PATH                   Show directories searched for commands
+
+  Example output:
+  /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+  Order matters — first match is what gets executed
+
+  PRACTICAL USE CASES
+  --------------------
+
+  which sshd                   Check if SSH server is installed
+  type python                  See if python is aliased or real binary
+  whereis bash                 Find bash binary and man page
+  echo $PATH                   Debug why a command isn’t found
 --------------------------------------------------------------------------------
 FLAGS — COMMON FLAGS EXPLAINED
 --------------------------------------------------------------------------------
