@@ -146,3 +146,101 @@ Make sure the shell is listed in /etc/shells first or chsh will reject it:
   which ksh                show the full path to the Ksh binary
 
 ================================================================================
+--------------------------------------------------------------------------------
+SHELLS — BASH VS ZSH (WHY $SHELL STILL SHOWS BASH)
+--------------------------------------------------------------------------------
+
+PROBLEM
+--------
+
+You run:
+  zsh
+
+But then:
+  echo $SHELL
+
+Output:
+  /bin/bash
+
+This makes it look like you are still using bash.
+
+--------------------------------------------------------------------------------
+WHY THIS HAPPENS
+--------------------------------------------------------------------------------
+
+  $SHELL shows your DEFAULT LOGIN SHELL,
+  NOT the shell you are currently running.
+
+So:
+  - You can be inside zsh
+  - But your default shell is still bash
+
+--------------------------------------------------------------------------------
+HOW TO CHECK YOUR CURRENT SHELL (IMPORTANT)
+--------------------------------------------------------------------------------
+
+  echo $0
+
+Output:
+  zsh        → You are in zsh
+  bash       → You are in bash
+
+--------------------------------------------------------------------------------
+MAKE ZSH YOUR DEFAULT SHELL
+--------------------------------------------------------------------------------
+
+  chsh -s /bin/zsh
+
+Then restart your terminal OR run:
+  exit
+
+--------------------------------------------------------------------------------
+VERIFY IT WORKED
+--------------------------------------------------------------------------------
+
+  echo $SHELL
+
+Expected:
+  /bin/zsh
+
+--------------------------------------------------------------------------------
+WSL NOTE (IMPORTANT)
+--------------------------------------------------------------------------------
+
+In WSL, chsh may not always work properly.
+
+If it does NOT stick, use this workaround:
+
+1. Edit bash config:
+   nano ~/.bashrc
+
+2. Add this line at the bottom:
+   exec zsh
+
+3. Save and restart terminal
+
+This forces zsh to launch automatically.
+
+--------------------------------------------------------------------------------
+OPTIONAL: FORCE FOR A SPECIFIC USER
+--------------------------------------------------------------------------------
+
+  sudo chsh -s /bin/zsh neo
+
+--------------------------------------------------------------------------------
+QUICK REFERENCE
+--------------------------------------------------------------------------------
+
+  echo $SHELL   → Default shell
+  echo $0       → Current shell (actual one you are using)
+
+--------------------------------------------------------------------------------
+EXPECTED RESULTS
+--------------------------------------------------------------------------------
+
+✔ echo $0 shows: zsh
+✔ echo $SHELL shows: /bin/zsh (after change)
+✔ Terminal starts in zsh automatically
+
+--------------------------------------------------------------------------------
+
