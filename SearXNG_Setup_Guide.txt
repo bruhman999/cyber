@@ -1,0 +1,174 @@
+================================================================
+  SEARXNG SETUP GUIDE
+  Installing & Running SearXNG with Podman on Fedora
+  Home Lab Documentation
+================================================================
+
+
+WHAT IS SEARXNG?
+----------------
+SearXNG is a free, open-source, privacy-respecting metasearch
+engine. It aggregates results from 70+ search engines (Google,
+Bing, DuckDuckGo, etc.) without tracking you, storing your
+searches, or serving ads. Running it locally means your searches
+never leave your network.
+
+WHY USE SEARXNG?
+  - No tracking — searches are not logged or tied to your identity
+  - No ads or sponsored results
+  - Aggregated results from multiple engines at once
+  - Fully self-hosted — runs on your hardware, your network
+  - Customizable — choose engines, categories, and settings
+  - Works great alongside Pi-hole for a fully private setup
+
+
+================================================================
+  PREREQUISITES
+================================================================
+
+  - Fedora Linux
+  - Podman (comes with Fedora by default)
+  - podman-compose
+  - curl
+
+Check Podman is installed:
+  podman --version
+
+Install podman-compose:
+  sudo dnf install podman-compose
+
+
+================================================================
+  INSTALLATION — STEP BY STEP
+================================================================
+
+STEP 1 — Create the directory structure
+----------------------------------------
+  mkdir -p ~/searxng/core-config
+  cd ~/searxng
+
+
+STEP 2 — Download the official files
+--------------------------------------
+  curl -fsSL \
+      -O https://raw.githubusercontent.com/searxng/searxng/master/container/docker-compose.yml \
+      -O https://raw.githubusercontent.com/searxng/searxng/master/container/.env.example
+
+
+STEP 3 — Configure the environment file
+-----------------------------------------
+  cp -i .env.example .env
+  nano .env
+
+  Add this line at the bottom (use your Fedora machine's actual IP):
+    SEARXNG_HOSTNAME=10.0.0.x
+
+  Save: Ctrl+O then Enter
+  Exit: Ctrl+X
+
+  TIP: Find your IP with: ip addr show
+
+
+STEP 4 — Fix the port line in docker-compose.yml
+--------------------------------------------------
+  nano docker-compose.yml
+
+  Find this line under "ports:" in the core service:
+    - ${SEARXNG_HOST:+${SEARXNG_HOST}:}${SEARXNG_PORT:-8080}:${SEARXNG_PORT:-8080}
+
+  Replace it with:
+    - 8080:8080
+
+  Save and exit (Ctrl+O, Enter, Ctrl+X)
+
+
+STEP 5 — Set permissions on the config directory
+--------------------------------------------------
+  chmod 777 ~/searxng/core-config
+
+
+STEP 6 — Start SearXNG
+------------------------
+  podman-compose up -d
+
+  Podman will pull images on first run. This may take a minute.
+
+
+STEP 7 — Verify it is running
+-------------------------------
+  podman-compose ps
+
+  You should see TWO containers:
+
+  CONTAINER          PORT          PURPOSE
+  searxng-core       8080          Web UI / search engine
+  searxng-valkey     6379 (int)    Cache / rate limiter
+
+
+STEP 8 — Open in browser
+--------------------------
+  From any device on your network:
+    http://10.0.0.x:8080
+
+
+STEP 9 — Open firewall port (if needed)
+-----------------------------------------
+  sudo firewall-cmd --permanent --add-port=8080/tcp
+  sudo firewall-cmd --reload
+
+
+================================================================
+  MANAGING SEARXNG
+================================================================
+
+COMMON COMMANDS
+  podman-compose up -d          Start all containers in background
+  podman-compose down           Stop and remove containers
+  podman-compose ps             List running containers
+  podman-compose logs -f core   Follow live logs
+  podman-compose pull           Pull latest images
+  podman ps -a                  Show all containers incl. stopped
+
+UPDATING SEARXNG
+  podman-compose down
+  podman-compose pull
+  podman-compose up -d
+
+EDITING SETTINGS
+  After first run a settings.yml is auto-generated:
+  nano ~/searxng/core-config/settings.yml
+
+
+================================================================
+  TROUBLESHOOTING
+================================================================
+
+PROBLEM: Permission denied / settings.yml not created
+  chmod 777 ~/searxng/core-config
+  podman-compose up -d
+
+PROBLEM: Invalid port format error
+  In docker-compose.yml, replace the ports line with:
+    - 8080:8080
+
+PROBLEM: Short-name resolution error
+  Prefix the image name with docker.io/ in docker-compose.yml:
+    image: docker.io/searxng/searxng:latest
+
+PROBLEM: Can't reach SearXNG from other devices
+  sudo firewall-cmd --permanent --add-port=8080/tcp
+  sudo firewall-cmd --reload
+
+PROBLEM: Container crashes on startup
+  podman-compose logs -f core
+  (read the error and check above fixes)
+
+
+================================================================
+  OFFICIAL RESOURCES
+================================================================
+
+  Docs:    https://docs.searxng.org
+  GitHub:  https://github.com/searxng/searxng
+
+================================================================
