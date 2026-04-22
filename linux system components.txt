@@ -1,0 +1,531 @@
+================================================================
+LINUX SYSTEM COMPONENTS REFERENCE
+================================================================
+Date: April 21, 2026
+
+----------------------------------------------------------------
+BOOTLOADER
+----------------------------------------------------------------
+What is a Bootloader?
+  The bootloader is the first program that runs when you power
+  on a computer. It loads the operating system kernel into
+  memory and hands control over to it. Without a bootloader
+  the system cannot start.
+
+Boot sequence order:
+  Power on
+      ↓
+  BIOS/UEFI (firmware checks hardware)
+      ↓
+  Bootloader (loads the OS kernel)
+      ↓
+  Kernel (starts the operating system)
+      ↓
+  Init system (starts all services)
+      ↓
+  Desktop/Login screen
+
+THE TWO MAIN BOOTLOADERS
+─────────────────────────
+
+GRUB2 (Grand Unified Bootloader 2)
+  The most widely used bootloader on Linux
+  ✅ Supports BIOS and UEFI systems
+  ✅ Can dual boot multiple operating systems
+  ✅ Highly configurable
+  ✅ Supports encrypted partitions
+  ✅ Has a recovery mode menu
+  Config file location: /etc/default/grub
+  Update grub config:   sudo update-grub
+                        sudo grub-mkconfig -o /boot/grub/grub.cfg
+  Used by: Ubuntu, Fedora, Debian, Kali, Arch, Mint
+
+systemd-boot (formerly gummiboot)
+  Simpler and faster than GRUB
+  ✅ Designed specifically for UEFI systems only
+  ✅ Much simpler configuration
+  ✅ Faster boot times
+  ✅ Built into systemd
+  ❌ No BIOS support
+  ❌ Less flexible than GRUB
+  Config location: /boot/efi/loader/
+  Used by: Arch Linux (optional), Pop OS, some Fedora installs
+
+rEFInd
+  A boot manager for UEFI systems
+  ✅ Auto detects all bootable systems
+  ✅ Nice graphical interface
+  ✅ Great for dual booting macOS and Linux
+  ❌ UEFI only
+  Used by: Optional on most distros, popular on Mac hardware
+
+SYSLINUX / ISOLINUX
+  Lightweight bootloader used mainly for live USBs
+  and rescue disks, not typical installations
+
+GRUB USEFUL COMMANDS
+─────────────────────
+  sudo update-grub              Regenerate grub config (Debian/Ubuntu)
+  sudo grub-mkconfig            Regenerate config manually
+  sudo grub-install /dev/sda    Install grub to a drive
+  cat /etc/default/grub         View grub settings
+  nano /etc/default/grub        Edit grub settings (timeout, default OS etc)
+
+----------------------------------------------------------------
+PACKAGE MANAGERS
+----------------------------------------------------------------
+What is a Package Manager?
+  A package manager is a tool that handles installing, updating,
+  removing, and managing software on your system. It downloads
+  packages from repositories (repos) which are servers that
+  store software maintained for your distro.
+
+  Instead of downloading .exe files like Windows, Linux uses
+  package managers to install everything cleanly with dependency
+  management and easy updates.
+
+TWO LEVELS OF PACKAGE MANAGERS
+────────────────────────────────
+  Low level    Handles the actual package files directly
+               Examples: dpkg, rpm
+               Rarely used directly by users
+
+  High level   Handles downloads, dependencies, and repos
+               Examples: apt, dnf, pacman, zypper
+               What you actually use day to day
+
+─────────────────────────────────────────────────────────────
+APT (Advanced Package Tool)
+─────────────────────────────────────────────────────────────
+  Used by:     Debian, Ubuntu, Kali, Mint, Pop OS, Raspbian
+  Package format: .deb files
+  Underlying tool: dpkg
+
+  Common commands:
+  sudo apt update                Update package list from repos
+  sudo apt upgrade               Upgrade all installed packages
+  sudo apt install <package>     Install a package
+  sudo apt remove <package>      Remove a package (keeps config)
+  sudo apt purge <package>       Remove package AND config files
+  sudo apt autoremove            Remove unused dependencies
+  sudo apt search <keyword>      Search for a package
+  sudo apt show <package>        Show package details
+  sudo apt list --installed      List all installed packages
+  sudo apt full-upgrade          Upgrade including removing old deps
+
+  Config/repos location: /etc/apt/sources.list
+                         /etc/apt/sources.list.d/
+
+  Notes:
+  apt-get is the older version of apt
+  apt is the modern recommended version
+  Both work on Debian based systems
+
+─────────────────────────────────────────────────────────────
+DNF (Dandified YUM)
+─────────────────────────────────────────────────────────────
+  Used by:     Fedora, RHEL, CentOS Stream, Rocky Linux, AlmaLinux
+  Package format: .rpm files
+  Replaced:    YUM (Yellowdog Updater Modified)
+
+  Common commands:
+  sudo dnf update                Update all packages
+  sudo dnf install <package>     Install a package
+  sudo dnf remove <package>      Remove a package
+  sudo dnf search <keyword>      Search for a package
+  sudo dnf info <package>        Show package details
+  sudo dnf list installed        List installed packages
+  sudo dnf autoremove            Remove unused dependencies
+  sudo dnf clean all             Clear package cache
+  sudo dnf upgrade               Upgrade all packages
+
+  Config/repos location: /etc/dnf/dnf.conf
+                         /etc/yum.repos.d/
+
+  Notes:
+  DNF replaced YUM in Fedora 22
+  YUM still exists on older RHEL systems
+  RPM is the low level tool underneath DNF
+
+─────────────────────────────────────────────────────────────
+PACMAN
+─────────────────────────────────────────────────────────────
+  Used by:     Arch Linux, Manjaro, Garuda, EndeavourOS
+  Package format: .pkg.tar.zst files
+  Unique feature: AUR (Arch User Repository) for community packages
+
+  Common commands:
+  sudo pacman -Syu               Sync repos and upgrade everything
+  sudo pacman -S <package>       Install a package
+  sudo pacman -R <package>       Remove a package
+  sudo pacman -Rs <package>      Remove package and unused deps
+  sudo pacman -Ss <keyword>      Search for a package
+  sudo pacman -Si <package>      Show package info
+  sudo pacman -Q                 List all installed packages
+  sudo pacman -Qe                List only explicitly installed packages
+  sudo pacman -Sc                Clear old package cache
+
+  AUR helpers (install AUR packages more easily):
+  yay -S <package>               Install from AUR using yay
+  paru -S <package>              Install from AUR using paru
+
+  Notes:
+  Pacman is known for being fast and simple
+  The AUR gives access to almost any software
+  Rolling release — no major version upgrades needed
+
+─────────────────────────────────────────────────────────────
+ZYPPER
+─────────────────────────────────────────────────────────────
+  Used by:     openSUSE, SUSE Linux Enterprise
+  Package format: .rpm files
+
+  Common commands:
+  sudo zypper refresh            Refresh repos
+  sudo zypper update             Update all packages
+  sudo zypper install <package>  Install a package
+  sudo zypper remove <package>   Remove a package
+  sudo zypper search <keyword>   Search for a package
+
+─────────────────────────────────────────────────────────────
+FLATPAK, SNAP, APPIMAGE (Universal Package Formats)
+─────────────────────────────────────────────────────────────
+  These work across ALL distros regardless of package manager
+
+  Flatpak
+    Sandboxed apps, used heavily on Fedora and desktop Linux
+    sudo flatpak install <app>
+    Repo: Flathub (flathub.org)
+    ✅ Sandboxed and secure
+    ✅ Works on any distro
+    ❌ Larger file sizes
+
+  Snap
+    Canonical's (Ubuntu) universal package format
+    sudo snap install <app>
+    ✅ Auto updates
+    ❌ Slower to launch
+    ❌ Controversial — some distros reject it
+
+  AppImage
+    Single file portable app — no installation needed
+    chmod +x app.AppImage
+    ./app.AppImage
+    ✅ No install required
+    ✅ Portable — carry on USB
+    ❌ No auto updates
+
+PACKAGE MANAGER COMPARISON TABLE
+──────────────────────────────────────────────────────────────
+Manager   Distros              Format   Low Level   Speed
+──────────────────────────────────────────────────────────────
+apt       Debian/Ubuntu/Kali   .deb     dpkg        Fast
+dnf       Fedora/RHEL          .rpm     rpm         Medium
+pacman    Arch/Manjaro         .pkg     pacman      Very fast
+zypper    openSUSE             .rpm     rpm         Medium
+emerge    Gentoo               source   portage     Slow (compiles)
+
+----------------------------------------------------------------
+INIT SYSTEMS
+----------------------------------------------------------------
+What is an Init System?
+  The init system is the first process started by the kernel
+  after boot (always PID 1). It is responsible for starting
+  and managing all other services and processes on the system.
+  It also handles shutdown and service dependencies.
+
+─────────────────────────────────────────────────────────────
+SYSTEMD (Most Common Modern Init System)
+─────────────────────────────────────────────────────────────
+  Used by:  Ubuntu, Fedora, Debian, Kali, Arch, Mint,
+            openSUSE, RHEL, and most modern distros
+  PID:      Always 1
+
+  Manages services called "units"
+  Unit files location: /etc/systemd/system/
+                       /usr/lib/systemd/system/
+
+  Common commands:
+  systemctl start <service>      Start a service
+  systemctl stop <service>       Stop a service
+  systemctl restart <service>    Restart a service
+  systemctl enable <service>     Enable service on boot
+  systemctl disable <service>    Disable service on boot
+  systemctl status <service>     Check service status
+  systemctl list-units           List all active units
+  journalctl -xe                 View system logs
+  journalctl -f                  Follow live logs
+  journalctl -u <service>        View logs for specific service
+
+  ✅ Fast parallel startup
+  ✅ Handles dependencies automatically
+  ✅ Built in logging (journald)
+  ✅ Socket and timer activation
+  ❌ Controversial — does too much for some users
+  ❌ More complex than older init systems
+
+─────────────────────────────────────────────────────────────
+SysVinit (Classic Init System)
+─────────────────────────────────────────────────────────────
+  Used by:  Older Debian, Slackware, legacy systems
+  The original Unix init system
+  Uses runlevels (0-6) to define system states
+
+  Runlevels:
+  0   Halt/shutdown
+  1   Single user mode (rescue)
+  2   Multi-user without networking (Debian)
+  3   Multi-user with networking
+  5   Multi-user with GUI
+  6   Reboot
+
+  Common commands:
+  service <name> start/stop/restart    Manage services
+  /etc/init.d/<service> start          Direct script execution
+
+  ❌ Sequential startup (slow)
+  ❌ No dependency management
+  ❌ Being phased out on most distros
+
+─────────────────────────────────────────────────────────────
+OpenRC
+─────────────────────────────────────────────────────────────
+  Used by:  Gentoo, Alpine Linux, Artix Linux
+  A lightweight dependency based init system
+  Compatible with SysVinit scripts
+
+  rc-service <name> start/stop         Manage services
+  rc-update add <service> default      Enable on boot
+
+  ✅ Lightweight and fast
+  ✅ No systemd dependency
+  ✅ Simple and transparent
+  ❌ Less features than systemd
+
+─────────────────────────────────────────────────────────────
+Runit
+─────────────────────────────────────────────────────────────
+  Used by:  Void Linux, Artix Linux (optional)
+  Extremely minimal and fast init system
+
+  sv start/stop/restart <service>      Manage services
+
+  ✅ Extremely fast boot times
+  ✅ Very simple design
+  ❌ Less documentation
+  ❌ Smaller community
+
+INIT SYSTEM COMPARISON
+──────────────────────────────────────────────────────────────
+Init        Used by              Speed    Complexity
+──────────────────────────────────────────────────────────────
+systemd     Most modern distros  Fast     High
+SysVinit    Legacy/Slackware     Slow     Low
+OpenRC      Gentoo/Alpine/Artix  Fast     Medium
+runit       Void/Artix           Fastest  Very Low
+s6          Artix (optional)     Fast     Medium
+
+----------------------------------------------------------------
+DISPLAY SERVER / RENDER SYSTEM
+----------------------------------------------------------------
+What is a Display Server?
+  The display server is the component that manages the screen,
+  handles input from keyboard and mouse, and communicates
+  between the hardware and the graphical applications.
+  Without it you have no GUI — just a terminal.
+
+─────────────────────────────────────────────────────────────
+X11 / Xorg (The Old Standard)
+─────────────────────────────────────────────────────────────
+  The original Linux display server, been around since 1984
+  Still widely used and supported
+
+  ✅ Extremely stable and mature
+  ✅ Compatible with almost every app and GPU driver
+  ✅ Supports remote desktop (X forwarding over SSH)
+  ✅ Works with every desktop environment
+  ❌ Old architecture with security weaknesses
+  ❌ Apps can spy on each other's input (no isolation)
+  ❌ Screen tearing issues
+  ❌ Not designed for modern hardware
+
+  Config location: /etc/X11/xorg.conf
+
+─────────────────────────────────────────────────────────────
+WAYLAND (The Modern Replacement)
+─────────────────────────────────────────────────────────────
+  Modern display protocol designed to replace X11
+  Becoming the default on most major distros now
+
+  How it works differently from X11:
+    X11:     App → X Server → Compositor → Screen
+    Wayland: App → Compositor → Screen (fewer steps, faster)
+
+  ✅ Better security (apps cannot see each other)
+  ✅ Better performance and smoother animations
+  ✅ No screen tearing
+  ✅ Better HiDPI/scaling support
+  ✅ Better touchscreen and stylus support
+  ✅ Native to modern desktops (GNOME, KDE)
+  ❌ Some older apps still need XWayland compatibility layer
+  ❌ Screen sharing and recording was limited (mostly fixed now)
+  ❌ Some NVIDIA issues (mostly resolved in recent drivers)
+  ❌ Remote desktop support less mature than X11
+
+  Wayland compositors:
+  Mutter       Used by GNOME
+  KWin         Used by KDE Plasma
+  Sway         Tiling window manager (i3 replacement)
+  Hyprland     Popular modern tiling compositor
+  wlroots      Library used by many compositors
+
+  XWayland:
+  A compatibility layer that lets old X11 apps run
+  under Wayland without modification. Installed
+  automatically alongside Wayland on most systems.
+
+X11 vs WAYLAND SUMMARY
+──────────────────────────────────────────────────────────────
+Feature              X11              Wayland
+──────────────────────────────────────────────────────────────
+Age                  Since 1984       Since 2008
+Security             Weak             Strong
+Performance          Good             Better
+Screen tearing       Can happen       No
+App compatibility    Universal        Most apps (via XWayland)
+Remote desktop       Excellent        Getting better
+HiDPI support        Mediocre         Excellent
+NVIDIA support       Full             Now mostly good
+Default on Ubuntu    Since 24.04      Yes
+Default on Fedora    Since F25        Yes
+
+----------------------------------------------------------------
+DISPLAY MANAGERS
+----------------------------------------------------------------
+What is a Display Manager?
+  The display manager (also called a login manager) is the
+  graphical login screen you see when your computer boots.
+  It handles user authentication and launches your chosen
+  desktop environment or window manager session.
+
+  Think of it as the bouncer at the door of your desktop.
+
+─────────────────────────────────────────────────────────────
+GDM (GNOME Display Manager)
+─────────────────────────────────────────────────────────────
+  Used by:  Ubuntu, Fedora, Debian GNOME, Kali (default)
+  Designed for GNOME desktop environment
+
+  ✅ Tight GNOME integration
+  ✅ Supports Wayland sessions natively
+  ✅ Accessibility features built in
+  ✅ Polished and modern look
+  ❌ Heavier on resources
+  ❌ Less customizable than others
+  ❌ Slower than SDDM or LightDM
+
+  Config location: /etc/gdm3/custom.conf
+
+─────────────────────────────────────────────────────────────
+SDDM (Simple Desktop Display Manager)
+─────────────────────────────────────────────────────────────
+  Used by:  KDE Plasma, Manjaro KDE, Fedora KDE,
+            your Fedora machine with Plasma
+  Designed for KDE/Qt desktop environments
+
+  ✅ Fast and lightweight
+  ✅ Highly themeable
+  ✅ Supports Wayland sessions
+  ✅ Works well with KDE Plasma
+  ✅ QML based themes (easy to customize)
+  ❌ Less GNOME friendly
+  ❌ Fewer accessibility features than GDM
+
+  Config location: /etc/sddm.conf
+                   /etc/sddm.conf.d/
+
+─────────────────────────────────────────────────────────────
+LightDM (Light Display Manager)
+─────────────────────────────────────────────────────────────
+  Used by:  Ubuntu MATE, Xubuntu, Linux Mint (some editions),
+            older Ubuntu versions
+  Designed to be lightweight and flexible
+
+  ✅ Very lightweight
+  ✅ Works with any desktop environment
+  ✅ Multiple greeter options (slick-greeter, gtk-greeter)
+  ✅ Easy to configure
+  ❌ Less actively developed recently
+  ❌ Wayland support not as strong
+
+  Config location: /etc/lightdm/lightdm.conf
+
+─────────────────────────────────────────────────────────────
+LXDM
+─────────────────────────────────────────────────────────────
+  Used by:  LXDE desktop environment
+  Very minimal and lightweight
+  ✅ Extremely low resource usage
+  ❌ Basic features only
+  ❌ Limited Wayland support
+
+─────────────────────────────────────────────────────────────
+XDM (X Display Manager)
+─────────────────────────────────────────────────────────────
+  The original X11 display manager
+  Very basic, rarely used today
+  ✅ Minimal
+  ❌ Outdated, no modern features
+
+DISPLAY MANAGER COMPARISON
+──────────────────────────────────────────────────────────────
+DM        Best for        Weight    Wayland   Themeable
+──────────────────────────────────────────────────────────────
+GDM       GNOME           Heavy     ✅ Yes    Limited
+SDDM      KDE Plasma      Light     ✅ Yes    Very much
+LightDM   Any DE          Very light ⚠️ Some  Yes
+LXDM      LXDE            Minimal   ❌ No     Basic
+XDM       Legacy          Minimal   ❌ No     No
+
+----------------------------------------------------------------
+POPULAR DISTROS — WHAT THEY USE
+----------------------------------------------------------------
+
+Distro          Bootloader  Package Mgr  Init      Display      DM
+────────────────────────────────────────────────────────────────────────
+Ubuntu 24.04    GRUB2       apt          systemd   Wayland      GDM
+Fedora 40       GRUB2       dnf          systemd   Wayland      GDM
+Debian 12       GRUB2       apt          systemd   X11/Wayland  GDM/SDDM
+Kali Linux      GRUB2       apt          systemd   X11/Wayland  GDM
+Linux Mint      GRUB2       apt          systemd   X11          LightDM
+Arch Linux      GRUB2/sysdb pacman       systemd   User choice  User choice
+Manjaro         GRUB2       pacman       systemd   Wayland      SDDM/GDM
+Pop OS          syst-boot   apt          systemd   Wayland      GDM
+openSUSE        GRUB2       zypper       systemd   Wayland      GDM/SDDM
+Void Linux      GRUB2       xbps         runit     X11/Wayland  User choice
+Alpine Linux    various     apk          OpenRC    X11          various
+Gentoo          GRUB2       emerge       OpenRC    X11/Wayland  User choice
+Your Fedora     GRUB2       dnf          systemd   Wayland      SDDM+Plasma
+
+----------------------------------------------------------------
+HOW THEY ALL FIT TOGETHER
+----------------------------------------------------------------
+
+  Power on
+      ↓
+  BIOS/UEFI
+      ↓
+  BOOTLOADER (GRUB2)         ← Loads the kernel
+      ↓
+  LINUX KERNEL               ← Takes over hardware
+      ↓
+  INIT SYSTEM (systemd)      ← Starts all services
+      ↓
+  DISPLAY MANAGER (GDM/SDDM) ← Shows login screen
+      ↓
+  DISPLAY SERVER (Wayland)   ← Starts graphical layer
+      ↓
+  DESKTOP ENVIRONMENT        ← Your desktop loads
+  (GNOME/KDE/COSMIC)
+
+================================================================

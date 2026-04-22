@@ -1,0 +1,159 @@
+--------------------------------------------------------------------------------
+SYMBOLIC LINKS
+--------------------------------------------------------------------------------
+
+  A symbolic link (symlink) is a pointer or shortcut that points to another
+  file or directory. It works like a shortcut in Windows. When you access
+  the symlink, the system follows it and accesses the original file.
+
+  Two types of links exist in Linux:
+    Symbolic link (soft link)   Points to a path — can link to files or folders
+    Hard link                   Points to actual data on disk — files only
+
+  CREATING SYMBOLIC LINKS
+  -----------------------
+
+  ln -s <target> <linkname>
+
+    <target>     The EXISTING file or folder you want to point TO
+    <linkname>   The NEW shortcut name you are creating
+
+  CRITICAL: Target always comes FIRST, link name always comes SECOND.
+  Think of it like: "I want <linkname> to point at <target>"
+  But you write it backwards: ln -s <target> <linkname>
+
+  EASY WAY TO REMEMBER
+  --------------------
+
+  ln -s  EXISTING_THING   NEW_SHORTCUT_NAME
+         (points to this) (creates this)
+
+  If you mix them up, the symlink will be created but will be broken
+  because it will be pointing at something that does not exist.
+
+  EXAMPLES — READ LEFT TO RIGHT
+  ------------------------------
+
+  Example 1:
+  Create a symlink named take-the-command-challenge
+  that points to the EXISTING file tmp/files/take-the-command-challenge
+
+    ln -s tmp/files/take-the-command-challenge take-the-command-challenge
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^
+          TARGET (existing file, points TO this)   LINKNAME (new shortcut)
+
+  Result: typing take-the-command-challenge now opens
+          tmp/files/take-the-command-challenge
+
+  ─────────────────────────────────────────────────────────────
+
+  Example 2:
+  Create a shortcut called shortcut.txt that points to /etc/hosts
+
+    ln -s /etc/hosts shortcut.txt
+          ^^^^^^^^^^ ^^^^^^^^^^^^^
+          TARGET      LINKNAME
+
+  Result: cat shortcut.txt now shows the contents of /etc/hosts
+
+  ─────────────────────────────────────────────────────────────
+
+  Example 3:
+  Create a shortcut called logs that points to the /var/log directory
+
+    ln -s /var/log logs
+          ^^^^^^^^ ^^^^
+          TARGET    LINKNAME
+
+  Result: cd logs now takes you into /var/log
+
+  ─────────────────────────────────────────────────────────────
+
+  Example 4:
+  Create a shortcut to rockyou.txt in your home directory
+  so you dont have to type the full path every time
+
+    ln -s /usr/share/wordlists/rockyou.txt ~/rockyou.txt
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^
+          TARGET (existing wordlist)         LINKNAME (shortcut in home dir)
+
+  Result: hydra -P ~/rockyou.txt instead of typing the full path
+
+  ─────────────────────────────────────────────────────────────
+
+  Example 5:
+  Make the python command point to python3
+
+    ln -s /usr/bin/python3 /usr/bin/python
+          ^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^
+          TARGET (python3)   LINKNAME (python command)
+
+  Result: typing python now runs python3
+
+  VIEWING SYMBOLIC LINKS
+  ----------------------
+
+  ls -la                       Symlinks show with an arrow pointing to their target
+                               Example output:
+                               lrwxrwxrwx 1 neo neo 32 Apr 18 take-the-command-challenge -> tmp/files/take-the-command-challenge
+
+  The l at the start of permissions means it is a symbolic link.
+  The -> shows what the link points to.
+
+  readlink <linkname>          Show what a symlink points to
+  readlink -f <linkname>       Show the full absolute resolved path
+
+  Examples:
+  readlink take-the-command-challenge      tmp/files/take-the-command-challenge
+  readlink -f shortcut.txt                 /etc/hosts
+
+  REMOVING SYMBOLIC LINKS
+  -----------------------
+
+  rm <linkname>                Remove a symlink (does NOT delete the original file)
+  unlink <linkname>            Alternative way to remove a symlink
+
+  Examples:
+  rm take-the-command-challenge            Removes the link, original file untouched
+  unlink shortcut.txt                      Same result
+
+  WARNING: Do NOT use rm -r on a symlink pointing to a directory.
+  It can delete the contents of the original directory.
+
+  BROKEN SYMBOLIC LINKS
+  ---------------------
+
+  A broken symlink happens when you accidentally put the link name first
+  and the target second, OR when the original target file gets deleted
+  or moved after the symlink was created.
+
+  Broken symlink symptoms:
+    Shows in red in terminal
+    Gives "No such file or directory" when accessed
+    The arrow in ls -la points to something that does not exist
+
+  find . -xtype l              Find all broken symlinks in current directory
+  find / -xtype l 2>/dev/null  Find all broken symlinks on entire system
+
+  PRACTICAL USE CASES
+  -------------------
+
+  ln -s /opt/metasploit/msfconsole /usr/local/bin/msf    Run msf from anywhere
+  ln -s /mnt/share/tools ~/tools                         Quick access to mounted tools
+  ln -s /var/log/apache2 ~/logs                          Quick access to apache logs
+  ln -s /usr/bin/python3 /usr/bin/python                 Fix python command
+
+  SYMLINK vs HARD LINK SUMMARY
+  ----------------------------
+
+  Feature              Symlink            Hard Link
+  ────────────────────────────────────────────────────
+  Created with         ln -s              ln (no flag)
+  Can link dirs        Yes                No
+  Works cross disk     Yes                No
+  Shows arrow in ls    Yes                No
+  Breaks if target     Yes                No
+  moves or is deleted
+  Original deleted     Link breaks        File still accessible
+
+--------------------------------------------------------------------------------

@@ -1,0 +1,379 @@
+================================================================================
+                         GREP - COMPLETE REFERENCE GUIDE
+================================================================================
+
+grep = Global Regular Expression Print
+Used to search for patterns in files or input streams.
+
+BASIC SYNTAX
+------------
+  grep [OPTIONS] PATTERN [FILE...]
+  grep [OPTIONS] -e PATTERN [FILE...]
+  grep [OPTIONS] -f PATTERN_FILE [FILE...]
+
+
+================================================================================
+                              ALL FLAGS / OPTIONS
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+PATTERN MATCHING FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  -e PATTERN        Specify the pattern explicitly. Useful when using multiple
+                    patterns or when the pattern starts with a dash (-).
+                    Example:
+                      grep -e "error" -e "warning" log.txt
+                    → Finds lines containing "error" OR "warning"
+
+  -f FILE           Read patterns from a file (one pattern per line).
+                    Example:
+                      grep -f patterns.txt data.txt
+                    → patterns.txt contains the search terms, data.txt is searched
+
+  -i                Ignore case (case-insensitive search).
+                    Example:
+                      grep -i "hello" file.txt
+                    → Matches "hello", "Hello", "HELLO", "HeLLo", etc.
+
+  -v                Invert match — print lines that do NOT match the pattern.
+                    Example:
+                      grep -v "error" log.txt
+                    → Prints every line that does NOT contain "error"
+
+  -w                Match whole words only. The pattern must match a complete word.
+                    Example:
+                      grep -w "log" file.txt
+                    → Matches "log" but NOT "login", "catalog", "dialog"
+
+  -x                Match whole lines only. The entire line must match the pattern.
+                    Example:
+                      grep -x "hello world" file.txt
+                    → Only matches lines that are exactly "hello world"
+
+  -F                Treat the pattern as a fixed string (no regex interpretation).
+                    Also written as --fixed-strings.
+                    Example:
+                      grep -F "192.168.1.1" access.log
+                    → Searches literally for "192.168.1.1" (dots are not wildcards)
+
+  -E                Use Extended Regular Expressions (ERE). Enables +, ?, |, {}, ().
+                    Also written as --extended-regexp. Same as using egrep.
+                    Example:
+                      grep -E "cat|dog|bird" animals.txt
+                    → Matches lines containing "cat", "dog", or "bird"
+
+  -P                Use Perl-Compatible Regular Expressions (PCRE).
+                    Enables lookaheads, lookbehinds, \d, \w, \s, etc.
+                    Example:
+                      grep -P "\d{3}-\d{4}" contacts.txt
+                    → Matches phone number patterns like "555-1234"
+
+────────────────────────────────────────────────────────────────────────────────
+OUTPUT CONTROL FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  -l                Print only the NAMES of files that contain a match
+                    (one filename per line). Stops reading a file after first match.
+                    Also written as --files-with-matches.
+                    Example:
+                      grep -l "TODO" *.py
+                    → Prints the names of all Python files that contain "TODO"
+                    Output:
+                      main.py
+                      utils.py
+                      parser.py
+
+  -L                Print only the NAMES of files that do NOT contain a match.
+                    Also written as --files-without-match.
+                    Example:
+                      grep -L "TODO" *.py
+                    → Prints names of Python files with no "TODO" in them
+
+  -c                Print only a count of matching lines per file (not the lines).
+                    Also written as --count.
+                    Example:
+                      grep -c "error" log.txt
+                    → Output: 42   (42 lines matched)
+                    With multiple files:
+                      grep -c "error" *.log
+                    → Output:
+                        app.log:12
+                        system.log:7
+                        error.log:31
+
+  -m NUM            Stop reading a file after NUM matching lines.
+                    Also written as --max-count=NUM.
+                    Example:
+                      grep -m 5 "error" log.txt
+                    → Prints only the first 5 matching lines, then stops
+
+  -o                Print only the matched part of each line (not the whole line).
+                    Also written as --only-matching.
+                    Example:
+                      grep -o "[0-9]\+" file.txt
+                    → Extracts and prints only the numbers found in each line
+
+  -q                Quiet mode — print nothing, just return exit code.
+                    Exit 0 = match found, Exit 1 = no match.
+                    Also written as --quiet or --silent.
+                    Example:
+                      grep -q "error" log.txt && echo "Errors found!"
+                    → No output from grep itself; used in scripts for conditionals
+
+  -s                Suppress error messages about nonexistent or unreadable files.
+                    Also written as --no-messages.
+                    Example:
+                      grep -s "hello" missing_file.txt
+                    → Runs silently even if file doesn't exist
+
+────────────────────────────────────────────────────────────────────────────────
+LINE NUMBER & CONTEXT FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  -n                Print line numbers before each matching line.
+                    Also written as --line-number.
+                    Example:
+                      grep -n "error" log.txt
+                    → Output:
+                        14:error: disk full
+                        57:error: connection timeout
+
+  -A NUM            Print NUM lines AFTER each matching line (After context).
+                    Also written as --after-context=NUM.
+                    Example:
+                      grep -A 3 "Exception" error.log
+                    → Prints matching line + 3 lines following it
+
+  -B NUM            Print NUM lines BEFORE each matching line (Before context).
+                    Also written as --before-context=NUM.
+                    Example:
+                      grep -B 2 "Exception" error.log
+                    → Prints 2 lines before the match + the matching line
+
+  -C NUM            Print NUM lines BEFORE AND AFTER each match (Context).
+                    Also written as --context=NUM.
+                    Example:
+                      grep -C 2 "Exception" error.log
+                    → Prints 2 lines before, the match, and 2 lines after
+
+────────────────────────────────────────────────────────────────────────────────
+FILE & DIRECTORY FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  -r                Recursively search all files in a directory and subdirectories.
+                    Also written as --recursive.
+                    Example:
+                      grep -r "TODO" ./src/
+                    → Searches every file inside ./src/ and all subdirectories
+
+  -R                Same as -r but also follows symbolic links.
+                    Example:
+                      grep -R "config" /etc/
+                    → Recursively searches /etc/ including symlinked directories
+
+  --include=GLOB    Only search files matching the glob pattern (used with -r).
+                    Example:
+                      grep -r --include="*.py" "import os" .
+                    → Searches only .py files recursively
+
+  --exclude=GLOB    Skip files matching the glob pattern (used with -r).
+                    Example:
+                      grep -r --exclude="*.log" "error" .
+                    → Recursively searches but ignores .log files
+
+  --exclude-dir=DIR Exclude directories from recursive search.
+                    Example:
+                      grep -r --exclude-dir=".git" "TODO" .
+                    → Skips the .git directory during recursive search
+
+────────────────────────────────────────────────────────────────────────────────
+DISPLAY & FORMAT FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  --color           Highlight matching text in color (usually red).
+                    Values: always, auto, never
+                    Example:
+                      grep --color=always "error" log.txt
+                    → Matching text is highlighted in color
+
+  -H                Always print the filename with each match (default with
+                    multiple files). Also written as --with-filename.
+                    Example:
+                      grep -H "error" log.txt
+                    → Output: log.txt:error: disk full
+
+  -h                Suppress filename from output (default with single file).
+                    Also written as --no-filename.
+                    Example:
+                      grep -h "error" *.log
+                    → Prints matching lines without filenames
+
+  -T                Print a tab after the filename (for alignment).
+                    Example:
+                      grep -T -n "error" *.log
+                    → Aligns output columns neatly
+
+  --label=LABEL     Use LABEL as the filename when reading from stdin.
+                    Example:
+                      cat file.txt | grep --label="myfile" -H "error"
+                    → Output: myfile:error: disk full
+
+────────────────────────────────────────────────────────────────────────────────
+BINARY & ENCODING FLAGS
+────────────────────────────────────────────────────────────────────────────────
+
+  -a                Process binary files as if they were text.
+                    Also written as --text.
+                    Example:
+                      grep -a "error" binary_log.bin
+                    → Searches inside binary files
+
+  -I                Ignore binary files (treat them as having no matches).
+                    Example:
+                      grep -rI "TODO" .
+                    → Recursively searches but silently skips binary files
+
+  -U                Treat the file as binary (do not strip CR characters on Windows).
+                    Also written as --binary.
+
+  -z                Treat input as a set of lines each terminated by a zero byte
+                    instead of a newline. Useful with find -print0.
+                    Also written as --null-data.
+                    Example:
+                      find . -name "*.txt" -print0 | xargs -0 grep -z "hello"
+
+
+================================================================================
+                          COMBINING FLAGS — REAL EXAMPLES
+================================================================================
+
+  1. Case-insensitive search with line numbers:
+       grep -in "warning" system.log
+     → Shows line numbers for all "warning" / "WARNING" / "Warning" matches
+
+  2. Find all .js files containing "console.log":
+       grep -rl "console.log" ./src/ --include="*.js"
+     → Lists filenames only, recursively, only .js files
+
+  3. Count errors per log file:
+       grep -c "ERROR" *.log
+     → Shows how many error lines each log file has
+
+  4. Show 3 lines of context around each crash:
+       grep -C 3 "CRASH" app.log
+     → Helps understand what happened before and after each crash
+
+  5. Extract all IP addresses from a file:
+       grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" access.log
+     → Prints only the IP address strings, one per line
+
+  6. Find files NOT containing a pattern:
+       grep -rL "license" ./src/ --include="*.py"
+     → Lists Python source files that are missing a license header
+
+  7. Search quietly in a shell script:
+       if grep -q "enabled" config.txt; then
+           echo "Feature is enabled"
+       fi
+     → Use grep as a condition — no output, just true/false
+
+  8. Ignore binary files during recursive search:
+       grep -rI "password" .
+     → Searches text files only, skips binaries silently
+
+  9. Show first 3 matches only:
+       grep -m 3 "fail" test_output.txt
+     → Stops after finding 3 matches
+
+  10. Multi-pattern search (OR logic):
+        grep -E "error|warn|critical" app.log
+      → Matches any line containing at least one of these words
+
+  11. Whole-word search:
+        grep -w "fail" results.txt
+      → Matches "fail" but not "failure", "failover", "nofail"
+
+  12. Invert + recursive to find files without a shebang:
+        grep -rL "^#!" ./scripts/
+      → Lists script files that don't have a shebang line
+
+  13. Pipe with grep:
+        ps aux | grep -v "grep" | grep "python"
+      → List running Python processes (exclude grep itself from results)
+
+  14. Search with fixed string (no regex):
+        grep -F "price * tax" invoice.txt
+      → Searches literally for "price * tax" (asterisk is NOT a wildcard)
+
+  15. Recursive search excluding node_modules and .git:
+        grep -r --exclude-dir={node_modules,.git} "TODO" .
+      → Common pattern in JavaScript/Node.js projects
+
+
+================================================================================
+                              EXIT CODES
+================================================================================
+
+  0    One or more matches found
+  1    No matches found
+  2    An error occurred (e.g., file not found, invalid option)
+
+  These are especially useful in shell scripts:
+    grep -q "ready" status.txt
+    if [ $? -eq 0 ]; then echo "System is ready"; fi
+
+
+================================================================================
+                       QUICK FLAG CHEAT SHEET
+================================================================================
+
+  Flag    | Meaning
+  --------|----------------------------------------------------------
+  -i      | Case-insensitive
+  -v      | Invert (non-matching lines)
+  -w      | Whole word only
+  -x      | Whole line only
+  -n      | Show line numbers
+  -c      | Count matching lines
+  -l      | Show filenames with matches
+  -L      | Show filenames WITHOUT matches
+  -r      | Recursive (directories)
+  -R      | Recursive + follow symlinks
+  -o      | Print only matched part
+  -q      | Quiet (exit code only)
+  -s      | Suppress file errors
+  -m NUM  | Stop after NUM matches
+  -A NUM  | NUM lines after match
+  -B NUM  | NUM lines before match
+  -C NUM  | NUM lines before AND after match
+  -E      | Extended regex (same as egrep)
+  -F      | Fixed string (no regex)
+  -P      | Perl-compatible regex
+  -H      | Always print filename
+  -h      | Never print filename
+  -a      | Treat binary as text
+  -I      | Ignore binary files
+  -e PAT  | Explicit pattern (allows multiple)
+  -f FILE | Read patterns from file
+  --color | Highlight matches
+  --include=GLOB  | Limit to matching filenames
+  --exclude=GLOB  | Skip matching filenames
+  --exclude-dir=  | Skip matching directories
+
+
+================================================================================
+                        GREP VARIANTS (ALIASES)
+================================================================================
+
+  egrep   = grep -E   (Extended regular expressions)
+  fgrep   = grep -F   (Fixed string, no regex)
+  rgrep   = grep -r   (Recursive)
+
+  These variants are available on most Unix systems but grep with flags
+  is preferred for clarity and portability.
+
+
+================================================================================
+END OF REFERENCE
+================================================================================
