@@ -1,0 +1,236 @@
+================================================================================
+                         ZSH & OH MY ZSH — SETUP NOTES
+================================================================================
+
+
+================================================================================
+  1. WHAT IS ZSH?
+================================================================================
+
+  ZSH (Z Shell) is a shell — the program that runs in your terminal and
+  interprets your commands. It's like the engine of your terminal.
+
+  Fedora can use several shells (bash, zsh, fish, etc). ZSH is more powerful
+  than the default bash shell and supports better autocomplete, globbing,
+  and customization.
+
+  You were already running ZSH — it showed "zsh" at the top of Konsole.
+  ZSH alone is plain with no colors or fancy prompt, just a basic command line.
+
+
+================================================================================
+  2. WHAT IS OH MY ZSH?
+================================================================================
+
+  Oh My Zsh is a framework that sits ON TOP of zsh.
+  It is NOT a separate shell — it's a customization layer.
+
+  Think of it like this:
+    ZSH          = the car engine
+    Oh My Zsh    = the custom paint, rims, interior, dashboard
+
+  Oh My Zsh gives you:
+    - Themes (changes how your prompt looks — colors, icons, git info)
+    - Plugins (adds extra functionality to your terminal)
+    - Easy configuration through ~/.zshrc
+
+  Without Oh My Zsh your zsh prompt is plain and boring.
+  With Oh My Zsh it can show your current folder, git branch,
+  error codes, time, and more — all in color.
+
+
+================================================================================
+  3. HOW ZSH AND OH MY ZSH WERE INSTALLED
+================================================================================
+
+  ZSH was already installed on Fedora KDE by default.
+
+  Oh My Zsh was installed by running this one-liner in the terminal:
+
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+  What that command does:
+    - curl         = downloads the install script from the internet
+    - -fsSL        = flags: fail silently, follow redirects, show errors only
+    - sh -c        = runs the downloaded script in the shell immediately
+    - The script   = creates ~/.oh-my-zsh folder and sets up the config
+
+  During install it asked:
+    "Do you want to overwrite your .zshrc with the Oh My Zsh template? [Y/n]"
+    → Answered Y
+
+  This backed up the old config to:
+    ~/.zshrc.pre-oh-my-zsh
+
+  And wrote a fresh Oh My Zsh template to:
+    ~/.zshrc
+
+
+================================================================================
+  4. POWERLEVEL10K THEME
+================================================================================
+
+  The default Oh My Zsh theme is "robbyrussell" — simple arrow prompt.
+  Powerlevel10k is the most popular advanced theme — shows git status,
+  icons, path, time, error codes, and more in a highly visual prompt.
+
+  Install Powerlevel10k:
+
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
+
+  What that does:
+    - git clone    = downloads the theme from GitHub
+    - --depth=1    = only downloads the latest version (faster, saves space)
+    - The path     = saves it into Oh My Zsh's custom themes folder
+
+  Then set it in ~/.zshrc:
+    ZSH_THEME="powerlevel10k/powerlevel10k"
+
+  After sourcing .zshrc it launches an interactive setup wizard that
+  lets you visually configure your prompt style.
+
+  Recommended font for icons to render correctly:
+    sudo dnf install jetbrains-mono-fonts
+  Then set font in Konsole: Settings → Edit Current Profile → Appearance
+
+
+================================================================================
+  5. PLUGINS — WHAT THEY ARE AND HOW TO INSTALL THEM
+================================================================================
+
+  Plugins add extra features and commands to your terminal.
+  They are listed in ~/.zshrc like this:
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+  ── PLUGIN: git ──────────────────────────────────────────────────────────────
+
+  Comes built into Oh My Zsh. No install needed.
+
+  Gives you short aliases for common git commands:
+    gst    →  git status
+    gco    →  git checkout
+    gcm    →  git commit -m
+    gp     →  git push
+    gl     →  git pull
+    gd     →  git diff
+
+  Useful if you work with git repositories regularly.
+
+  ── PLUGIN: zsh-autosuggestions ──────────────────────────────────────────────
+
+  As you type a command, it shows a faded grey suggestion based on your
+  command history. Press the → right arrow key to accept the suggestion.
+
+  Example:
+    You type:  ssh
+    It shows:  ssh neo@192.168.1.1   ← (faded, from your history)
+    Press →    accepts the full command
+
+  Install:
+    git clone https://github.com/zsh-users/zsh-autosuggestions \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+  ── PLUGIN: zsh-syntax-highlighting ──────────────────────────────────────────
+
+  Colors your command AS YOU TYPE before you hit Enter:
+    Green  = valid command that exists
+    Red    = typo or command not found
+
+  Lets you catch mistakes before running them.
+
+  Example:
+    grpe      ← turns red (typo)
+    grep      ← turns green (valid)
+
+  Install:
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+  ── ENABLING ALL PLUGINS ─────────────────────────────────────────────────────
+
+  After installing, open ~/.zshrc and set:
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+  Then apply:
+    source ~/.zshrc
+
+
+================================================================================
+  6. CUSTOM CD FUNCTION (AUTO LS SCRIPT)
+================================================================================
+
+  This function overrides the default cd command so that every time
+  you change into a directory it automatically lists the contents.
+  No more typing ls after every cd.
+
+  Add this to the bottom of ~/.zshrc:
+
+    function cd() {
+        new_directory="$*";
+        if [ $# -eq 0 ]; then
+            new_directory=${HOME};
+        fi;
+        builtin cd "${new_directory}" && /bin/ls -lhF --time-style=long-iso --color=auto --ignore=lost+found
+    }
+
+  What each ls flag does:
+    -l              = long format (shows permissions, size, date, owner)
+    -h              = human readable sizes (KB, MB instead of bytes)
+    -F              = adds / after folders, * after executables
+    --time-style=long-iso  = shows date in clean YYYY-MM-DD HH:MM format
+    --color=auto    = colorizes output (folders blue, executables green, etc)
+    --ignore=lost+found    = hides the lost+found system folder from output
+
+  The function logic:
+    - If you type cd with no arguments → goes to home directory (~)
+    - If you type cd /some/path → goes there and lists contents
+    - builtin cd is used so it calls the real cd, not itself recursively
+
+
+================================================================================
+  7. FINAL ~/.zshrc STRUCTURE
+================================================================================
+
+  # Oh My Zsh setup
+  export ZSH="$HOME/.oh-my-zsh"
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+  plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+  source $ZSH/oh-my-zsh.sh
+
+  # Auto ls when changing directory
+  function cd() {
+      new_directory="$*";
+      if [ $# -eq 0 ]; then
+          new_directory=${HOME};
+      fi;
+      builtin cd "${new_directory}" && /bin/ls -lhF --time-style=long-iso --color=auto --ignore=lost+found
+  }
+
+
+================================================================================
+  8. QUICK COMMAND REFERENCE
+================================================================================
+
+  Apply changes after editing .zshrc:
+    source ~/.zshrc
+
+  Open .zshrc for editing:
+    nano ~/.zshrc
+
+  Check what shell you are using:
+    echo $SHELL
+
+  Check zsh version:
+    zsh --version
+
+  Back up .zshrc before editing:
+    cp ~/.zshrc ~/Desktop/zshrc_backup
+
+  See Oh My Zsh themes list:
+    ls ~/.oh-my-zsh/themes/
+
+
+================================================================================
+END OF NOTES
+================================================================================
