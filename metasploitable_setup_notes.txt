@@ -1,0 +1,244 @@
+================================================================================
+              METASPLOITABLE 2 — SETUP NOTES
+              KVM + Virt-Manager on Fedora
+================================================================================
+
+
+================================================================================
+  1. WHAT IS METASPLOITABLE 2?
+================================================================================
+
+  Metasploitable 2 is an intentionally vulnerable Linux virtual machine made
+  by Rapid7. It is designed as a safe practice target for learning penetration
+  testing and ethical hacking.
+
+  It runs old versions of services with known vulnerabilities — FTP, SSH, HTTP,
+  Samba, MySQL and more — all with weak passwords and open ports on purpose.
+
+  IMPORTANT: Always run it on an isolated/host-only network.
+             Never expose it to the internet or your real network.
+
+
+================================================================================
+  2. WHAT IS KVM AND VIRT-MANAGER?
+================================================================================
+
+  KVM (Kernel-based Virtual Machine)
+  ------------------------------------
+  KVM is virtualization technology built directly into the Linux kernel.
+  It is NOT the physical KVM switch device — completely different thing,
+  just the same acronym.
+
+    KVM (this)   = Kernel-based Virtual Machine (software, inside Linux)
+    KVM switch   = physical device to share keyboard/video/mouse between PCs
+
+  KVM uses your CPU's built-in virtualization features:
+    Intel = VT-x
+    AMD   = AMD-V
+
+  Check if your CPU supports it:
+    grep -E 'vmx|svm' /proc/cpuinfo
+    (vmx = Intel | svm = AMD — if output appears, you're supported)
+
+  Virt-Manager
+  ------------
+  Virt-Manager is the graphical interface that sits on top of KVM.
+  Lets you create and manage VMs through a GUI instead of command line.
+
+  Why KVM + Virt-Manager over VMware:
+    - No account or sign-in required
+    - Built into the Linux kernel — no extra drivers needed
+    - Fully open source, maintained by Red Hat (same company as Fedora)
+    - Better performance — talks directly to the CPU
+
+
+================================================================================
+  3. INSTALLING KVM AND VIRT-MANAGER
+================================================================================
+
+  Install all required packages:
+    sudo dnf install virt-manager libvirt qemu-kvm
+
+  Enable and start the virtualization service:
+    sudo systemctl enable --now libvirtd
+
+  Add your user to the libvirt group (no sudo needed after this):
+    sudo usermod -aG libvirt $USER
+
+  Log out and back in, then launch:
+    virt-manager
+
+
+================================================================================
+  4. DOWNLOADING METASPLOITABLE 2
+================================================================================
+
+  Download from Rapid7's official site (faster than SourceForge):
+    https://docs.rapid7.com/metasploit/metasploitable-2
+
+  Or download via terminal with wget:
+    wget -c "https://sourceforge.net/projects/metasploitable/files/Metasploitable2/metasploitable-linux-2.0.0.zip"
+
+    Note: -c flag means download resumes if interrupted
+
+  Extract the zip after downloading:
+    unzip metasploitable-linux-2.0.0.zip -d ~/Downloads/metasploitable
+
+  This gives you a folder containing a .vmdk file (virtual hard disk).
+
+
+================================================================================
+  5. CREATING THE VM IN VIRT-MANAGER
+================================================================================
+
+  Open Virt-Manager > New Virtual Machine. Settings:
+
+    Step 1:  Choose "Import existing disk image"
+    Step 2:  Browse to the .vmdk file you extracted
+    Step 3:  Set OS type to Linux > Ubuntu (closest match)
+    Step 4:  Memory = 512 MB | CPUs = 1
+    Step 5:  Check "Customize configuration before install"
+    Network: Change to "hostonly" isolated network (see Section 6)
+    Name:    Metasploitable 2
+
+
+================================================================================
+  6. SETTING UP HOST-ONLY NETWORK
+================================================================================
+
+  Host-only networking creates a completely isolated private network that only
+  exists between your Fedora machine and the VM. The VM cannot reach the
+  internet or your real network.
+
+  Network modes explained:
+    NAT        — VM shares your internet. VM can reach internet, internet
+                 cannot reach VM directly
+    Bridge     — VM acts like a real separate PC on your network, visible
+                 to all devices including your router and switch
+    Host-only  — VM can ONLY talk to your Fedora machine. Completely
+                 isolated. Nothing outside can see it.
+
+  Create the host-only network (run once):
+    sudo virsh net-define /dev/stdin << 'EOF'
+    <network>
+      <name>hostonly</name>
+      <bridge name="virbr1"/>
+    </network>
+    EOF
+
+  Start it and enable autostart on boot:
+    sudo virsh net-start hostonly
+    sudo virsh net-autostart hostonly
+
+  Now select "hostonly" from the network dropdown in the VM setup.
+
+
+================================================================================
+  7. FIXING THE DISK BUS (SATA FIX)
+================================================================================
+
+  Metasploitable's .vmdk was made for VMware which uses a different disk
+  controller. KVM defaults to VirtIO which Metasploitable has no drivers for,
+  causing this boot error:
+
+    ALERT! /dev/mapper/metasploitable-root does not exist. Dropping to a shell!
+
+  The fix is changing the disk bus from VirtIO to SATA via XML config:
+
+  Step 1 — Export the VM config to a file:
+    sudo virsh --connect qemu:///system dumpxml "Metasploitable 2" > ~/metasploitable.xml
+
+  Step 2 — Edit the file:
+    nano ~/metasploitable.xml
+
+  Step 3 — Find this in the disk section:
+    <target dev='vda' bus='virtio'/>
+    <address type='pci' domain='0x0000' bus='0x00' slot='0x07' function='0x0'/>
+
+  Step 4 — Replace with:
+    <target dev='sda' bus='sata'/>
+    <address type='drive' controller='0' bus='0' target='0' unit='0'/>
+
+  Step 5 — Save and reload the config:
+    sudo virsh --connect qemu:///system define ~/metasploitable.xml
+
+  Step 6 — Start the VM:
+    virsh --connect qemu:///system start "Metasploitable 2"
+
+
+================================================================================
+  8. LOGGING IN
+================================================================================
+
+  Once booted you will see a Linux login prompt.
+  Default credentials:
+
+    username: msfadmin
+    password: msfadmin
+
+  Find the VM's IP address after logging in:
+    ifconfig
+
+  Note the inet address — you will use this IP from your Fedora machine
+  to scan and attack it.
+
+
+================================================================================
+  9. USEFUL COMMANDS REFERENCE
+================================================================================
+
+  VIRT-MANAGER / VIRSH
+  ---------------------
+  List all VMs:
+    virsh --connect qemu:///system list --all
+
+  Force stop a VM (like pulling the power cable):
+    virsh --connect qemu:///system destroy "Metasploitable 2"
+
+  Start a VM:
+    virsh --connect qemu:///system start "Metasploitable 2"
+
+  Export VM XML config:
+    sudo virsh --connect qemu:///system dumpxml "Metasploitable 2" > ~/metasploitable.xml
+
+  Reload VM from edited XML:
+    sudo virsh --connect qemu:///system define ~/metasploitable.xml
+
+  List virtual networks:
+    virsh --connect qemu:///system net-list --all
+
+
+  RELEASE MOUSE FROM VM
+  ----------------------
+  Press:  Left Ctrl + Left Alt
+  This releases focus back to your Fedora desktop.
+  NOTE: Never press Ctrl+Alt+Del inside the VM — that reboots it!
+
+
+  SCANNING AND RECON (run from Fedora, NOT inside the VM)
+  --------------------------------------------------------
+  Scan open ports and services:
+    nmap -sV <metasploitable-ip>
+
+  Aggressive scan with OS detection:
+    nmap -A <metasploitable-ip>
+
+  Scan all 65535 ports:
+    nmap -p- <metasploitable-ip>
+
+  Web vulnerability scan:
+    nikto -h http://<metasploitable-ip>
+
+
+  FILE OPERATIONS
+  ---------------
+  Extract a zip:
+    unzip file.zip -d /destination/folder
+
+  Resume interrupted download:
+    wget -c "url"
+
+
+================================================================================
+END OF NOTES
+================================================================================
