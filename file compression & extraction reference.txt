@@ -1,0 +1,340 @@
+================================================================
+FILE COMPRESSION & EXTRACTION REFERENCE
+================================================================
+
+----------------------------------------------------------------
+OVERVIEW
+----------------------------------------------------------------
+Linux uses several different compression formats.
+Each format has its own tool to compress and extract.
+Knowing which tool to use depends on the file extension.
+
+Quick reference:
+  .gz          use gunzip or gzip
+  .zip         use unzip or zip
+  .tar         use tar
+  .tar.gz      use tar with flags
+  .tar.bz2     use tar with flags
+  .tar.xz      use tar with flags
+  .bz2         use bunzip2 or bzip2
+  .xz          use xz
+  .7z          use 7zip or 7z
+  .rar         use unrar
+
+----------------------------------------------------------------
+GUNZIP / GZIP
+----------------------------------------------------------------
+What it is:
+  gzip is a compression tool that creates .gz files
+  gunzip is the decompression counterpart
+  Works on single files only, not directories
+
+GUNZIP - Extracting/Decompressing .gz files
+-------------------------------------------
+  gunzip <file.gz>               Extract file, removes the .gz file after
+  gunzip -k <file.gz>            Extract but KEEP the original .gz file
+  gunzip -v <file.gz>            Verbose, shows compression ratio info
+  gunzip -l <file.gz>            List info about the file without extracting
+  gunzip -f <file.gz>            Force extract even if file already exists
+  gzip -d <file.gz>              Alternative way to decompress (same as gunzip)
+
+Examples:
+  gunzip rockyou.txt.gz
+  (extracts rockyou.txt, deletes rockyou.txt.gz)
+
+  gunzip -k rockyou.txt.gz
+  (extracts rockyou.txt, keeps rockyou.txt.gz)
+
+  gunzip -v rockyou.txt.gz
+  (extracts and shows: rockyou.txt.gz: 60.3% -- replaced with rockyou.txt)
+
+  sudo gunzip /usr/share/wordlists/rockyou.txt.gz
+  (decompress rockyou wordlist in place, needs sudo for that directory)
+
+GZIP - Compressing files into .gz
+----------------------------------
+  gzip <file>                    Compress a file, removes original after
+  gzip -k <file>                 Compress but KEEP the original file
+  gzip -v <file>                 Verbose, shows compression ratio
+  gzip -1 <file>                 Fast compression, larger file size
+  gzip -9 <file>                 Best compression, slower, smallest file
+  gzip -r <directory>            Compress all files inside a directory
+
+Examples:
+  gzip notes.txt
+  (creates notes.txt.gz, deletes notes.txt)
+
+  gzip -k scan_results.txt
+  (creates scan_results.txt.gz, keeps scan_results.txt)
+
+  gzip -9 bigfile.txt
+  (maximum compression)
+
+----------------------------------------------------------------
+UNZIP / ZIP
+----------------------------------------------------------------
+What it is:
+  zip creates .zip archives (can contain multiple files)
+  unzip extracts .zip archives
+  .zip is the most common format from Windows systems
+
+UNZIP - Extracting .zip files
+------------------------------
+  unzip <file.zip>               Extract to current directory
+  unzip <file.zip> -d <dir>      Extract to a specific directory
+  unzip -l <file.zip>            List contents without extracting
+  unzip -v <file.zip>            Verbose list with details
+  unzip -o <file.zip>            Overwrite existing files without asking
+  unzip -n <file.zip>            Never overwrite existing files
+  unzip -q <file.zip>            Quiet mode, no output
+  unzip -P <password> <file.zip> Extract a password protected zip
+
+Examples:
+  unzip tools.zip
+  (extracts everything to current directory)
+
+  unzip tools.zip -d /opt/tools/
+  (extracts everything into /opt/tools/)
+
+  unzip -l archive.zip
+  (shows list of files inside without extracting)
+
+  unzip -P secretpass protected.zip
+  (extract a zip that has a password)
+
+  unzip -o updated_files.zip
+  (overwrite existing files without asking for confirmation)
+
+ZIP - Creating .zip files
+--------------------------
+  zip <archive.zip> <file>       Create zip with a single file
+  zip <archive.zip> <f1> <f2>    Create zip with multiple files
+  zip -r <archive.zip> <dir>     Zip an entire directory recursively
+  zip -e <archive.zip> <file>    Create encrypted/password protected zip
+  zip -u <archive.zip> <file>    Update an existing zip with new file
+  zip -d <archive.zip> <file>    Delete a file from inside a zip
+  zip -9 <archive.zip> <file>    Maximum compression level
+
+Examples:
+  zip results.zip scan1.txt scan2.txt
+  (create zip containing two files)
+
+  zip -r project.zip /home/neo/project/
+  (zip entire project folder and its contents)
+
+  zip -e secret.zip passwords.txt
+  (creates password protected zip, prompts for password)
+
+  zip -r -9 compressed.zip /var/log/
+  (zip logs folder with maximum compression)
+
+----------------------------------------------------------------
+TAR
+----------------------------------------------------------------
+What it is:
+  tar stands for Tape Archive
+  tar by itself just bundles files together, no compression
+  tar combined with flags adds compression (gzip, bzip2, xz)
+  The most common format for Linux software and backups
+  Can handle entire directories including structure
+
+TAR FILE EXTENSIONS AND WHAT THEY MEAN
+----------------------------------------
+  .tar          Bundled only, no compression
+  .tar.gz       Bundled and compressed with gzip (most common)
+  .tgz          Same as .tar.gz just shorter name
+  .tar.bz2      Bundled and compressed with bzip2 (better compression)
+  .tar.xz       Bundled and compressed with xz (best compression)
+
+KEY TAR FLAGS
+--------------
+  c             Create a new archive
+  x             Extract an archive
+  v             Verbose, show files being processed
+  f             File, specify the archive filename (always needed)
+  z             Use gzip compression (.tar.gz)
+  j             Use bzip2 compression (.tar.bz2)
+  J             Use xz compression (.tar.xz)
+  t             List contents of archive without extracting
+  C             Extract to a specific directory
+
+MEMORY TIP FOR TAR FLAGS
+-------------------------
+  To extract:   x = eXtract
+  To create:    c = Create
+  Always need:  f = File (specify name)
+  Always use:   v = Verbose (see what is happening)
+
+EXTRACTING WITH TAR
+--------------------
+  tar -xvf <file.tar>            Extract a plain tar file
+  tar -xzvf <file.tar.gz>        Extract a .tar.gz file
+  tar -xjvf <file.tar.bz2>       Extract a .tar.bz2 file
+  tar -xJvf <file.tar.xz>        Extract a .tar.xz file
+  tar -xzvf <file.tar.gz> -C <dir>  Extract to a specific directory
+
+Examples:
+  tar -xzvf nmap-7.94.tar.gz
+  (extract nmap source archive to current directory)
+
+  tar -xzvf tools.tar.gz -C /opt/
+  (extract tools archive into /opt/ directory)
+
+  tar -xjvf wordlist.tar.bz2
+  (extract bzip2 compressed archive)
+
+  tar -xJvf archive.tar.xz
+  (extract xz compressed archive)
+
+CREATING WITH TAR
+------------------
+  tar -cvf <archive.tar> <files>       Create plain tar
+  tar -czvf <archive.tar.gz> <files>   Create gzip compressed tar
+  tar -cjvf <archive.tar.bz2> <files>  Create bzip2 compressed tar
+  tar -cJvf <archive.tar.xz> <files>   Create xz compressed tar
+
+Examples:
+  tar -czvf backup.tar.gz /home/neo/
+  (compress entire home directory into backup.tar.gz)
+
+  tar -czvf logs.tar.gz /var/log/
+  (compress entire log directory)
+
+  tar -cjvf project.tar.bz2 /opt/project/
+  (compress project folder with better bzip2 compression)
+
+LISTING CONTENTS WITHOUT EXTRACTING
+-------------------------------------
+  tar -tvf <file.tar>            List contents of plain tar
+  tar -tzvf <file.tar.gz>        List contents of .tar.gz
+  tar -tjvf <file.tar.bz2>       List contents of .tar.bz2
+
+Examples:
+  tar -tzvf tools.tar.gz
+  (shows all files inside without extracting anything)
+
+----------------------------------------------------------------
+BZIP2 / BUNZIP2
+----------------------------------------------------------------
+What it is:
+  bzip2 compresses single files into .bz2 format
+  Better compression than gzip but slower
+  bunzip2 is the decompression tool
+
+  bunzip2 <file.bz2>             Extract .bz2 file
+  bunzip2 -k <file.bz2>          Extract but keep original
+  bzip2 <file>                   Compress a file to .bz2
+  bzip2 -k <file>                Compress but keep original
+  bzip2 -d <file.bz2>            Decompress (same as bunzip2)
+
+Examples:
+  bunzip2 wordlist.bz2
+  (extracts wordlist, removes wordlist.bz2)
+
+  bzip2 -k importantfile.txt
+  (creates importantfile.txt.bz2, keeps original)
+
+----------------------------------------------------------------
+XZ
+----------------------------------------------------------------
+What it is:
+  xz provides the best compression ratio of the common tools
+  Slower to compress but produces smallest file sizes
+  Used heavily for distributing large Linux packages
+
+  xz -d <file.xz>               Decompress .xz file
+  xz -dk <file.xz>              Decompress but keep original
+  xz <file>                     Compress a file to .xz
+  xz -k <file>                  Compress but keep original
+  xz -9 <file>                  Maximum compression level
+
+Examples:
+  xz -d archive.xz
+  (decompress archive.xz)
+
+  xz -9 -k largefile.txt
+  (maximum compression, keep original file)
+
+----------------------------------------------------------------
+7ZIP
+----------------------------------------------------------------
+What it is:
+  7zip handles many formats including .7z, .zip, .rar, .tar
+  Very high compression ratio
+  Install: sudo apt install 7zip
+
+  7z x <file>                   Extract any supported archive
+  7z l <file>                   List contents
+  7z a <archive.7z> <files>     Create 7z archive
+  7z e <file>                   Extract without directory structure
+
+Examples:
+  7z x archive.7z
+  (extract 7z archive)
+
+  7z x mixed.zip
+  (7zip can also extract zip files)
+
+  7z a compressed.7z /opt/tools/
+  (create 7z archive of tools directory)
+
+----------------------------------------------------------------
+UNRAR
+----------------------------------------------------------------
+What it is:
+  Handles .rar files which come mostly from Windows
+  Install: sudo apt install unrar
+
+  unrar x <file.rar>            Extract keeping directory structure
+  unrar e <file.rar>            Extract all files to current directory
+  unrar l <file.rar>            List contents without extracting
+  unrar p <password> <file.rar> Extract with password
+
+Examples:
+  unrar x tools.rar
+  (extract rar archive with full paths)
+
+  unrar l archive.rar
+  (list whats inside without extracting)
+
+----------------------------------------------------------------
+QUICK REFERENCE - WHICH COMMAND TO USE
+----------------------------------------------------------------
+
+To EXTRACT any archive by extension:
+  file.gz          gunzip file.gz
+  file.zip         unzip file.zip
+  file.tar         tar -xvf file.tar
+  file.tar.gz      tar -xzvf file.tar.gz
+  file.tgz         tar -xzvf file.tgz
+  file.tar.bz2     tar -xjvf file.tar.bz2
+  file.tar.xz      tar -xJvf file.tar.xz
+  file.bz2         bunzip2 file.bz2
+  file.xz          xz -d file.xz
+  file.7z          7z x file.7z
+  file.rar         unrar x file.rar
+
+To CHECK contents without extracting:
+  file.gz          gunzip -l file.gz
+  file.zip         unzip -l file.zip
+  file.tar.gz      tar -tzvf file.tar.gz
+  file.7z          7z l file.7z
+  file.rar         unrar l file.rar
+
+Common flags that work across most tools:
+  -k               Keep original file after compression
+  -v               Verbose, show whats happening
+  -f               Force overwrite
+  -d <dir>         Extract to specific directory
+
+----------------------------------------------------------------
+INSTALL MISSING TOOLS
+----------------------------------------------------------------
+  sudo apt install unzip         Install unzip
+  sudo apt install zip           Install zip
+  sudo apt install unrar         Install unrar
+  sudo apt install 7zip          Install 7zip
+  sudo apt install bzip2         Install bzip2
+  sudo apt install xz-utils      Install xz
+
+================================================================
