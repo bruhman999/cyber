@@ -1,0 +1,428 @@
+================================================================
+PERSONAL AUTONOMOUS SYSTEM (AS) — BEGINNER'S GUIDE
+================================================================
+
+----------------------------------------------------------------
+WHAT IS AN AUTONOMOUS SYSTEM (AS)?
+----------------------------------------------------------------
+An Autonomous System is a network or group of networks
+controlled by a single organization that has a unified
+routing policy. Think of it like owning your own small
+piece of the internet.
+
+Every major ISP, tech company, and university has their own
+AS. For example:
+  Google        AS15169
+  Cloudflare    AS13335
+  This person   AS20126
+
+To have your own AS you need three things:
+  1. An ASN (Autonomous System Number) — your unique ID
+  2. IP address space — your own block of IP addresses
+  3. BGP peering — connections to other networks
+
+Real world analogy:
+  Think of the internet as a postal system.
+  Each AS is like its own post office with its own
+  zip codes (IP addresses). BGP is the system that
+  tells all the post offices how to route mail
+  (internet traffic) to each other.
+
+----------------------------------------------------------------
+KEY TERMS FOR BEGINNERS
+----------------------------------------------------------------
+
+ASN (Autonomous System Number)
+  A unique number that identifies your network on the
+  internet. Like a phone number for your network.
+  Assigned by regional registries like RIPE (Europe)
+  or ARIN (North America).
+
+BGP (Border Gateway Protocol)
+  The routing protocol that runs the internet.
+  It is how networks tell each other "I can reach
+  these IP addresses, send traffic to me."
+  Called the "language of the internet."
+
+IP Address Space / Prefix
+  A block of IP addresses you own.
+  Written like: 192.0.2.0/24
+  The /24 means how many addresses are in the block.
+  A /40 prefix is a large block of IPv6 addresses.
+  The smaller the number after /, the more addresses.
+
+VPS (Virtual Private Server)
+  A rented virtual machine running in a data center.
+  Used here to have physical presence in different
+  locations around the world to establish BGP.
+
+Peering
+  When two networks agree to exchange traffic directly
+  with each other, usually for free or mutual benefit.
+  Like two post offices agreeing to deliver each
+  other's mail directly.
+
+Upstream Provider
+  A larger network that provides you internet
+  connectivity and allows you to advertise your
+  IP addresses to the rest of the internet through them.
+
+----------------------------------------------------------------
+THE PARTNERSHIPS — HOW IT ALL STARTED
+----------------------------------------------------------------
+
+To run your own AS you need two key things from outside:
+
+1. XENYTH CLOUD — ASN and Address Space
+  Provided the ASN (AS20126) and a /40 IPv6 prefix.
+  This is called address space allocation.
+  Without an ASN and IP addresses you cannot participate
+  in BGP routing on the real internet.
+  RIPE is the regional registry for Europe that
+  officially assigns these numbers.
+
+2. VULTR — VPS Hosting for BGP Presence
+  Vultr provided the virtual servers (VPS) used to
+  establish BGP presence in different locations.
+  To advertise your IP addresses to the internet you
+  need physical servers in data centers that can
+  connect to upstream providers.
+  Vultr supports BGP sessions which allows customers
+  to announce their own IP space through Vultr's network.
+
+Why you need both:
+  ASN + IP space = your identity on the internet
+  VPS with BGP = your ability to actually connect
+                 and be reachable on the internet
+
+----------------------------------------------------------------
+NETWORK ARCHITECTURE — THE THREE SITE SETUP
+----------------------------------------------------------------
+
+What was built:
+  Three sites connected together:
+    Site 1    Warsaw, Poland (VPS)
+    Site 2    Los Angeles, USA (VPS)
+    Site 3    Home network in Finland
+
+Why multiple sites?
+  Having servers in multiple locations lets you:
+  - Serve users from the closest location
+  - Have redundancy if one site goes down
+  - Take advantage of Anycast routing (explained below)
+
+FULL MESH TOPOLOGY
+  Every site connects directly to every other site.
+  With 3 sites this means 3 tunnels total.
+  With 4 sites this means 6 tunnels total.
+  The number of tunnels grows fast as you add sites.
+
+  Warsaw ←──── tunnel ────→ Los Angeles
+  Warsaw ←──── tunnel ────→ Finland
+  Los Angeles ←── tunnel ──→ Finland
+
+  This is called a full mesh because every node
+  has a direct connection to every other node.
+  No traffic has to hop through a middle point.
+
+TUNNELS
+  Since these sites are on different networks and
+  providers, they cannot connect directly at layer 2.
+  Tunnels (like GRE or Wireguard) create a virtual
+  private connection between sites over the public
+  internet, making them act like they are on the
+  same local network.
+
+BIRD (ROUTING DAEMON)
+  Bird is open source software that runs BGP and
+  other routing protocols on Linux.
+  It is the brain of the routing setup.
+  It handles:
+    - Speaking BGP to upstream providers
+    - Exchanging routes between your own sites
+    - Applying routing policies and communities
+
+OSPF (Open Shortest Path First)
+  A routing protocol used inside your own network
+  (called IGP — Interior Gateway Protocol).
+  While BGP handles routing between different networks
+  on the internet, OSPF handles routing between
+  your own sites internally.
+  It automatically finds the best path between
+  your internal nodes and updates if a link fails.
+
+  Simple way to think about it:
+    BGP = how you talk to the outside internet
+    OSPF = how your own sites talk to each other
+
+----------------------------------------------------------------
+ANYCAST — WHAT IT IS AND WHY IT IS HARD
+----------------------------------------------------------------
+
+What is Anycast?
+  Normally one IP address = one server (Unicast).
+  With Anycast, the SAME IP address is announced
+  from MULTIPLE locations simultaneously.
+  The internet automatically routes users to the
+  closest or best location.
+
+  Real world example:
+  Cloudflare's DNS uses 1.1.1.1 as Anycast.
+  When you query 1.1.1.1 you hit your nearest
+  Cloudflare server automatically, not one specific
+  machine. This is why Cloudflare DNS is so fast
+  worldwide.
+
+Why it is hard to implement:
+  You cannot control exactly which path internet
+  traffic takes. Different ISPs have different
+  relationships and routing preferences.
+  Traffic from Japan might not go to your Tokyo
+  node even if that is the closest one.
+  The internet routes traffic based on BGP policies
+  not just physical distance.
+
+HOW HE SOLVED ROUTING PROBLEMS
+
+BGP Communities:
+  Tags you attach to route advertisements that
+  tell upstream providers how to handle your routes.
+  Example: "only advertise this route in Europe"
+  or "give this route lower priority."
+  Different providers support different communities.
+  You have to read each provider's documentation
+  to know which communities they support.
+
+AS-Path Prepending:
+  A technique to make one path look less attractive
+  than another to influence traffic direction.
+  BGP prefers shorter AS paths (fewer hops).
+  By artificially repeating your ASN in the path
+  you make that route look longer and less preferred.
+
+  Example:
+  Normal path:    AS20126 → AS174 → destination
+  Prepended path: AS20126 AS20126 AS20126 → AS174
+  Other networks will prefer the shorter path
+  and route traffic away from the prepended one.
+
+  This gives you manual control over which of
+  your nodes receives traffic from which regions.
+
+----------------------------------------------------------------
+FOURTH NODE — GRAND RAPIDS (RACKGENIUS)
+----------------------------------------------------------------
+
+After the initial three sites worked, a fourth node
+was added in Grand Rapids, Michigan via RackGenius.
+
+Why this complicated things:
+  Full mesh with 3 nodes = 3 tunnels to manage
+  Full mesh with 4 nodes = 6 tunnels to manage
+  Full mesh with 5 nodes = 10 tunnels to manage
+
+  Managing tunnel configs, BGP sessions, and OSPF
+  by hand across 4+ nodes becomes error prone fast.
+  This is what pushed the move toward automation.
+
+Upstream providers used:
+  Aurelion (formerly Lumen/CenturyLink)
+  Hurricane Electric (HE)
+
+  Having diverse upstream providers matters because
+  different ISPs have different peering relationships
+  and will route traffic differently. Using both
+  gives better global coverage for Anycast.
+
+----------------------------------------------------------------
+AUTOMATION WITH ANSIBLE
+----------------------------------------------------------------
+
+What is Ansible?
+  An open source automation tool that lets you
+  manage many servers from one place using simple
+  configuration files called playbooks.
+  Instead of SSH-ing into each server and running
+  commands manually, you write a playbook once
+  and Ansible applies it to all servers at once.
+
+  Think of it like: instead of sending the same
+  email to 10 people individually, you BCC them all.
+
+How Ansible was used here:
+
+  Software Updates:
+    Run updates across all nodes simultaneously
+    instead of logging into each one separately.
+
+  BGP Configuration Templating:
+    Instead of writing a unique Bird BGP config
+    for each node by hand, Ansible uses templates.
+    You define the variables (IP addresses, ASN,
+    neighbors) and Ansible generates the correct
+    config file for each node automatically.
+    Change one template = all nodes updated.
+
+  OSPF Configuration:
+    Same approach — templated OSPF configs
+    deployed consistently across all nodes.
+
+  Benefits:
+    Consistency — every node configured the same way
+    Speed — changes applied to all nodes at once
+    Less errors — no more copy paste mistakes
+    Repeatability — add a new node and it gets
+                    configured automatically
+
+----------------------------------------------------------------
+NETBOX — SOURCE OF TRUTH
+----------------------------------------------------------------
+
+What is Netbox?
+  An open source network documentation and
+  IP address management (IPAM) tool.
+  It is essentially a database for everything
+  about your network: servers, IPs, interfaces,
+  VLANs, prefixes, and more.
+  Think of it as a very powerful spreadsheet
+  for your network that other tools can read from.
+
+Why it matters — Source of Truth concept:
+  In a complex network, information about IPs and
+  interfaces can exist in many places:
+  - In your head
+  - In a spreadsheet
+  - In config files
+  - In documentation
+
+  A "source of truth" means ONE place holds the
+  correct authoritative information and everything
+  else derives from it.
+  If Netbox says a server has IP 10.0.0.5 then
+  that is what it has. Period.
+
+How Netbox was used here:
+  Stores all VM inventory and IP assignments.
+  Ansible queries Netbox to get current network data.
+  Ansible then generates Bird BGP and OSPF configs
+  based on what Netbox says is in the network.
+
+  The workflow:
+    Update Netbox (add new node or IP)
+        ↓
+    Run Ansible playbook
+        ↓
+    Ansible reads from Netbox
+        ↓
+    Ansible generates new configs
+        ↓
+    Configs deployed to all nodes automatically
+
+  This means adding a new node is just:
+  1. Add it to Netbox
+  2. Run Ansible
+  Done. No manual config writing.
+
+----------------------------------------------------------------
+FUTURE PLANS
+----------------------------------------------------------------
+
+Migrate services:
+  Move existing self-hosted services onto the new
+  AS infrastructure to take advantage of the
+  redundancy and anycast routing.
+
+RIPE Atlas Probe:
+  RIPE Atlas is a global network measurement platform
+  with thousands of probes around the world.
+  Having your own probe lets you run measurements
+  from your network and contribute to the platform.
+  Useful for monitoring how your network is seen
+  from different locations on the internet.
+
+Remaining address space experiments:
+  Use leftover IP space to simulate ISP services:
+
+  BNG (Broadband Network Gateway):
+    The device in an ISP network that manages
+    subscriber connections, authentication, and
+    IP assignment for end customers.
+    Simulating this means practicing real ISP
+    infrastructure without actually being one.
+
+  IPv6 Transition Mechanisms:
+    Technologies that help networks move from
+    IPv4 to IPv6, like DS-Lite, MAP-T, and 6rd.
+    These are used by real ISPs to provide IPv6
+    to customers who still have IPv4 infrastructure.
+
+GPON (Gigabit Passive Optical Network):
+  The technology behind fiber to the home (FTTH).
+  Passive optical networks use fiber and optical
+  splitters with no active electronics between
+  the ISP and the customer.
+  Experimenting with this means running actual
+  fiber networking equipment like real ISPs do.
+
+Access Networks:
+  The last mile of connectivity between an ISP
+  and end customers. Experimenting with this
+  means building the actual infrastructure that
+  connects homes or buildings to a network.
+
+Custom Hardware (Mono Gateway):
+  A custom built gateway device for access
+  network experiments rather than using
+  off the shelf commercial equipment.
+
+----------------------------------------------------------------
+THE FULL PICTURE — HOW IT ALL FITS TOGETHER
+----------------------------------------------------------------
+
+  RIPE / Xenyth
+  (ASN + IP space)
+        ↓
+  Netbox
+  (source of truth for all network data)
+        ↓
+  Ansible
+  (reads Netbox, generates configs, deploys everywhere)
+        ↓
+  Bird (routing daemon) on each VPS node
+  (runs BGP to upstream providers + OSPF internally)
+        ↓
+  Full mesh tunnels between all sites
+  (Warsaw, Los Angeles, Finland, Grand Rapids)
+        ↓
+  BGP communities + AS-path prepending
+  (control which node handles which traffic)
+        ↓
+  Anycast routing
+  (users reach the best node automatically)
+
+----------------------------------------------------------------
+BEGINNER LEARNING PATH (IF YOU WANT TO DO THIS YOURSELF)
+----------------------------------------------------------------
+
+Step 1   Learn basic networking (IP, subnets, routing)
+Step 2   Learn Linux basics
+Step 3   Learn BGP concepts (how it works, what a prefix is)
+Step 4   Get a small VPS and experiment with Bird
+Step 5   Learn Ansible basics (playbooks, templates)
+Step 6   Apply for an ASN through RIPE or ARIN
+         (requires justification and a small fee)
+Step 7   Find a sponsor LIR (like Xenyth) for IP space
+Step 8   Set up BGP sessions with your VPS provider
+Step 9   Build your full mesh and test Anycast
+Step 10  Automate everything with Ansible and Netbox
+
+Useful resources:
+  dn42         A practice BGP network, no real internet
+               Great for learning BGP safely
+  Hurricane Electric BGP Toolkit   bgp.he.net
+  RIPE NCC     ripe.net
+  Bird docs    bird.network.cz
+  Ansible docs ansible.com
+  Netbox docs  netbox.dev
+
+================================================================
