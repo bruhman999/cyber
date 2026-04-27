@@ -1,0 +1,171 @@
+================================================================
+HARDWARE INVENTORY
+================================================================
+All components acquired for free unless price listed.
+
+----------------------------------------------------------------
+TRUENAS SERVER
+----------------------------------------------------------------
+
+MOTHERBOARD
+  Gigabyte X299 AORUS Gaming 7 ATX DDR4
+  Intel X299 chipset, ATX form factor, DDR4 support
+
+CPU
+  Intel Core i7-7800X
+  6 cores / 12 threads, LGA 2066 socket
+  Skylake-X platform, supports quad channel memory
+
+CPU COOLER
+  Amazon B0D8VS42T8                              $23.99
+
+RAM
+  SK Hynix HMA81GU6AFR8N-UH
+  8GB x2 = 16GB total DDR4 2400MHz
+  Desktop ECC-capable modules                   $22.27
+
+HBA (HOST BUS ADAPTER)
+  LSI 9207-8i 6Gbps HBA
+  Firmware: P20 IT Mode (passthrough)
+  Compatible with ZFS, FreeNAS, unRAID
+  2x SFF-8087 connectors + 4x SATA ports
+  IT Mode = drives passed directly to OS,
+  no RAID controller interference (required for ZFS)
+
+STORAGE
+  HGST Ultrastar HE10 HUH721010ALE600
+  10TB SATA 6Gb/s 7200RPM 3.5" Enterprise HDD
+  Quantity: 3 drives                           $223.30
+
+  Seagate Exos X10 ST10000NM0086
+  10TB SATA 6Gb/s 7200RPM 3.5" Enterprise HDD
+  256MB Cache, 512e, 3.5 inch (Renewed)        $279.00
+
+GPU
+  XFX Radeon RX 580 GTS XXX Edition
+  8GB GDDR5, 1386MHz OC, Dual BIOS, VR Ready   $202.05
+
+10GbE NETWORKING
+  IBM 00E2719 4-Port 10Gb SFP+ / 1Gb RJ45
+  PCIe fiber host card                          $29.80
+
+  Mellanox MFM1T02A-SR SFP+ Transceiver
+  10GbE 10GBASE-SR, SFP+ module                $18.76
+
+  OM2 LC to LC Fiber Optic Patch Cable
+  Multimode Duplex 50/125 Orange
+  Available lengths: 1M to 15M                 $10.10
+
+TOTAL APPROXIMATE SPEND:                      ~$809.27
+
+----------------------------------------------------------------
+SWITCH
+----------------------------------------------------------------
+
+  Cisco Meraki MS220-48LP-HW
+  48-Port Cloud Managed PoE Switch
+  Managed via dashboard.meraki.com
+  Serial: Q2MP-87DT-FGMD
+  MAC:    00:18:0A:C2:82:01
+
+----------------------------------------------------------------
+MAIN DESKTOP (DESKTOP-J20DRRD)
+----------------------------------------------------------------
+
+MOTHERBOARD
+  Gigabyte B550M AORUS Elite
+  AMD B550 chipset, Micro-ATX form factor
+  PCIe 4.0 support, AM4 socket
+
+CPU
+  AMD Ryzen 7 5800X3D
+  8 cores / 16 threads, AM4 socket
+  3.4GHz base / 4.5GHz boost
+  96MB L3 3D V-Cache                           $372.21
+
+GPU
+  MSI GeForce RTX 3070 LHR Gaming X
+  8GB GDDR6, 256-Bit, Torx Fan 4, RGB
+  Ampere architecture, HDMI + DP, NVLink      $1,168.79
+
+RAM
+  Kingston FURY Beast
+  32GB (2x16GB) DDR4 3600MHz PC4-28800        $63.80
+
+  TEAMGROUP T-Force Vulcan Z
+  16GB (2x8GB) DDR4 3200MHz CL16
+  Total RAM: 48GB across both kits             $68.99
+
+STORAGE
+  Crucial MX500 2TB 3D NAND SATA 2.5"
+  Up to 560MB/s read, CT2000MX500SSD1
+  Note: Now priced at $499 (was $85.07)        $85.07
+
+  HGST Ultrastar HUS726060ALA640
+  6TB 7.2K 6Gbps SATA 3.5" Enterprise HDD
+  Used as D: drive                             $42.54
+
+10GbE NETWORKING
+  HP NC552SFP Dual Port 10Gb SFP+
+  PCIe server adapter, OCE11102-HP             $12.22
+
+TOTAL APPROXIMATE SPEND:                     ~$1,813.62
+
+----------------------------------------------------------------
+FEDORA MACHINE
+----------------------------------------------------------------
+All components acquired for free.
+
+MOTHERBOARD    ASUS TUF Gaming X570
+               AMD X570 chipset, PCIe 4.0, AM4 socket
+
+CPU            AMD Ryzen 7 3700X
+               8 cores / 16 threads
+               3.6GHz base / 4.4GHz boost, 65W TDP
+
+GPU            Gigabyte RTX 3070 OC
+               8GB GDDR6, factory overclocked
+
+RAM            G.Skill 16GB DDR4 3600MHz
+               Timings: 16-16-16-36
+               Dual channel, sweet spot for Ryzen 3000
+
+PSU            Seasonic Focus Gold 750W Fully Modular
+               80+ Gold efficiency, highly reliable
+
+CASE           Fractal Design Meshify C
+               Mesh front panel, excellent airflow
+               Compact ATX form factor
+
+OS             Fedora Linux
+               KDE Plasma desktop / SDDM display manager
+
+----------------------------------------------------------------
+UNUSED PARTS
+----------------------------------------------------------------
+
+MOTHERBOARD    Gigabyte GA-A320M-S2H
+               AMD AM4 socket, Micro-ATX
+               2x DDR4, HDMI, Realtek ALC887 audio
+               3x PCIe, USB 3.1 Gen 1, LAN
+
+CPU COOLER     Cooler Master Hyper 212 Black Edition RGB
+               SF120R RGB fan
+               Anodized gun-metal black finish
+               Brushed nickel fins
+               4x copper direct contact heat pipes
+               Compatible with AMD Ryzen and Intel LGA1151
+
+================================================================
+FULL COST SUMMARY
+================================================================
+
+  TrueNAS Server components          ~$809.27
+  Main Desktop components          ~$1,813.62
+  Fedora Machine                       $0.00 (all free)
+  Switch                               $0.00 (free)
+  Unused Parts                         $0.00 (free)
+  ─────────────────────────────────────────────────
+  TOTAL SPENT                       ~$2,622.89
+
+================================================================
