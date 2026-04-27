@@ -1,0 +1,394 @@
+================================================================
+FIBER NETWORKING — COMPLETE REFERENCE GUIDE
+================================================================
+
+----------------------------------------------------------------
+WHAT IS FIBER NETWORKING?
+----------------------------------------------------------------
+Fiber networking uses light instead of electrical signals
+to transmit data through thin strands of glass or plastic.
+
+Why fiber over copper (ethernet)?
+  Copper (Cat5e/Cat6):
+    Max reliable distance    100 meters
+    Max speed                10Gbps (Cat6A)
+    Susceptible to           EMI (electromagnetic interference)
+    Signal degrades          Over distance
+
+  Fiber:
+    Max distance             Hundreds to thousands of meters
+    Max speed                100Gbps+ depending on type
+    Susceptible to           Physical damage only
+    Signal degrades          Much less over distance
+    Immune to                EMI completely
+
+Common use cases:
+  Data center interconnects
+  Server to switch uplinks (10GbE, 25GbE, 100GbE)
+  ISP backbone connections
+  Building to building connections
+  Home lab 10GbE networking on a budget
+
+----------------------------------------------------------------
+FIBER CABLE TYPES — MULTIMODE VS SINGLEMODE
+----------------------------------------------------------------
+
+MULTIMODE FIBER
+  Light travels through a larger core (50 or 62.5 micron)
+  Multiple light paths bounce through the core at once
+  Cheaper to produce and cheaper transceivers
+  Shorter distances — typically up to 550 meters
+  Used for: data centers, server rooms, short runs
+  Identified by: orange or aqua colored jacket
+
+SINGLEMODE FIBER
+  Light travels through a tiny core (9 micron)
+  Single direct light path, no bouncing
+  More expensive cable and transceivers
+  Much longer distances — kilometers to hundreds of km
+  Used for: ISP backbones, campus networks, WAN links
+  Identified by: yellow colored jacket
+
+QUICK COLOR REFERENCE
+  Orange jacket     OM1 or OM2 multimode (older)
+  Aqua jacket       OM3 or OM4 multimode (modern)
+  Purple jacket     OM4 multimode (some vendors)
+  Yellow jacket     OS1 or OS2 singlemode
+
+----------------------------------------------------------------
+MULTIMODE FIBER GRADES — OM1 THROUGH OM5
+----------------------------------------------------------------
+
+OM stands for Optical Multimode.
+Higher number = better performance = higher bandwidth.
+
+  OM1    62.5 micron core    Orange     1Gbps up to 275m
+         Oldest standard, rarely used today
+         10Gbps limited to 33m only
+
+  OM2    50 micron core      Orange     1Gbps up to 550m
+         Improved over OM1
+         10Gbps up to 82m
+         What you have in your setup (LC to LC OM2)
+         Still common in older installations
+
+  OM3    50 micron core      Aqua       10Gbps up to 300m
+         Laser optimized fiber
+         40Gbps up to 100m
+         Most common in modern data centers
+
+  OM4    50 micron core      Aqua       10Gbps up to 550m
+         Higher bandwidth than OM3
+         100Gbps up to 150m
+         Current standard for new installations
+
+  OM5    50 micron core      Lime green 100Gbps+
+         Supports SWDM (wideband multimode)
+         Future proofed for high density networks
+         Most expensive multimode option
+
+YOUR SETUP USES OM2 (ORANGE CABLE)
+  OM2 is perfectly fine for 10GbE at short distances
+  Most home lab and small office runs are under 82m
+  so OM2 handles 10Gbps without any issues
+  If you ever need more distance upgrade to OM3/OM4
+
+----------------------------------------------------------------
+FIBER CONNECTOR TYPES
+----------------------------------------------------------------
+
+LC CONNECTOR (Lucent Connector / Little Connector)
+  The most common connector in modern networking
+  Small form factor — about half the size of SC
+  Uses a push and latch mechanism (clicks in)
+  Always comes in pairs for duplex connections
+  Used with: SFP, SFP+, SFP28, QSFP transceivers
+  What you have: LC to LC patch cable
+
+SC CONNECTOR (Subscriber Connector)
+  Older, larger square shaped connector
+  Push and pull mechanism
+  Less common in new installations
+  Still found in older buildings and telecom
+
+ST CONNECTOR (Straight Tip)
+  Circular bayonet style connector
+  Twist and lock mechanism
+  Very old standard, rarely seen today
+  Found in legacy campus networks
+
+MPO/MTP CONNECTOR
+  Multi-fiber connector — 12 or 24 fibers in one plug
+  Used for 40GbE, 100GbE, and high density installs
+  Looks like a wide rectangular plug
+  Requires special cables and transceivers
+
+----------------------------------------------------------------
+LC TO LC EXPLAINED
+----------------------------------------------------------------
+Your cable is described as:
+  OM2 LC to LC Fiber Optic Patch Cable
+  Multimode Duplex 50/125 Orange LC LC 1M-15M
+
+Breaking that down:
+
+  OM2          Multimode grade 2, orange jacket
+               50 micron core fiber
+
+  LC to LC     Both ends use LC connectors
+               One end plugs into your fiber card
+               Other end plugs into your switch or
+               another device
+
+  Multimode    Uses LED or VCSEL light source
+               Cheaper transceivers, shorter distance
+
+  Duplex       Two fibers in one cable jacket
+               One fiber transmits (TX)
+               One fiber receives (RX)
+               Both directions at once (full duplex)
+               This is why you see two strands in
+               one cable — one for each direction
+
+  50/125       Core diameter / cladding diameter
+               50 micron core (the light carrying part)
+               125 micron cladding (outer glass layer)
+               This is standard for all OM2-OM5 fiber
+
+  Orange       OM1 or OM2 identifier color
+
+  1M to 15M    Available in lengths from 1 to 15 meters
+
+DUPLEX vs SIMPLEX
+  Simplex      Single fiber strand, one direction only
+               Used for specialized applications
+               Rare in standard networking
+
+  Duplex       Two fiber strands, both directions
+               Standard for all networking equipment
+               TX on one strand, RX on the other
+               What you have and what you always want
+               for network connections
+
+LC DUPLEX CONNECTOR VISUAL
+  An LC duplex connector looks like two LC connectors
+  joined side by side in one housing.
+  The two fibers are usually color coded:
+    One side    Blue or marked A (transmit)
+    Other side  White or marked B (receive)
+  Polarity matters — if you flip them the link
+  will not come up.
+
+----------------------------------------------------------------
+TRANSCEIVERS — SFP AND SFP+
+----------------------------------------------------------------
+
+WHAT IS A TRANSCEIVER?
+  A transceiver is a small pluggable module that converts
+  electrical signals from your network card into light
+  signals for fiber, or vice versa.
+  It plugs into a port called a cage on your NIC or switch.
+  Transceiver = transmitter + receiver in one module.
+
+  Without a transceiver your fiber port does nothing.
+  The cable plugs into the transceiver,
+  the transceiver plugs into the cage on your card.
+
+SFP (Small Form-factor Pluggable)
+  Original standard
+  Supports up to 1Gbps
+  Used for 1GbE fiber connections
+  Still common on managed switches for uplinks
+  Sometimes called Mini-GBIC
+
+SFP+ (Enhanced Small Form-factor Pluggable)
+  The upgrade from SFP
+  Supports up to 10Gbps
+  Same physical size as SFP
+  Most common transceiver in use today
+  Used for 10GbE connections
+  What you have: Mellanox MFM1T02A-SR SFP+
+
+SFP28
+  Supports up to 25Gbps
+  Same physical size as SFP and SFP+
+  Used in modern high performance servers
+  Common in cloud provider infrastructure
+
+QSFP+ (Quad SFP+)
+  Four lanes of SFP+ combined
+  Supports up to 40Gbps
+  Larger module than SFP+
+  Used for switch uplinks and spine connections
+
+QSFP28
+  Four lanes of 25Gbps
+  Supports up to 100Gbps
+  Common in modern data center spines
+
+----------------------------------------------------------------
+SFP+ TRANSCEIVER TYPES
+----------------------------------------------------------------
+
+SR (Short Range)
+  Uses 850nm wavelength laser (VCSEL)
+  Designed for multimode fiber
+  Distance: up to 300m on OM3, 400m on OM4
+  Cheapest type of SFP+ transceiver
+  What you have: Mellanox MFM1T02A-SR
+  The SR at the end means Short Range
+  Uses your orange OM2 cable
+
+LR (Long Range)
+  Uses 1310nm wavelength laser
+  Designed for singlemode fiber (yellow cable)
+  Distance: up to 10km
+  More expensive than SR
+  Used for building to building or campus links
+
+ER (Extended Range)
+  Uses 1550nm wavelength laser
+  Designed for singlemode fiber
+  Distance: up to 40km
+  Expensive, used for WAN links
+
+ZR (Long Haul)
+  Distance: up to 80km
+  Used for metropolitan area networks
+  Very expensive
+
+LRM (Long Range Multimode)
+  Uses 1310nm wavelength
+  Works with older OM1 and OM2 fiber
+  Up to 220m on multimode
+  Niche use case for older installations
+
+DAC (Direct Attach Copper)
+  Not fiber at all but fits SFP+ cages
+  Short twinax copper cable with SFP+ on each end
+  Distances: 1m to 7m only
+  Cheapest way to connect two nearby devices
+  at 10Gbps, no transceivers needed separately
+  Good for connecting server to top of rack switch
+
+AOC (Active Optical Cable)
+  SFP+ connectors with fiber cable attached
+  Cable and transceivers are one unit
+  Distances: up to 100m
+  More flexible than DAC for longer runs
+  Cannot replace just the cable or transceiver
+
+----------------------------------------------------------------
+YOUR SPECIFIC GEAR EXPLAINED
+----------------------------------------------------------------
+
+MELLANOX MFM1T02A-SR                           $18.76
+  Type:        SFP+ SR (Short Range)
+  Speed:       10Gbps
+  Wavelength:  850nm
+  Cable type:  Multimode fiber (your OM2 orange cable)
+  Max distance: 300m on OM3, 82m on OM2
+  Connector:   LC duplex
+  This plugs into your fiber card and your switch
+
+OM2 LC TO LC FIBER CABLE                       $10.10
+  Type:        OM2 multimode duplex
+  Connectors:  LC on both ends
+  Color:       Orange jacket
+  Core:        50/125 micron
+  Length:      1M to 15M available
+  This connects your transceiver to another device
+
+IBM 00E2719 FIBER CARD                         $29.80
+  4-Port 10Gb SFP+
+  Also has 1Gb RJ45 copper ports
+  PCIe card that goes in your server or desktop
+  Has SFP+ cages that accept your Mellanox transceiver
+  This is the host card that the transceiver plugs into
+
+HOW THEY ALL CONNECT
+  IBM fiber card (in PC/server)
+      ↓ SFP+ cage on card
+  Mellanox SFP+ SR transceiver (plugs into card)
+      ↓ LC duplex port on transceiver
+  OM2 orange LC to LC fiber cable
+      ↓ LC duplex port on other end
+  Switch or other device SFP+ port
+      ↓ SFP+ transceiver in switch
+  Other device
+
+----------------------------------------------------------------
+COMPATIBILITY RULES
+----------------------------------------------------------------
+
+SR transceiver requires multimode fiber (orange/aqua)
+LR transceiver requires singlemode fiber (yellow)
+Never mix SR with singlemode or LR with multimode
+
+Both ends must match:
+  SR to SR      correct
+  LR to LR      correct
+  SR to LR      will not work
+
+Fiber connectors must match:
+  LC to LC      correct (what you have)
+  LC to SC      needs an adapter
+  SC to SC      correct
+
+Speed must match on both ends:
+  SFP+ to SFP+  10Gbps both ends, correct
+  SFP to SFP+   1Gbps limited by slower end
+
+Third party transceivers:
+  Most switches and cards accept third party modules
+  Some Cisco gear requires Cisco branded transceivers
+  or a command to override the check:
+  service unsupported-transceiver
+  Meraki switches may require genuine Cisco SFPs
+  for full compatibility and support
+
+----------------------------------------------------------------
+FIBER CABLE HANDLING AND CARE
+----------------------------------------------------------------
+
+  Always cap fiber ends when not in use
+  Dust is the most common cause of fiber link failure
+  Never bend fiber sharply — minimum bend radius is
+  usually around 30mm or more for patch cables
+  Clean fiber ends before connecting with
+  fiber cleaning sticks or IPA wipes
+  Never look directly into a fiber end when
+  a transceiver is active — laser can damage eyes
+  even if you cannot see the light (IR wavelength)
+  Store extra cables coiled loosely, not kinked
+
+----------------------------------------------------------------
+QUICK REFERENCE TABLES
+----------------------------------------------------------------
+
+FIBER GRADE COMPARISON
+  Grade   Core    Jacket    10GbE Distance
+  OM1     62.5um  Orange    33m
+  OM2     50um    Orange    82m       (your setup)
+  OM3     50um    Aqua      300m
+  OM4     50um    Aqua      550m
+  OM5     50um    Lime      550m+
+  OS1/2   9um     Yellow    2km-10km+ (singlemode)
+
+SFP+ TYPE COMPARISON
+  Type   Fiber        Wavelength   Distance    Cost
+  SR     Multimode    850nm        300m OM3    Cheapest
+  LR     Singlemode   1310nm       10km        Medium
+  ER     Singlemode   1550nm       40km        Expensive
+  ZR     Singlemode   1550nm       80km        Very expensive
+  DAC    Copper       N/A          7m max      Cheapest overall
+  AOC    Multimode    850nm        100m        Medium
+
+CONNECTOR COMPARISON
+  Type   Size    Mechanism    Common use
+  LC     Small   Push/latch   SFP+, modern networking
+  SC     Medium  Push/pull    Older installs, telecom
+  ST     Medium  Bayonet      Legacy campus networks
+  MPO    Large   Push/latch   40G/100G, high density
+
+================================================================
