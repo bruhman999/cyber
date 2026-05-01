@@ -1,0 +1,663 @@
+================================================================================
+               OPTICAL NETWORKING — COMPLETE REFERENCE NOTES
+         PON, Fiber, OLT, ONU, GPON, XGS-PON, QUIC & Transceivers
+================================================================================
+
+
+================================================================================
+  SECTION 1 — FIBER OPTIC FUNDAMENTALS
+================================================================================
+
+--------------------------------------------------------------------------------
+  What Fiber Optic Cable Is
+--------------------------------------------------------------------------------
+  Fiber optic cable transmits data as pulses of light through a glass or plastic
+  core rather than electrical signals through copper. This gives it several major
+  advantages over copper ethernet:
+
+    - Virtually no signal loss over long distances
+    - Immune to electromagnetic interference (EMI)
+    - Much higher bandwidth potential than copper
+    - Cannot be tapped with a simple wire splice (more physically secure)
+    - Supports distances of hundreds of meters to tens of kilometers depending
+      on fiber type and transceiver used
+
+  A fiber cable has three main layers:
+    Core        — the glass/plastic center that carries the light signal
+    Cladding    — surrounds the core, keeps light bouncing inward (reflection)
+    Coating     — outer protective jacket, usually color coded by fiber type
+
+--------------------------------------------------------------------------------
+  Single Mode Fiber (SMF)
+--------------------------------------------------------------------------------
+  Definition:
+    Single mode fiber has a very small core diameter (around 9 microns).
+    It carries only one mode (path) of light, which is a laser light source.
+    Because only one light path travels through the core, there is almost no
+    signal distortion over distance.
+
+  Characteristics:
+    Core size:      ~9 microns
+    Light source:   Laser (1310nm or 1550nm wavelength typically)
+    Distance:       Up to 10km, 40km, 80km, or even 120km depending on
+                    transceiver used
+    Color jacket:   Yellow (OS1/OS2 standards)
+    Use case:       Long distance, high performance, ISP infrastructure,
+                    building-to-building runs, PON networks
+
+  Common standards:
+    OS1   — indoor single mode, tighter loss spec, up to ~10km
+    OS2   — outdoor single mode, lower loss, designed for longer runs
+
+  Can single mode work with any SFP+ transceiver?
+    NO. This is a critical point.
+
+    Single mode fiber REQUIRES a single mode SFP+ transceiver. Using a
+    multimode transceiver in a single mode fiber run will not work reliably
+    and can damage equipment. The laser wavelengths and core sizes are
+    incompatible. Always match:
+
+      Single mode fiber   →   Single mode SFP+ transceiver (laser based)
+      Multimode fiber     →   Multimode SFP+ transceiver (LED/VCSEL based)
+
+    Common single mode SFP+ transceivers:
+      SFP-10G-LR    10Gbps, single mode, up to 10km, 1310nm
+      SFP-10G-ER    10Gbps, single mode, up to 40km, 1550nm
+      SFP-10G-ZR    10Gbps, single mode, up to 80km, 1550nm
+      SFP-1G-LX     1Gbps,  single mode, up to 10km, 1310nm
+
+    Brand locking:
+      Some switches (Cisco, Juniper) only accept vendor-branded SFPs and
+      will reject third party ones unless you bypass the check. Open
+      switches like MikroTik and most Ubiquiti hardware accept any compliant
+      SFP+ without vendor lock.
+
+--------------------------------------------------------------------------------
+  Multimode Fiber (MMF)
+--------------------------------------------------------------------------------
+  Definition:
+    Multimode fiber has a much larger core (50 or 62.5 microns) and carries
+    multiple modes (paths) of light simultaneously using an LED or VCSEL
+    light source. Because multiple light paths travel slightly different
+    distances through the core, the signal spreads out over distance
+    (called modal dispersion), limiting how far it can reliably travel.
+
+  Characteristics:
+    Core size:      50 microns (OM3/OM4/OM5) or 62.5 microns (OM1/OM2)
+    Light source:   LED or VCSEL (Vertical Cavity Surface Emitting Laser)
+    Distance:       Typically 300m to 550m depending on standard
+    Color jacket:   Orange (OM1/OM2), Aqua (OM3/OM4), Lime green (OM5)
+    Use case:       Short runs inside buildings, data centers, server rooms
+
+  Common standards:
+    OM1   — 62.5 micron core, older, up to 300m at 1Gbps
+    OM2   — 50 micron core, up to 550m at 1Gbps
+    OM3   — 50 micron core, optimized for laser, up to 300m at 10Gbps
+    OM4   — 50 micron core, up to 550m at 10Gbps, 100m at 100Gbps
+    OM5   — 50 micron core, supports wideband multimode, newest standard
+
+  When to use multimode vs single mode:
+    Use multimode when:
+      - Runs are short (inside a building or between rooms)
+      - Budget is a concern (multimode transceivers are cheaper)
+      - You are building a data center or server room interconnect
+
+    Use single mode when:
+      - Runs exceed 500 meters
+      - Building to building or campus connections
+      - ISP/PON infrastructure
+      - Future proofing for longer distances
+
+--------------------------------------------------------------------------------
+  Angled Physical Contact (APC) Connectors
+--------------------------------------------------------------------------------
+  Definition:
+    APC is a type of fiber optic connector end face polish. The end of the
+    fiber is polished at an 8 degree angle instead of flat (flat = UPC,
+    Ultra Physical Contact). This angle causes any reflected light to
+    bounce away from the core rather than back down the fiber, dramatically
+    reducing return loss.
+
+  Why it matters:
+    In standard UPC connectors some light reflects back down the fiber toward
+    the transmitter. This reflected light causes noise and signal degradation,
+    which is especially problematic in high precision systems like PON networks
+    where upstream and downstream signals share the same fiber.
+
+  APC vs UPC at a glance:
+    UPC (Ultra Physical Contact)
+      - Flat or slightly curved polish
+      - Green or blue connector body (varies)
+      - Return loss: ~-50dB
+      - Use: general data networks, shorter runs, patch panels
+
+    APC (Angled Physical Contact)
+      - 8 degree angled polish
+      - Green connector body (always green, important identifier)
+      - Return loss: ~-60dB or better
+      - Use: PON networks, CATV, long haul, any high precision optical system
+
+  CRITICAL: APC and UPC connectors are NOT compatible with each other.
+    Connecting an APC to a UPC will physically mate but will cause very high
+    insertion loss and signal degradation. Always match connector types end
+    to end. APC connectors are always green — use this as your visual check.
+
+  Where you will see APC:
+    - The fiber drop coming into your house from the ISP is almost always APC
+    - ONT/ONU devices use APC on the fiber port
+    - PON splitters use APC
+    - Any GPON or XGS-PON infrastructure uses APC throughout
+
+
+================================================================================
+  SECTION 2 — PASSIVE OPTICAL NETWORKS (PON)
+================================================================================
+
+--------------------------------------------------------------------------------
+  What a PON Network Is
+--------------------------------------------------------------------------------
+  A Passive Optical Network is a point-to-multipoint fiber architecture that
+  uses unpowered optical splitters to split one fiber signal from a central
+  point (the OLT) to many endpoints (ONUs/ONTs). The word "passive" refers to
+  the fact that the splitters in the field require no power — they are purely
+  optical glass devices with no electronics.
+
+  Basic PON topology:
+    ISP/Internet Backbone
+           |
+          OLT  (Central Office or Street Cabinet)
+           |
+      Single fiber
+           |
+    Passive Splitter  (1:32 or 1:64 split ratio typically)
+      /    |    \
+    ONU   ONU   ONU   (at each customer premises)
+     |     |     |
+   Router Router Router
+
+  Key PON concepts:
+    Downstream:   OLT broadcasts to all ONUs simultaneously, each ONU only
+                  reads packets addressed to it (uses encryption for privacy)
+    Upstream:     ONUs take turns transmitting to the OLT using time slots
+                  assigned by the OLT (called TDMA, Time Division Multiple Access)
+    Split ratio:  How many ONUs share one fiber — common ratios are 1:32, 1:64,
+                  and 1:128. Higher ratio = more customers per fiber but less
+                  bandwidth per customer during peak times.
+
+--------------------------------------------------------------------------------
+  GPON — Gigabit Passive Optical Network
+--------------------------------------------------------------------------------
+  Definition:
+    GPON is the most widely deployed PON standard in the world. It is what
+    the majority of fiber-to-the-home (FTTH) ISPs run today. The standard
+    is defined by ITU-T G.984.
+
+  Speeds:
+    Downstream:   2.488 Gbps shared across all ONUs on that fiber
+    Upstream:     1.244 Gbps shared across all ONUs on that fiber
+
+  Wavelengths used:
+    Downstream:   1490nm
+    Upstream:     1310nm
+    (Both travel on the same single fiber using WDM — Wavelength Division Mux)
+
+  Max distance:   Up to 20km between OLT and ONU
+  Split ratio:    Up to 1:64 (sometimes 1:128)
+  Connector:      APC (green) — always
+
+  Real world performance:
+    With a 1:32 split ratio and 2.5Gbps downstream, each customer gets
+    roughly 78Mbps theoretical maximum. In practice ISPs engineer the network
+    so not everyone is active at once, allowing them to provision 100-1000Mbps
+    plans on GPON infrastructure.
+
+  Where you see GPON:
+    - Most residential fiber internet (AT&T Fiber, Verizon Fios, many others)
+    - Enterprise fiber drops to office buildings
+    - Municipal fiber networks
+
+--------------------------------------------------------------------------------
+  XGS-PON — 10 Gigabit Symmetric Passive Optical Network
+--------------------------------------------------------------------------------
+  Definition:
+    XGS-PON is the next generation upgrade to GPON. It runs at 10Gbps
+    symmetrically (both up and down) and is backward compatible with GPON
+    infrastructure, meaning an OLT can serve both GPON and XGS-PON ONUs
+    on the same fiber plant simultaneously. Standard is ITU-T G.9807.1.
+
+  Speeds:
+    Downstream:   10 Gbps shared
+    Upstream:     10 Gbps shared
+
+  Wavelengths used:
+    Downstream:   1577nm
+    Upstream:     1270nm
+    (Different wavelengths from GPON allowing coexistence on same fiber)
+
+  Max distance:   Up to 20km
+  Split ratio:    Up to 1:64 or 1:128
+  Connector:      APC (green) — always
+
+  Why XGS-PON matters:
+    As ISPs roll out multi-gig plans (2Gbps, 5Gbps, 10Gbps) GPON simply
+    does not have enough headroom. XGS-PON is the upgrade path. Many ISPs
+    are currently mid-rollout replacing GPON OLT cards with XGS-PON cards
+    while reusing all existing fiber infrastructure and splitters.
+
+  XGS-PON vs GPON coexistence:
+    Because they use different wavelengths, an XGS-PON OLT port can serve
+    XGS-PON ONUs at 10Gbps and GPON ONUs at 2.5Gbps simultaneously on the
+    same physical fiber. ISPs use this to upgrade customers gradually without
+    replacing all equipment at once.
+
+  Other PON standards (for reference):
+    EPON    — 1Gbps, used mostly in Asia, defined by IEEE 802.3ah
+    10G-EPON — 10Gbps version of EPON, also more common in Asia
+    NG-PON2 — 40Gbps, emerging, not widely deployed yet
+
+
+================================================================================
+  SECTION 3 — KEY DEVICES
+================================================================================
+
+--------------------------------------------------------------------------------
+  OLT — Optical Line Terminal
+--------------------------------------------------------------------------------
+  Definition:
+    The OLT is the central device in a PON network. It lives at the provider
+    side — in a data center, central office, or street cabinet. It is the
+    origin point of all optical signals sent to customers and the aggregation
+    point for all upstream traffic coming back from customers.
+
+  What it does:
+    - Converts electrical/ethernet data from the internet backbone into
+      optical signals sent down fiber
+    - Manages time slots for upstream transmissions from each ONU (TDMA)
+    - Authenticates and authorizes each ONU that connects to it
+    - Enforces bandwidth profiles (QoS) per customer
+    - Monitors the health and status of every ONU it serves
+    - Can serve dozens to thousands of ONUs from a single chassis depending
+      on how many PON ports and line cards are installed
+
+  Physical form:
+    Enterprise/ISP OLTs are rack mount chassis with hot-swappable line cards.
+    Each line card contains multiple PON ports (8, 16, or more per card).
+    Each PON port connects to one fiber run that splits to up to 64/128 ONUs.
+
+  Common OLT manufacturers:
+    Huawei    — MA5800 series (most widely deployed globally)
+    ZTE       — C600/C650 series
+    Calix     — E7 series (common in US regional ISPs)
+    Nokia     — 7360 ISAM FX series
+    Adtran    — SDX series
+
+  Buying an OLT for personal/lab use:
+    Used OLTs are available on eBay and AliExpress. A small Huawei MA5608T
+    or ZTE C320 can be found for $200-600 and is perfectly capable of running
+    a private PON network for a campus or multi-building setup.
+
+--------------------------------------------------------------------------------
+  ONU / ONT — Optical Network Unit / Optical Network Terminal
+--------------------------------------------------------------------------------
+  Definition:
+    The ONU (or ONT, the terms are used interchangeably in most contexts) is
+    the customer premises device. It is the box at your house or building
+    where the fiber cable from the street terminates. It converts the optical
+    signal back into an electrical ethernet signal your router can use.
+
+  What it does:
+    - Converts incoming optical signal to ethernet (downstream)
+    - Converts outgoing ethernet to optical signal (upstream)
+    - Authenticates itself to the OLT using a serial number or PLOAM password
+    - Handles the timing and transmission windows assigned by the OLT
+    - Some ONUs also have built in router/WiFi functionality (combo units)
+
+  ONU vs ONT — the technical difference:
+    ONT     — typically refers to a single port device serving one premises
+    ONU     — can refer to both single and multi-port units serving multiple
+              users. In practice most people use the terms interchangeably.
+
+  Common form factors:
+    Stick ONU     — SFP+ form factor, plugs directly into a router's SFP port.
+                    Eliminates a separate ONT box. Very popular for home labs.
+                    Example: WAS-110, Potron M50, various AliExpress models.
+    Desktop ONT   — Small box that sits near your router, has ethernet ports
+                    on one side and fiber on the other. What ISPs typically
+                    install at your home.
+    Wall mount    — Larger unit with multiple ethernet and sometimes phone ports
+
+  Stick ONU (SFP ONU) — important for home lab and custom setups:
+    A stick ONU is an SFP+ module that contains all ONU functionality and
+    plugs directly into a compatible router or switch SFP+ port. This means:
+      - No separate ONT box needed
+      - Fiber plugs directly into your router
+      - Full control over the ONT authentication credentials
+      - Popular with people bypassing ISP-provided equipment
+
+    Compatible routers for stick ONUs:
+      MikroTik routers (most models with SFP+ ports)
+      Ubiquiti UniFi/EdgeRouter with SFP+ ports
+      Some pfSense/OPNsense hardware
+
+
+================================================================================
+  SECTION 4 — QUIC PROTOCOL
+================================================================================
+
+--------------------------------------------------------------------------------
+  What QUIC Is
+--------------------------------------------------------------------------------
+  Definition:
+    QUIC is a modern transport layer network protocol developed by Google and
+    now standardized by the IETF (RFC 9000). It was designed to replace TCP
+    for most internet traffic, especially for HTTP/3 (the latest version of
+    the web protocol). QUIC runs over UDP instead of TCP.
+
+  Why QUIC was created:
+    TCP has been the backbone of internet transport since the 1970s. While
+    reliable, it has fundamental limitations:
+      - Connection setup requires a 3-way handshake (adds latency)
+      - TLS encryption adds another round trip on top of that
+      - Head of line blocking — if one packet is lost, everything waits
+      - Connection tied to IP address — mobile devices lose connection
+        when switching between WiFi and cellular
+
+  What QUIC fixes:
+    0-RTT or 1-RTT connection setup   — much faster than TCP + TLS handshake
+    Built in encryption               — TLS 1.3 is mandatory, baked in
+    Stream multiplexing               — multiple streams, no head of line blocking
+    Connection migration              — connections survive IP address changes
+                                        (seamless WiFi to cellular handoff)
+
+  QUIC and HTTP/3:
+    HTTP/3 runs exclusively over QUIC. When you visit a modern website your
+    browser negotiates HTTP/3 over QUIC if the server supports it, falling
+    back to HTTP/2 over TCP if not. Most major sites (Google, YouTube,
+    Cloudflare, Facebook) already serve HTTP/3.
+
+  QUIC in relation to fiber/optical networks:
+    QUIC is a protocol that runs over whatever physical network you have,
+    including fiber. On a high speed fiber connection QUIC's benefits are
+    most visible — low latency connections get even lower with 0-RTT handshakes
+    and multiplexed streams mean your 10Gbps XGS-PON connection is used
+    more efficiently with less protocol overhead.
+
+  Checking if a site uses QUIC/HTTP3:
+    In Chrome: open DevTools → Network tab → Protocol column shows "h3" for HTTP/3
+    Command line: curl --http3 https://example.com
+    Online tool: https://http3check.net
+
+
+================================================================================
+  SECTION 5 — OPTICAL DISTRIBUTION NETWORKS (ODN)
+================================================================================
+
+--------------------------------------------------------------------------------
+  What an ODN Is
+--------------------------------------------------------------------------------
+  The Optical Distribution Network is the complete fiber infrastructure between
+  the OLT and the ONUs. It includes everything in the middle — the fiber cables,
+  passive splitters, enclosures, patch panels, and conduit. It is the physical
+  plant of a PON deployment.
+
+  ODN components:
+    Feeder fiber      — the main fiber run from the OLT to the first splitter
+                        usually a high fiber count cable (24, 48, 96 fibers)
+    Passive splitters — glass devices that split one fiber signal into many
+                        no power required, just optical physics
+    Distribution fiber — fiber runs from splitters to neighborhood cabinets
+    Drop fiber        — the individual fiber run from the cabinet to each premises
+                        usually a single fiber pair per customer
+    Patch panels      — termination and organization points at each stage
+    Enclosures        — weatherproof boxes housing splitters and connections
+                        in the field (on poles, in underground vaults)
+
+  Splitter ratios and their tradeoffs:
+    1:2    — splits signal to 2 ONUs   — very low loss, short reach applications
+    1:4    — splits to 4 ONUs          — low loss
+    1:8    — splits to 8 ONUs
+    1:16   — splits to 16 ONUs
+    1:32   — most common ISP ratio     — balance of reach and density
+    1:64   — high density deployments  — more customers, more signal loss
+    1:128  — maximum, only viable with high power OLTs and short distances
+
+  Optical loss budget:
+    Every passive splitter adds insertion loss (signal attenuation).
+    A 1:32 splitter adds roughly 15-17dB of loss. The total loss budget
+    from OLT to ONU must stay within the PON standard's limits:
+      GPON:     allows up to 28dB loss (class B+) or 32dB (class C+)
+      XGS-PON:  allows up to 29dB (N1) or 31dB (N2) loss
+
+    This is why fiber type, connector quality, and splitter ratios all matter —
+    every bad connection or unnecessary splice eats into your loss budget.
+
+
+================================================================================
+  SECTION 6 — SCENARIOS
+================================================================================
+
+--------------------------------------------------------------------------------
+  Scenario 1 — Multi-Building Home / Farm / Large Property
+--------------------------------------------------------------------------------
+  Situation:
+    You have a main house, a detached garage workshop, and a barn all on the
+    same property. You want fast, reliable network connectivity between all
+    three without running copper (copper ethernet maxes out at 100 meters).
+
+  Solution — Private PON or point-to-point single mode fiber:
+
+    Option A: Point to point single mode fiber (simpler)
+      - Run OS2 single mode fiber (yellow jacket) from main house to each
+        building — single mode easily covers hundreds of meters
+      - At each end, install a media converter (fiber to ethernet) or use
+        a switch/router with SFP+ ports and single mode transceivers
+      - Connect the switch to your LAN at each building
+      - No OLT or ONU needed — just fiber and SFP+ transceivers
+
+      Equipment needed:
+        OS2 single mode fiber cable (bulk, sold per meter or reel)
+        LC-APC or LC-UPC patch cables at each end
+        SFP-10G-LR transceivers (single mode, 10Gbps, 10km range)
+        Switches with SFP+ ports at each location (MikroTik, Ubiquiti, etc.)
+
+    Option B: Small private PON (more complex, more scalable)
+      - Install a small OLT (Huawei MA5608T or similar) in the main house
+      - Run one single mode fiber to each building
+      - Install an ONU at each building
+      - All buildings appear as network endpoints managed by the OLT
+
+  Fiber considerations:
+    - Use OS2 single mode outdoor rated cable for underground or aerial runs
+    - Use APC connectors throughout if building a PON
+    - Bury fiber at least 12 inches deep in conduit for protection
+    - Aerial runs need messenger wire or self-supporting fiber cable
+
+  Why not copper ethernet for this?
+    Copper ethernet has a hard 100 meter limit. Single mode fiber can span
+    10km on a cheap LR transceiver. No comparison for long runs.
+
+--------------------------------------------------------------------------------
+  Scenario 2 — Building Your Own Neighborhood / Community ISP
+--------------------------------------------------------------------------------
+  Situation:
+    You live in a rural area with poor internet. You and several neighbors
+    want to build a shared fiber network and pool resources to get a real
+    internet connection.
+
+  Solution — Small GPON or XGS-PON deployment:
+
+    Step 1 — Get upstream internet
+      - Contact a wholesale bandwidth provider or local fiber carrier
+      - Get a dedicated fiber handoff (this is the expensive part)
+      - Alternatively share a fixed wireless or satellite connection as
+        a temporary upstream while building the fiber plant
+
+    Step 2 — Install an OLT
+      - Place a small OLT in a central location (your house, a small shed)
+      - Connect your upstream internet to the OLT's uplink port
+      - The OLT manages all downstream connections
+
+    Step 3 — Build the ODN (fiber plant)
+      - Run feeder fiber from the OLT to a central splitter location
+      - Install 1:8 or 1:16 passive splitters
+      - Run drop fiber from splitters to each home
+      - Terminate with APC connectors throughout
+
+    Step 4 — Install ONUs at each home
+      - Each neighbor gets an ONU at their house
+      - ONU connects to their router via ethernet
+      - You provision each ONU through the OLT management interface
+
+    Can the upstream ISP see you?
+      They see one large connection from your OLT. They cannot see individual
+      traffic from each home. All they see is aggregate traffic from your
+      connection. Individual homes are invisible to them.
+
+    Legal note:
+      Operating as an ISP requires licensing in most countries. In the US
+      you may need to register as a CLEC or use an existing ISP's wholesale
+      service. Research local regulations before doing this commercially.
+
+--------------------------------------------------------------------------------
+  Scenario 3 — Bypassing Your ISP's ONT with a Stick ONU
+--------------------------------------------------------------------------------
+  Situation:
+    Your ISP installed a locked ONT (ONT box) at your house. You want to
+    remove it, plug fiber directly into your router, and have full control
+    over your connection without the ISP's equipment in the path.
+
+  Solution — SFP+ Stick ONU:
+
+    What you need:
+      - A router or firewall with an SFP+ port (MikroTik, pfSense box, etc.)
+      - A compatible stick ONU (WAS-110 is the most popular for this)
+      - Your ISP's ONU serial number and PLOAM password (needed to authenticate
+        to the OLT — you can usually read these off your existing ONT)
+
+    Process:
+      1. Note the serial number and PLOAM password from your existing ONT
+      2. Plug the stick ONU into your router's SFP+ port
+      3. Connect the fiber drop cable (APC connector) to the stick ONU
+      4. Configure the stick ONU with your serial number and credentials
+         via its web interface
+      5. The OLT thinks it's still talking to your original ONT
+      6. Your router now handles all PPPoE or DHCP directly
+
+    Benefits:
+      - One less device in the chain (no separate ONT box)
+      - Lower latency (one fewer device to process packets)
+      - Full control over your connection settings
+      - Cleaner setup
+
+    Fiber connector note:
+      The fiber drop from your ISP almost certainly uses an APC connector
+      (green). Make sure your stick ONU and any patch cables use APC as well.
+      Mixing APC and UPC will cause the connection to fail or perform poorly.
+
+--------------------------------------------------------------------------------
+  Scenario 4 — Data Center or Server Room Interconnect
+--------------------------------------------------------------------------------
+  Situation:
+    You have a server room and need to connect multiple racks or connect
+    to a separate network room with high speed links.
+
+  Solution — Multimode fiber for short runs, single mode for longer:
+
+    For runs under 100 meters (within a building):
+      - Use OM4 or OM5 multimode fiber (aqua jacket)
+      - Use 10G SFP+ SR transceivers (multimode, short range)
+      - Much cheaper than single mode transceivers
+      - Adequate for intra-building runs
+
+    For runs over 300 meters (between buildings on campus):
+      - Switch to OS2 single mode fiber (yellow jacket)
+      - Use SFP-10G-LR or SFP-10G-ER transceivers
+      - Same fiber can scale to 100Gbps later with transceiver upgrade
+
+    QUIC relevance here:
+      In a data center environment where you are running modern applications
+      and microservices, enabling HTTP/3 and QUIC at the application layer
+      over your high speed fiber backbone reduces connection overhead and
+      improves throughput for parallel streams significantly.
+
+--------------------------------------------------------------------------------
+  Scenario 5 — Understanding Your Existing ISP Fiber Connection
+--------------------------------------------------------------------------------
+  Situation:
+    You have home fiber internet and want to understand what you actually have.
+
+  What your setup likely looks like:
+    Street pole/cabinet   — contains passive splitter and feeder fiber
+           |
+    Drop fiber (single mode OS2, APC connector, yellow jacket usually)
+           |
+    ONT/ONU at your house (the box your ISP installed)
+           |  (ethernet cable)
+    Your router
+           |
+    Your home network
+
+  The ONT at your house:
+    - Is an ONU that your ISP's OLT manages remotely
+    - Your ISP can push firmware updates, reboot it, read diagnostics
+    - You do not own it in most cases — the ISP does
+    - Replacing it with a stick ONU (Scenario 3) removes ISP control
+      over that device
+
+  Can your ISP see your traffic?
+    Yes, by default. All your traffic passes through their OLT and network.
+    They can see metadata (which IPs you connect to, timing, volume) even
+    if they cannot easily read encrypted content. Using a VPN or Tor sends
+    your traffic encrypted through their infrastructure, hiding destinations.
+
+  What QUIC changes for you here:
+    If you use HTTP/3 capable sites and apps, your browser uses QUIC over
+    UDP automatically. Some ISPs used to throttle certain protocols — QUIC
+    over UDP is harder to throttle or classify than HTTP/2 over TCP.
+
+
+================================================================================
+  QUICK REFERENCE CHEAT SHEET
+================================================================================
+
+  FIBER TYPES
+  -----------
+  OS1/OS2     Single mode (yellow)    Long distance, 10km-80km+
+  OM1/OM2     Multimode (orange)      Short distance, 300-550m, older
+  OM3/OM4     Multimode (aqua)        Short distance, 300-550m, 10Gbps
+  OM5         Multimode (lime green)  Short distance, emerging standard
+
+  CONNECTORS
+  ----------
+  APC (green)     8 degree angle polish, -60dB return loss, use for PON/GPON
+  UPC (blue)      Flat polish, -50dB return loss, general networking
+  LC              Small form factor, most common in modern networking
+  SC              Larger, older, still common in ISP infrastructure
+  DO NOT mix APC and UPC — they are physically compatible but optically wrong
+
+  PON STANDARDS
+  -------------
+  GPON        2.5Gbps down / 1.25Gbps up    Most common residential fiber today
+  XGS-PON     10Gbps down / 10Gbps up       Next gen, multi-gig plans
+  EPON        1Gbps symmetric               Common in Asia
+  10G-EPON    10Gbps symmetric              Asia, less common globally
+
+  TRANSCEIVERS (single mode SFP+)
+  --------------------------------
+  SFP-10G-SR    Multimode, 300m,  850nm     (DO NOT use with single mode fiber)
+  SFP-10G-LR    Single mode, 10km, 1310nm
+  SFP-10G-ER    Single mode, 40km, 1550nm
+  SFP-10G-ZR    Single mode, 80km, 1550nm
+
+  KEY RULES
+  ---------
+  Single mode fiber    →   REQUIRES single mode transceiver
+  Multimode fiber      →   REQUIRES multimode transceiver
+  PON networks         →   Always use APC (green) connectors
+  OLT                  →   Provider side, manages all ONUs
+  ONU/ONT              →   Customer side, converts optical to ethernet
+  QUIC                 →   Runs over UDP, used by HTTP/3, faster than TCP+TLS
+
+================================================================================
+  Personal Reference Notes — Optical Networking
+================================================================================
