@@ -1,0 +1,316 @@
+================================================================
+TRUENAS SCALE — DRIVE REPLACEMENT NOTES
+================================================================
+Date: June 2, 2026
+
+----------------------------------------------------------------
+SITUATION
+----------------------------------------------------------------
+Pool "coolpool" showed DEGRADED status after an iSCSI session
+crashed mid-session during heavy PC load (gaming + OBS).
+The crash caused the HGST drive to fault and its metadata
+to corrupt, leaving it permanently UNAVAIL in the pool.
+
+Setup:
+  Pool name:     coolpool
+  Pool type:     RAIDZ1 (requires 1 drive minimum to survive)
+  Failed drive:  HGST Ultrastar (old, end of life)
+  New drive:     Seagate Exos X10 ST10000NM0086 10TB
+  Serial:        ZA2AM0E8
+  HBA:           LSI 9207-8i in IT Mode
+
+----------------------------------------------------------------
+WHEN TO USE THESE NOTES
+----------------------------------------------------------------
+  - A drive shows UNAVAIL or FAULTED in pool status
+  - Pool shows DEGRADED
+  - You are replacing a failed drive with a new one
+  - You want to resilver a new drive into an existing pool
+
+----------------------------------------------------------------
+STEP 1 — CHECK POOL STATUS
+----------------------------------------------------------------
+Run this first to see the state of your pool:
+
+  zpool status coolpool
+
+What to look for:
+  ONLINE      All drives healthy, pool is fine
+  DEGRADED    One or more drives failed, data still safe
+              but no redundancy — replace drive ASAP
+  FAULTED     Drive completely failed
+  UNAVAIL     Drive missing or unreadable
+  SUSPENDED   Pool is paused, serious issue
+
+When to run:
+  Any time you suspect a drive issue
+  After replacing a drive
+  To monitor resilver progress
+  Routine health checks
+
+----------------------------------------------------------------
+STEP 2 — CHECK WHICH PHYSICAL DRIVE FAILED
+----------------------------------------------------------------
+The failed drive showed as a long number with no drive letter:
+
+  11802723225796848042   UNAVAIL
+
+This means TrueNAS could not identify it as a drive anymore.
+The drive letter (sda, sdb etc) is assigned by the kernel.
+When a drive completely fails it loses its letter and shows
+only its GUID or WWN identifier.
+
+To list all drives and their identifiers:
+
+  ls /dev/disk/by-id/
+
+This shows all drives with their serial numbers so you can
+match them to physical drives in your server.
+
+To check SMART health of any drive:
+
+  sudo smartctl -a /dev/sdX
+
+Replace X with the drive letter (a, b, c etc).
+Run this on any drive you suspect is failing.
+
+----------------------------------------------------------------
+STEP 3 — VERIFY NEW DRIVE SMART HEALTH BEFORE REPLACING
+----------------------------------------------------------------
+Before adding a new drive always check its health first:
+
+  sudo smartctl -a /dev/sdd
+
+Key values to check:
+  SMART overall-health         Should say PASSED
+  Reallocated_Sector_Ct        Should be 0
+  Current_Pending_Sector       Should be 0
+  Offline_Uncorrectable        Should be 0
+  Reported_Uncorrect           Should be 0
+  Power_On_Hours               Shows drive age/usage
+
+If any of the above are non-zero the drive may be failing
+already. Do not use a drive with high reallocated sectors
+or pending sectors as a replacement.
+
+----------------------------------------------------------------
+STEP 4 — WIPE THE NEW DRIVE BEFORE REPLACING
+----------------------------------------------------------------
+New or used drives often have leftover partition signatures
+from previous use. These MUST be cleared before ZFS can use
+the drive. In this case the Seagate had a DDF RAID member
+signature from a previous array which caused it to show
+as busy and FAULTED when ZFS tried to write to it.
+
+Wipe the partition table:
+
+  sudo sgdisk --zap-all /dev/sdd
+
+Wipe all filesystem signatures:
+
+  sudo wipefs -a /dev/sdd
+
+If the drive has existing partitions wipe those too:
+
+  sudo wipefs -a /dev/sdd1
+
+Tell the kernel to re-read the partition table:
+
+  sudo partprobe /dev/sdd
+
+When to run:
+  Any time you are adding a used drive to a ZFS pool
+  Any time wipefs or zpool replace says drive is busy
+  Any time drive has DDF, MBR, or other signatures
+
+NOTE: If the drive shows "Device or resource busy" after
+wiping, a reboot is usually required to clear the kernel's
+cached state. After reboot run wipefs again before replacing.
+
+----------------------------------------------------------------
+STEP 5 — REPLACE THE FAILED DRIVE
+----------------------------------------------------------------
+This command tells ZFS to replace the failed drive identifier
+with the new physical drive:
+
+  sudo zpool replace -f coolpool 11802723225796848042 /dev/sdd
+
+Breaking down the command:
+  sudo                    Run as administrator
+  zpool replace           ZFS replace command
+  -f                      Force — override signature warnings
+  coolpool                Your pool name
+  11802723225796848042    The GUID of the failed/UNAVAIL drive
+                          (get this from zpool status output)
+  /dev/sdd                The new replacement drive
+
+If the drive shows as busy use /dev/sdb or whatever letter
+TrueNAS assigned it after reboot:
+
+  sudo zpool replace -f coolpool 11802723225796848042 /dev/sdb
+
+When to run:
+  After wiping the new drive
+  After verifying SMART health
+  When pool is DEGRADED and you have a replacement ready
+
+----------------------------------------------------------------
+STEP 6 — MONITOR RESILVER PROGRESS
+----------------------------------------------------------------
+After running zpool replace the pool will begin resilvering —
+rebuilding the data from the surviving drives onto the new one.
+
+Check progress:
+
+  zpool status coolpool
+
+Watch it live updating every 2 seconds:
+
+  watch zpool status coolpool
+
+Press Ctrl+C to stop watching.
+
+What you will see during resilver:
+  replacing-1     DEGRADED    Normal during resilver
+  sdb             ONLINE (resilvering)
+  X% done
+  HH:MM:SS to go  Estimated time remaining
+
+When resilver is complete you will see:
+  pool:  ONLINE
+  scan:  resilvered XXXG in HH:MM:SS with 0 errors
+
+How long resilver takes:
+  Depends on pool size and drive speed
+  This resilver took 1 hour 48 minutes for 912GB
+  Larger pools can take 8-24 hours
+  Do NOT power off during resilvering
+
+----------------------------------------------------------------
+STEP 7 — VERIFY POOL IS HEALTHY AFTER RESILVER
+----------------------------------------------------------------
+After resilver completes run:
+
+  zpool status coolpool
+
+Expected healthy output:
+  pool:  ONLINE
+  state: ONLINE
+  scan:  resilvered with 0 errors
+  All drives show ONLINE
+  errors: No known data errors
+
+----------------------------------------------------------------
+STEP 8 — CLEAN UP OLD FAILED DRIVE FROM POOL
+----------------------------------------------------------------
+After the resilver completes remove the old dead drive
+from the spares list so the pool looks clean:
+
+  sudo zpool remove coolpool 8233f383-b7ab-42e0-a239-50840eb68e25
+
+Replace the long number with whatever UNAVAIL spare shows
+in your zpool status output.
+
+When to run:
+  After resilver is 100% complete
+  When you see an UNAVAIL entry in the spares section
+
+----------------------------------------------------------------
+TROUBLESHOOTING — COMMON ERRORS ENCOUNTERED
+----------------------------------------------------------------
+
+ERROR: invalid vdev specification / contains ddf_raid_member
+  Cause:   Drive has leftover RAID signature from previous use
+  Fix:     Run sgdisk --zap-all and wipefs -a on the drive
+           Then use -f flag in zpool replace
+
+ERROR: Device or resource busy
+  Cause:   Kernel is holding cached partition state
+  Fix:     Run partprobe, then reboot if still busy
+           After reboot run wipefs again then zpool replace
+
+ERROR: Permission denied
+  Cause:   Not running as root/sudo
+  Fix:     Add sudo before the command
+
+ERROR: Sense Key: Not Ready / Logical unit not ready
+  Cause:   Physical connection issue — cable not seated
+           or wrong cable type being used
+  Fix:     Power off, reseat SATA data and power cables
+           Try a different port on the HBA breakout cable
+           Reboot and try again
+
+ERROR: Drive shows FAULTED during resilver with many errors
+  Cause:   Usually a physical connection issue not bad drive
+  Fix:     Check SMART data first with smartctl -a /dev/sdX
+           If SMART is clean reseat cables and reboot
+           Try a different HBA port
+
+----------------------------------------------------------------
+HOW THE CRASH HAPPENED AND HOW TO PREVENT IT
+----------------------------------------------------------------
+Cause:
+  iSCSI session crashed during heavy PC load
+  (gaming + OBS recording simultaneously)
+  TrueNAS saw drive disappear mid-write
+  HGST drive metadata corrupted
+  Drive came back as permanently UNAVAIL
+
+Prevention:
+  1. Increase iSCSI recovery timeout in TrueNAS
+     Shares → iSCSI → Target → Recovery Timeout → 120s
+     Gives session time to reconnect before dropping
+
+  2. Do not disconnect VPN while iSCSI is active
+     Windscribe firewall drops network which kills iSCSI
+
+  3. Use dedicated NIC for iSCSI traffic
+     Keeps iSCSI separate from gaming/general network traffic
+
+  4. Do not run iSCSI drives in same pool as critical data
+     Use a separate zvol so a crash only affects that volume
+
+  5. Turn off Windscribe firewall before gaming sessions
+     Re-enable after
+
+----------------------------------------------------------------
+QUICK REFERENCE — ALL COMMANDS
+----------------------------------------------------------------
+
+Check pool health:
+  zpool status coolpool
+
+Watch resilver live:
+  watch zpool status coolpool
+
+Check drive SMART health:
+  sudo smartctl -a /dev/sdX
+
+List all drives by serial:
+  ls /dev/disk/by-id/
+
+Wipe partition table:
+  sudo sgdisk --zap-all /dev/sdX
+
+Wipe filesystem signatures:
+  sudo wipefs -a /dev/sdX
+
+Re-read partition table:
+  sudo partprobe /dev/sdX
+
+Replace failed drive:
+  sudo zpool replace -f poolname FAILED_GUID /dev/sdX
+
+Remove dead spare from pool:
+  sudo zpool remove poolname SPARE_GUID
+
+Check kernel drive errors:
+  sudo dmesg | grep -i sdX | tail -40
+
+Scrub pool for errors:
+  sudo zpool scrub coolpool
+
+Check scrub results:
+  zpool status coolpool
+
+================================================================
