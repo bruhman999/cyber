@@ -6,7 +6,7 @@
 BASIC FILE & DIRECTORY COMMANDS
 --------------------------------------------------------------------------------
 
-  .                              Current directory
+  .                              Current directory ( cp /media/cdrom/* .) copies all files in cdrom into current directory
   ls                             List files in a directory
   ls -lh <file>                  List with details, check file owner/permissions
   ls -al                         List all files including hidden, with details
@@ -35,6 +35,23 @@ BASIC FILE & DIRECTORY COMMANDS
   touch file{a..10}.txt          create multiple files
   history 5                      print last 5 commands
   chsh -s $(which zsh)           set Zsh as your permanent default shell
+  gedit                          Open file in cool notes
+  ;                              add shorter commands (cd; ls; pwd)
+  \                              if too long type cat \ /etc/passwd
+  "                              use for strings with spaces like grep "justin kloski"
+--------------------------------------------------------------------------------
+Symbolic link
+--------------------------------------------------------------------------------
+Example 1:
+  Create a symlink named take-the-command-challenge
+  that points to the EXISTING file tmp/files/take-the-command-challenge
+
+    ln -s tmp/files/take-the-command-challenge take-the-command-challenge
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^
+          TARGET (existing file, points TO this)   LINKNAME (new shortcut)
+
+  Result: typing take-the-command-challenge now opens
+          tmp/files/take-the-command-challenge
 --------------------------------------------------------------------------------
 VIEWING FILE CONTENT — HEAD & TAIL
 --------------------------------------------------------------------------------
