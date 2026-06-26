@@ -1,0 +1,31 @@
+NFT Firewall Lab Notes
+======================
+
+RECON / TOOLS
+-------------
+which tcpdump       # locate tcpdump binary
+which nft           # locate nft binary (netfilter firewall tool)
+
+VIEWING RULESETS
+----------------
+cat nftables.txt        # view ruleset file, explains tables, chains, and rules
+sudo nft list ruleset   # list all active nft rules currently loaded
+
+NFT CONCEPTS
+------------
+- Tables  : top-level containers that hold chains (e.g. inet, ip, ip6)
+- Chains  : ordered list of rules within a table, hooked into network stack
+- Rules   : individual conditions and actions (accept, drop, log, etc.)
+
+CREATING A TABLE AND CHAIN
+--------------------------
+sudo nft add table inet watchdog
+# creates a new table named "watchdog" using inet (IPv4 + IPv6)
+
+sudo nft add chain inet watchdog input '{ type filter hook input priority 0 ; }'
+# adds an input chain to watchdog, hooked at input priority 0 (filter level)
+
+ADDING A RULE
+-------------
+sudo nft add rule inet watchdog input tcp dport 22 ip saddr != 192.168.186.99 log prefix '"[UNAUTHORIZED SSH]"' drop
+# blocks and logs any SSH (port 22) traffic NOT coming from 192.168.186.99
