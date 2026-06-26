@@ -365,6 +365,8 @@ Correct:
 
     ./syncthing
 
+nohup ./syncthing & (runs in background & tells it to give prompt back and nohup keeps it running)
+
 --------------------------------------------------------------------------------
 
 Why?
