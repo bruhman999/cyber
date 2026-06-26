@@ -45,6 +45,21 @@ sudo cat /var/log/auth.log
 # View all auth log entries (Fedora)
 sudo cat /var/log/secure
 
+OR ON FEDORA:
+# View all auth/SSH events
+sudo journalctl -u sshd
+
+# Live view in real time
+sudo journalctl -u sshd -f
+
+# Failed login attempts
+sudo journalctl -u sshd | grep "Failed password"
+
+# All security related events
+sudo journalctl _COMM=sudo
+sudo journalctl _COMM=sshd
+
+
 # Watch live in real time
 sudo tail -f /var/log/auth.log       # Kali
 sudo tail -f /var/log/secure         # Fedora
