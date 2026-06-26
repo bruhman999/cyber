@@ -1,0 +1,591 @@
+```
+================================================================================
+                    LINUX ARCHIVES & INSTALLATION REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+Linux software is distributed in several different formats. Some files are
+installers (.rpm), while others are simply compressed archives that contain
+the program (.tar.gz, .zip, .7z).
+
+Unlike Windows, downloading software does NOT always mean it is installed.
+Many downloads simply need to be extracted and executed.
+
+General workflow:
+
+    Download
+        │
+        ▼
+    Determine file type
+        │
+        ▼
+    Extract (if necessary)
+        │
+        ▼
+    Enter extracted directory
+        │
+        ▼
+    Locate executable
+        │
+        ▼
+    Run executable
+
+================================================================================
+                    STEP 1 — IDENTIFY THE FILE TYPE
+================================================================================
+
+List files in the current directory:
+
+    ls
+
+Example:
+
+    syncthing-linux-amd64-v2.1.0.tar.gz
+    bitwarden.rpm
+    firefox.tar.xz
+    program.zip
+
+To see more information:
+
+    ls -lh
+
+To determine exactly what a file is:
+
+    file filename
+
+Example:
+
+    file syncthing-linux-amd64-v2.1.0.tar.gz
+
+================================================================================
+                    ARCHIVE TYPES EXPLAINED
+================================================================================
+
+ZIP (.zip)
+-----------
+
+Standard archive used primarily on Windows.
+
+Extract:
+
+    unzip archive.zip
+
+or
+
+    7z x archive.zip
+
+--------------------------------------------------------------------------------
+
+GZIP (.gz)
+----------
+
+Compresses ONE file.
+
+Example:
+
+    notes.txt.gz
+
+Extract:
+
+    gunzip notes.txt.gz
+
+Result:
+
+    notes.txt
+
+NOTE:
+A .gz file is NOT necessarily a program.
+
+--------------------------------------------------------------------------------
+
+TAR (.tar)
+----------
+
+A TAR file is simply many files packed together.
+
+Think of it as:
+
+    Folder
+        ↓
+    One archive
+
+Extract:
+
+    tar -xf archive.tar
+
+--------------------------------------------------------------------------------
+
+TAR.GZ (.tar.gz)
+----------------
+
+The most common Linux download.
+
+A TAR archive compressed with gzip.
+
+Extract directly:
+
+    tar -xzf archive.tar.gz
+
+Flag explanation:
+
+    x = Extract
+    z = GZip compression
+    f = File
+
+Result:
+
+    archive/
+
+--------------------------------------------------------------------------------
+
+TGZ (.tgz)
+----------
+
+Exactly the same as .tar.gz
+
+Extract:
+
+    tar -xzf archive.tgz
+
+--------------------------------------------------------------------------------
+
+TAR.XZ (.tar.xz)
+----------------
+
+Compressed using xz.
+
+Extract:
+
+    tar -xJf archive.tar.xz
+
+Flag explanation:
+
+    J = xz compression
+
+--------------------------------------------------------------------------------
+
+XZ (.xz)
+---------
+
+Single compressed file.
+
+Extract:
+
+    unxz file.xz
+
+or
+
+    xz -d file.xz
+
+--------------------------------------------------------------------------------
+
+7Z (.7z)
+--------
+
+7-Zip archive.
+
+Extract:
+
+    7z x archive.7z
+
+--------------------------------------------------------------------------------
+
+RAR (.rar)
+----------
+
+RAR archive.
+
+Extract:
+
+    7z x archive.rar
+
+or
+
+    unrar x archive.rar
+
+================================================================================
+                    INSTALLER TYPES
+================================================================================
+
+RPM (.rpm)
+----------
+
+Native Fedora package.
+
+Install:
+
+    sudo dnf install ./program.rpm
+
+The "./" tells dnf:
+
+    "Install THIS local file."
+
+Without "./", dnf searches the Fedora repositories instead.
+
+--------------------------------------------------------------------------------
+
+DEB (.deb)
+----------
+
+Debian / Ubuntu installer.
+
+NOT compatible with Fedora.
+
+Do NOT extract it.
+
+Instead:
+
+    Download the RPM version.
+
+--------------------------------------------------------------------------------
+
+AppImage
+--------
+
+Portable executable.
+
+No installation required.
+
+Make executable:
+
+    chmod +x Program.AppImage
+
+Run:
+
+    ./Program.AppImage
+
+================================================================================
+                    NAVIGATING THE FILESYSTEM
+================================================================================
+
+Current directory:
+
+    pwd
+
+Example:
+
+    /home/neo/Documents
+
+--------------------------------------------------------------------------------
+
+List files:
+
+    ls
+
+Detailed listing:
+
+    ls -l
+
+Include hidden files:
+
+    ls -la
+
+--------------------------------------------------------------------------------
+
+Enter a directory:
+
+    cd foldername
+
+Example:
+
+    cd syncthing-linux-amd64-v2.1.0
+
+--------------------------------------------------------------------------------
+
+Go back one directory:
+
+    cd ..
+
+Go back two:
+
+    cd ../..
+
+Go home:
+
+    cd
+
+Go to Documents:
+
+    cd ~/Documents
+
+================================================================================
+                    EXPLORING EXTRACTED FILES
+================================================================================
+
+After extraction:
+
+    ls
+
+Example:
+
+    syncthing
+    README.md
+    LICENSE
+    AUTHORS
+
+Look for:
+
+    README
+    INSTALL
+    LICENSE
+    executable files
+
+Determine file type:
+
+    file syncthing
+
+Output:
+
+    ELF 64-bit executable
+
+This means it is a Linux executable.
+
+================================================================================
+                    RUNNING PROGRAMS
+================================================================================
+
+Linux does NOT automatically execute files in the current directory.
+
+Example:
+
+Current directory:
+
+    /home/neo/Documents/syncthing/
+
+Contains:
+
+    syncthing
+
+Incorrect:
+
+    syncthing
+
+Correct:
+
+    ./syncthing
+
+--------------------------------------------------------------------------------
+
+Why?
+
+Linux searches executable programs in:
+
+    /usr/bin
+    /bin
+    /usr/local/bin
+    ...
+
+NOT the current directory.
+
+"./" literally means:
+
+    "Run the file located HERE."
+
+================================================================================
+                    EXECUTABLE PERMISSIONS
+================================================================================
+
+If you receive:
+
+    Permission denied
+
+The file probably is not executable.
+
+Grant permission:
+
+    chmod +x syncthing
+
+Run again:
+
+    ./syncthing
+
+================================================================================
+                    COMPLETE EXAMPLE
+================================================================================
+
+Downloaded:
+
+    syncthing-linux-amd64-v2.1.0.tar.gz
+
+Step 1
+
+    cd ~/Documents
+
+Step 2
+
+    tar -xzf syncthing-linux-amd64-v2.1.0.tar.gz
+
+Step 3
+
+    ls
+
+Output:
+
+    syncthing-linux-amd64-v2.1.0
+
+Step 4
+
+    cd syncthing-linux-amd64-v2.1.0
+
+Step 5
+
+    ls
+
+Output:
+
+    syncthing
+    README.md
+    LICENSE
+
+Step 6
+
+    ./syncthing
+
+Program starts.
+
+================================================================================
+                    FEDORA PACKAGE MANAGER (DNF)
+================================================================================
+
+Before downloading software manually, check if Fedora already provides it.
+
+Search:
+
+    dnf search program
+
+Example:
+
+    dnf search syncthing
+
+Install:
+
+    sudo dnf install syncthing
+
+Upgrade everything:
+
+    sudo dnf upgrade
+
+Remove:
+
+    sudo dnf remove syncthing
+
+List installed packages:
+
+    dnf list installed
+
+This is the preferred installation method because:
+
+    • Automatically installs dependencies
+    • Receives updates
+    • Integrates with the system
+    • Easy removal
+
+================================================================================
+                    COMMON COMMANDS
+================================================================================
+
+Current directory
+
+    pwd
+
+List files
+
+    ls
+
+Detailed list
+
+    ls -lh
+
+Hidden files
+
+    ls -la
+
+Change directory
+
+    cd folder
+
+Back one directory
+
+    cd ..
+
+Home directory
+
+    cd
+
+Extract ZIP
+
+    unzip archive.zip
+
+Extract tar.gz
+
+    tar -xzf archive.tar.gz
+
+Extract tar.xz
+
+    tar -xJf archive.tar.xz
+
+Extract tar
+
+    tar -xf archive.tar
+
+Extract 7z
+
+    7z x archive.7z
+
+Install RPM
+
+    sudo dnf install ./package.rpm
+
+Run executable
+
+    ./program
+
+Make executable
+
+    chmod +x program
+
+Determine file type
+
+    file filename
+
+================================================================================
+                    REMEMBER
+================================================================================
+
+Compressed Archive (.zip, .tar.gz, .7z)
+
+        Download
+            ↓
+        Extract
+            ↓
+        cd into folder
+            ↓
+        ls
+            ↓
+        Find executable
+            ↓
+        ./program
+
+RPM Package
+
+        Download
+            ↓
+        sudo dnf install ./package.rpm
+
+AppImage
+
+        Download
+            ↓
+        chmod +x App.AppImage
+            ↓
+        ./App.AppImage
+
+DEB Package
+
+        Fedora cannot install this directly.
+
+        Download the RPM version instead.
+
+================================================================================
+```
