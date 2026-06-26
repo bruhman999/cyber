@@ -1,0 +1,5 @@
+cd ~/Documents/syncthing-linux-amd64-v2.1.0
+
+nohup ./syncthing &
+
+http://127.0.0.1:8384/
