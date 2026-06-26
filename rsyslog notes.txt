@@ -1,0 +1,88 @@
+Rsyslog Installation & Usage Notes
+===================================
+
+WHAT IS RSYSLOG?
+----------------
+Rsyslog is a system logging daemon that collects, processes, and stores
+log messages from the OS, services, and applications. It is essential for
+security monitoring, troubleshooting, and detecting unauthorized access attempts.
+
+WHY INSTALL IT?
+---------------
+- Centralized logging for all system activity
+- Detect unauthorized SSH attempts and brute force attacks
+- Audit user logins, sudo usage, and service failures
+- Required for most security monitoring and SIEM integrations
+- Logs persist across sessions for forensic analysis
+
+INSTALLATION
+------------
+# Kali (Debian-based)
+sudo apt update && sudo apt install rsyslog -y
+sudo systemctl enable rsyslog
+sudo systemctl start rsyslog
+
+# Fedora
+sudo dnf install rsyslog -y
+sudo systemctl enable rsyslog
+sudo systemctl start rsyslog
+
+# Verify it is running (both distros)
+sudo systemctl status rsyslog
+
+KEY LOG FILES
+-------------
+/var/log/auth.log       # Kali/Debian — SSH logins, sudo, auth events
+/var/log/secure         # Fedora/RHEL — same as above
+/var/log/syslog         # General system messages (Kali)
+/var/log/messages       # General system messages (Fedora)
+
+VIEWING UNAUTHORIZED ACCESS ATTEMPTS
+-------------------------------------
+# View all auth log entries (Kali)
+sudo cat /var/log/auth.log
+
+# View all auth log entries (Fedora)
+sudo cat /var/log/secure
+
+# Watch live in real time
+sudo tail -f /var/log/auth.log       # Kali
+sudo tail -f /var/log/secure         # Fedora
+
+# Filter for failed SSH login attempts
+sudo grep "Failed password" /var/log/auth.log
+sudo grep "Failed password" /var/log/secure
+
+# Filter for invalid users
+sudo grep "Invalid user" /var/log/auth.log
+
+# Filter for successful logins
+sudo grep "Accepted password" /var/log/auth.log
+
+# See all SSH-related events
+sudo grep "sshd" /var/log/auth.log
+
+WHAT TO LOOK FOR
+----------------
+"Failed password for root from x.x.x.x"   → brute force attempt
+"Invalid user admin from x.x.x.x"          → scanning for common usernames
+"Accepted password for neo from x.x.x.x"   → successful login (verify it was you)
+"sudo: neo : TTY=pts/0"                     → sudo command was run
+
+WHAT TO DO IF YOU SEE UNAUTHORIZED ATTEMPTS
+--------------------------------------------
+1. Identify the source IP from the log entry
+2. Block it immediately:
+   sudo ufw deny from x.x.x.x to any      # Kali
+   sudo firewall-cmd --add-rich-rule='rule family=ipv4 source address=x.x.x.x drop' --permanent && sudo firewall-cmd --reload   # Fedora
+
+3. Check if they got in:
+   last                     # shows recent logins
+   lastb                    # shows failed login attempts
+   who                      # shows who is currently logged in
+
+4. If breach is suspected:
+   - Change passwords immediately
+   - Review /var/log/auth.log for full session timeline
+   - Check for new user accounts: cat /etc/passwd
+   - Check for new cron jobs: crontab -l && sudo crontab -l
