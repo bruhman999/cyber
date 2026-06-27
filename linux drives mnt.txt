@@ -1,0 +1,297 @@
+```text
+================================================================================
+                    LINUX DRIVES & MOUNT POINTS REFERENCE
+================================================================================
+
+OVERVIEW
+--------
+Linux does NOT use drive letters like Windows (C:, D:, E:).
+
+Instead, every drive, partition, USB stick, network share, etc., becomes part
+of one single directory tree.
+
+Everything begins at:
+
+    /
+
+called the "root" directory.
+
+Examples:
+
+Windows:
+
+    C:\Users\Neo\Desktop
+
+    D:\Games
+
+Linux:
+
+    /home/neo/Desktop
+
+    /mnt/Games
+
+================================================================================
+                    VIEW ALL MOUNTED DRIVES
+================================================================================
+
+Show mounted filesystems:
+
+    mount
+
+Better view:
+
+    df -h
+
+Example:
+
+    Filesystem      Size   Used   Avail   Mounted on
+
+    /dev/nvme0n1p2 500G    60G    440G    /
+
+    /dev/sdb1      2T      1.1T   900G    /mnt/storage
+
+================================================================================
+                    SEE BLOCK DEVICES
+================================================================================
+
+Show physical disks:
+
+    lsblk
+
+Example:
+
+    NAME        SIZE   TYPE   MOUNTPOINT
+
+    nvme0n1     500G   disk
+
+    ├─nvme0n1p1 600M   part   /boot
+
+    └─nvme0n1p2 499G   part   /
+
+    sdb          2T    disk
+
+    └─sdb1       2T    part   /mnt/storage
+
+================================================================================
+                    CHANGE TO A DIFFERENT DRIVE
+================================================================================
+
+Windows:
+
+    D:
+
+Linux:
+
+    cd /mnt/storage
+
+or
+
+    cd /run/media/neo/Storage
+
+There is NO drive letter command.
+
+You simply cd into wherever the drive is mounted.
+
+================================================================================
+                    COMMON MOUNT LOCATIONS
+================================================================================
+
+Home directory
+
+    /home/neo
+
+USB drives
+
+    /run/media/neo/
+
+Temporary mounts
+
+    /mnt/
+
+Optional software
+
+    /opt/
+
+System root
+
+    /
+
+================================================================================
+                    FIND WHERE A DRIVE IS MOUNTED
+================================================================================
+
+Show drives:
+
+    lsblk
+
+Example:
+
+    NAME      MOUNTPOINT
+
+    sdb1      /mnt/storage
+
+Go there:
+
+    cd /mnt/storage
+
+================================================================================
+                    ACCESSING SMB SHARES
+================================================================================
+
+SMB shares must first be mounted.
+
+Install tools:
+
+    sudo dnf install cifs-utils
+
+Create mount point:
+
+    sudo mkdir /mnt/windows
+
+Mount:
+
+    sudo mount -t cifs \
+    //192.168.1.100/Shared \
+    /mnt/windows \
+    -o username=neo
+
+Now access it:
+
+    cd /mnt/windows
+
+List files:
+
+    ls
+
+Everything behaves like a normal folder.
+
+================================================================================
+                    AUTOMATICALLY MOUNTED NETWORK SHARES
+================================================================================
+
+If KDE (Dolphin) mounted the share for you:
+
+Look under:
+
+    /run/user/1000/gvfs/
+
+Example:
+
+    ls /run/user/1000/gvfs
+
+Output:
+
+    smb-share:server=desktop,share=documents
+
+Go into it:
+
+    cd "/run/user/1000/gvfs/smb-share:server=desktop,share=documents"
+
+Notice the quotes.
+
+================================================================================
+                    FIND ALL SMB MOUNTS
+================================================================================
+
+mount | grep cifs
+
+or
+
+    df -h | grep cifs
+
+================================================================================
+                    FIND ALL NETWORK SHARES
+================================================================================
+
+mount | grep //
+
+================================================================================
+                    FIND A SPECIFIC FILE
+================================================================================
+
+find /mnt -name "notes.txt"
+
+Search entire system:
+
+    find / -name "notes.txt"
+
+================================================================================
+                    NAVIGATION CHEATSHEET
+================================================================================
+
+Current directory
+
+    pwd
+
+List files
+
+    ls
+
+Enter folder
+
+    cd folder
+
+Back one level
+
+    cd ..
+
+Go home
+
+    cd
+
+Go to root
+
+    cd /
+
+Go to mounted drive
+
+    cd /mnt/storage
+
+Go to USB
+
+    cd /run/media/neo/
+
+Go to SMB share
+
+    cd /mnt/windows
+
+================================================================================
+                    QUICK WORKFLOW
+================================================================================
+
+Physical drive
+
+    lsblk
+        ↓
+    Find mount point
+        ↓
+    cd /mount/point
+
+------------------------------------------------------------
+
+USB Drive
+
+    lsblk
+        ↓
+    cd /run/media/neo/USBNAME
+
+------------------------------------------------------------
+
+SMB Share
+
+    sudo mount -t cifs ...
+        ↓
+    cd /mnt/windows
+
+------------------------------------------------------------
+
+SMB Mounted by Dolphin
+
+    cd /run/user/1000/gvfs/
+        ↓
+    ls
+        ↓
+    cd "smb-share:server=...,share=..."
+
+================================================================================
+```
