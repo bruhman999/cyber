@@ -1,0 +1,579 @@
+================================================================
+            FEDORA DNS CONFIGURATION & SYSTEMD-RESOLVED
+                     COMPLETE REFERENCE GUIDE
+================================================================
+
+----------------------------------------------------------------
+OVERVIEW
+----------------------------------------------------------------
+Fedora uses NetworkManager to manage network connections and
+systemd-resolved to perform DNS resolution.
+
+Applications DO NOT usually send DNS requests directly to your
+configured DNS server.
+
+Instead, the request flows like this:
+
+        Application
+             │
+             ▼
+      systemd-resolved
+        (127.0.0.53)
+             │
+             ▼
+   Configured DNS Server
+      (10.0.0.50)
+             │
+             ▼
+          Pi-hole
+             │
+             ▼
+     Upstream DNS Server
+             │
+             ▼
+        Website IP Address
+
+This is why tools like dig and nslookup usually display:
+
+    SERVER: 127.0.0.53
+
+This is NORMAL.
+
+127.0.0.53 is NOT your real DNS server.
+
+It is simply Fedora's local DNS resolver.
+
+================================================================
+                    HOW FEDORA HANDLES DNS
+================================================================
+
+There are three important components:
+
+NetworkManager
+    Manages Wi-Fi and Ethernet connections
+
+systemd-resolved
+    Receives all DNS requests from applications
+
+Configured DNS Server
+    Pi-hole, Google DNS, Cloudflare, etc.
+
+Example:
+
+Browser
+    ↓
+
+systemd-resolved
+(127.0.0.53)
+    ↓
+
+10.0.0.50
+(Pi-hole)
+    ↓
+
+Cloudflare
+    ↓
+
+Website
+
+================================================================
+                    VIEW ACTIVE CONNECTIONS
+================================================================
+
+Show active connections:
+
+    nmcli connection show --active
+
+Example:
+
+    NAME                  DEVICE
+
+    Wired connection 1    enp5s0
+
+    Fbi_Van               wlp4s0
+
+Interface naming:
+
+    enp5s0
+        Ethernet
+
+    wlp4s0
+        Wi-Fi
+
+    lo
+        Loopback
+
+================================================================
+                    VIEW CONNECTION SETTINGS
+================================================================
+
+Show complete connection:
+
+    nmcli connection show "Wired connection 1"
+
+Show only IPv4 settings:
+
+    nmcli connection show "Wired connection 1" | grep ipv4
+
+Example:
+
+    ipv4.method: auto
+
+    ipv4.dns: 10.0.0.50
+
+    ipv4.ignore-auto-dns: yes
+
+================================================================
+                    CHANGE DNS USING KDE
+================================================================
+
+Settings
+
+    ↓
+
+Connections
+
+    ↓
+
+Wired connection
+
+    ↓
+
+IPv4
+
+Method:
+
+    Automatic (DHCP) addresses only
+
+DNS Servers:
+
+    10.0.0.50
+
+Save
+
+Disconnect
+
+Reconnect
+
+================================================================
+                    CHANGE DNS USING NMCLI
+================================================================
+
+Set DNS server:
+
+    nmcli connection modify "Wired connection 1" \
+        ipv4.dns "10.0.0.50"
+
+Ignore DHCP DNS:
+
+    nmcli connection modify "Wired connection 1" \
+        ipv4.ignore-auto-dns yes
+
+Reconnect:
+
+    nmcli connection down "Wired connection 1"
+
+    nmcli connection up "Wired connection 1"
+
+================================================================
+                    VERIFY NETWORKMANAGER SETTINGS
+================================================================
+
+Display IPv4 configuration:
+
+    nmcli connection show "Wired connection 1" | grep ipv4
+
+Expected:
+
+    ipv4.dns: 10.0.0.50
+
+    ipv4.ignore-auto-dns: yes
+
+================================================================
+                    VERIFY CURRENT DNS
+================================================================
+
+Show current resolver:
+
+    resolvectl status
+
+Example:
+
+Link 2 (enp5s0)
+
+Current DNS Server:
+
+    10.0.0.50
+
+DNS Servers:
+
+    10.0.0.50
+
+This confirms Ethernet is using Pi-hole.
+
+================================================================
+                    UNDERSTANDING RESOLVECTL
+================================================================
+
+Example:
+
+Link 2 (enp5s0)
+
+Current DNS Server:
+
+    10.0.0.50
+
+DNS Servers:
+
+    10.0.0.50
+    2001:558:feed::1
+    2001:558:feed::2
+
+Meaning:
+
+Current DNS Server
+
+    The server currently handling DNS requests.
+
+DNS Servers
+
+    Every DNS server available for that interface.
+
+Fedora will generally use the Current DNS Server first.
+
+================================================================
+                    WHY DIG SHOWS 127.0.0.53
+================================================================
+
+Running:
+
+    dig google.com
+
+Produces:
+
+    ;; SERVER: 127.0.0.53
+
+Many people think this means Pi-hole isn't being used.
+
+It DOES NOT.
+
+dig communicates with:
+
+    systemd-resolved
+
+systemd-resolved forwards requests to:
+
+    10.0.0.50
+
+which forwards them to:
+
+    Pi-hole
+
+Flow:
+
+dig
+
+    ↓
+
+127.0.0.53
+
+    ↓
+
+10.0.0.50
+
+    ↓
+
+Pi-hole
+
+================================================================
+                    TEST PI-HOLE DIRECTLY
+================================================================
+
+Bypass systemd-resolved:
+
+    dig @10.0.0.50 google.com
+
+Expected:
+
+    SERVER: 10.0.0.50
+
+This confirms Pi-hole itself is answering DNS.
+
+================================================================
+                    VERIFY SYSTEMD-RESOLVED
+================================================================
+
+Ask systemd-resolved where it got an answer:
+
+    resolvectl query google.com
+
+Example:
+
+    google.com
+
+    ...
+
+    from 10.0.0.50
+
+This confirms systemd-resolved forwarded the request
+to Pi-hole.
+
+================================================================
+                    TEST USING NSLOOKUP
+================================================================
+
+Run:
+
+    nslookup google.com
+
+Output:
+
+    Server: 127.0.0.53
+
+Again:
+
+This is NORMAL.
+
+nslookup is querying systemd-resolved.
+
+================================================================
+                    VERIFY USING PI-HOLE
+================================================================
+
+Open:
+
+    http://10.0.0.50/admin
+
+Go to:
+
+    Query Log
+
+Then run:
+
+    dig github.com
+
+    dig reddit.com
+
+    dig google.com
+
+If they appear in the Query Log:
+
+    Fedora
+        ↓
+
+    Pi-hole
+
+is working correctly.
+
+================================================================
+                    MULTIPLE NETWORK INTERFACES
+================================================================
+
+Fedora can have Ethernet and Wi-Fi connected
+at the same time.
+
+Example:
+
+Ethernet
+
+    enp5s0
+
+Wi-Fi
+
+    wlp4s0
+
+Each interface has its OWN DNS settings.
+
+Example:
+
+Ethernet
+
+    10.0.0.50
+
+Wi-Fi
+
+    ISP DNS
+
+Both can exist simultaneously.
+
+================================================================
+                    DISABLE WI-FI
+================================================================
+
+Disable:
+
+    nmcli radio wifi off
+
+Enable:
+
+    nmcli radio wifi on
+
+================================================================
+                    IPV6 DNS
+================================================================
+
+Example:
+
+    2001:558:feed::1
+
+    2001:558:feed::2
+
+These are IPv6 DNS servers supplied by your ISP.
+
+Even if IPv4 uses Pi-hole,
+
+IPv6 may still use these servers.
+
+Options:
+
+    Configure Pi-hole for IPv6
+
+or
+
+    Ignore automatic IPv6 DNS
+
+or
+
+    Disable IPv6 (only if appropriate for your network)
+
+================================================================
+                    USEFUL COMMANDS
+================================================================
+
+Current DNS
+
+    resolvectl status
+
+Current query
+
+    resolvectl query google.com
+
+Show active connections
+
+    nmcli connection show --active
+
+Show connection settings
+
+    nmcli connection show "Wired connection 1"
+
+Show IPv4 settings
+
+    nmcli connection show "Wired connection 1" | grep ipv4
+
+Reconnect connection
+
+    nmcli connection down "Wired connection 1"
+
+    nmcli connection up "Wired connection 1"
+
+Test Pi-hole
+
+    dig @10.0.0.50 google.com
+
+Normal DNS lookup
+
+    dig google.com
+
+Alternative lookup
+
+    nslookup google.com
+
+================================================================
+                    TROUBLESHOOTING
+================================================================
+
+Problem:
+
+    resolvectl still shows ISP DNS.
+
+Possible causes:
+
+    Didn't reconnect the connection.
+
+    Didn't enable:
+
+        ipv4.ignore-auto-dns yes
+
+    Modified the wrong connection.
+
+------------------------------------------------------------
+
+Problem:
+
+    dig shows:
+
+        SERVER: 127.0.0.53
+
+Cause:
+
+    Normal behavior.
+
+127.0.0.53 is systemd-resolved.
+
+------------------------------------------------------------
+
+Problem:
+
+    Pi-hole Query Log is empty.
+
+Possible causes:
+
+    Wrong DNS configured.
+
+    Pi-hole offline.
+
+    Connection not reconnected.
+
+    DNS cached elsewhere.
+
+------------------------------------------------------------
+
+Problem:
+
+    Ethernet works
+
+    Wi-Fi still uses ISP DNS
+
+Cause:
+
+    Wi-Fi has separate DNS settings.
+
+Configure Wi-Fi independently or disconnect it.
+
+================================================================
+                    COMPLETE DNS FLOW
+================================================================
+
+Application
+
+    ↓
+
+systemd-resolved
+
+(127.0.0.53)
+
+    ↓
+
+NetworkManager
+
+    ↓
+
+Configured DNS Server
+
+(10.0.0.50)
+
+    ↓
+
+Pi-hole
+
+    ↓
+
+Upstream DNS
+
+(Cloudflare, Google, Quad9, etc.)
+
+    ↓
+
+Website IP Returned
+
+================================================================
