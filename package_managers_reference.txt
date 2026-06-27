@@ -1,0 +1,402 @@
+================================================================================
+                     PACKAGE MANAGERS & SOFTWARE INSTALLATION
+================================================================================
+
+--------------------------------------------------------------------------------
+WHAT IS A PACKAGE MANAGER?
+--------------------------------------------------------------------------------
+
+  A package manager is a tool that automates installing, updating, configuring,
+  and removing software on your system. It handles dependencies automatically —
+  meaning if a program needs other software to run, the package manager fetches
+  and installs those too.
+
+  Package Manager by Distro:
+  --------------------------
+  Fedora / RHEL / CentOS    dnf  (modern) or yum (older)
+  Debian / Ubuntu / Kali    apt
+  Arch Linux                pacman
+  openSUSE                  zypper
+  Any RPM-based system      rpm  (low-level, no dependency resolution)
+
+--------------------------------------------------------------------------------
+DNF — DANDIFIED YUM (Fedora / RHEL / CentOS)
+--------------------------------------------------------------------------------
+
+  dnf is the default package manager on Fedora. It handles dependencies
+  automatically and pulls packages from configured repositories.
+
+  SEARCHING
+  ---------
+
+  dnf search <keyword>               Search for a package by name or description
+  dnf search nmap                    Find all packages related to nmap
+
+  dnf info <package>                 Show detailed info about a package
+  dnf info firefox                   See version, size, description, repo source
+
+  dnf list installed                 List all installed packages
+  dnf list available                 List all packages available to install
+  dnf list installed | grep python   Filter installed packages for python
+
+  dnf provides <file>                Find which package provides a specific file
+  dnf provides /usr/bin/python3      See which package owns that binary
+
+  INSTALLING
+  ----------
+
+  dnf install <package>              Install a package
+  dnf install nmap                   Install nmap
+  dnf install nmap wireshark git     Install multiple packages at once
+  dnf install -y <package>           Install without asking for confirmation (-y = yes to all)
+
+  dnf reinstall <package>            Reinstall an already installed package
+  dnf reinstall firefox              Useful if a package gets corrupted
+
+  dnf localinstall <file.rpm>        Install a local .rpm file using dnf
+                                     (handles dependencies unlike rpm -i)
+  dnf install ./package.rpm          Alternative syntax for local install
+
+  REMOVING
+  --------
+
+  dnf remove <package>               Remove a package
+  dnf remove nmap                    Uninstall nmap
+
+  dnf autoremove                     Remove packages that were installed as
+                                     dependencies but are no longer needed
+
+  UPDATING
+  --------
+
+  dnf update                         Update all installed packages
+  dnf update <package>               Update a specific package only
+  dnf update firefox                 Update only Firefox
+  dnf upgrade                        Same as update (upgrade is an alias)
+  dnf check-update                   Check what updates are available without installing
+
+  GROUPS
+  ------
+
+  Groups are collections of related packages bundled together.
+
+  dnf group list                     List all available package groups
+  dnf group install "Development Tools"    Install a full group at once
+  dnf group remove "Development Tools"     Remove an entire group
+  dnf group info "Development Tools"       See what's in a group
+
+  HISTORY & UNDO
+  --------------
+
+  dnf history                        Show history of all dnf transactions
+  dnf history info <ID>              Show details of a specific transaction
+  dnf history undo <ID>              Undo a specific transaction (e.g. undo an install)
+  dnf history redo <ID>              Redo a previously undone transaction
+
+  Example:
+    dnf history                      # see transaction list
+    dnf history undo 5               # undo transaction #5
+
+  REPOSITORIES
+  ------------
+
+  Repositories (repos) are the sources dnf pulls packages from.
+
+  dnf repolist                       List all enabled repositories
+  dnf repolist all                   List all repos including disabled ones
+  dnf repolist enabled               Show only enabled repos
+
+  dnf config-manager --add-repo <URL>     Add a new repository
+  dnf config-manager --enable <repo>      Enable a disabled repo
+  dnf config-manager --disable <repo>     Disable a repo without removing it
+
+  Enable RPM Fusion (popular third-party repo for Fedora):
+    sudo dnf install \
+      https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+    sudo dnf install \
+      https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+  CLEANING CACHE
+  --------------
+
+  dnf clean all                      Remove all cached package data
+  dnf clean packages                 Remove only cached downloaded packages
+  dnf makecache                      Rebuild the package metadata cache
+
+  USEFUL COMBOS
+  -------------
+
+  sudo dnf update -y && sudo dnf autoremove -y     Full system update and cleanup
+  dnf list installed | wc -l                       Count installed packages
+  dnf search python | grep "python3"               Search and filter results
+
+--------------------------------------------------------------------------------
+RPM — RED HAT PACKAGE MANAGER (Low-Level)
+--------------------------------------------------------------------------------
+
+  rpm is the low-level tool underneath dnf. It installs .rpm files directly
+  but does NOT automatically resolve dependencies like dnf does.
+  Use dnf for most tasks — use rpm when you need direct control or info.
+
+  INSTALLING
+  ----------
+
+  rpm -i <file.rpm>              Install an RPM package
+  rpm -iv <file.rpm>             Install with verbose output
+  rpm -ivh <file.rpm>            Install with verbose output and progress bar
+                                 (h = hash marks showing progress)
+
+  rpm -U <file.rpm>              Upgrade a package (installs if not present)
+  rpm -Uvh <file.rpm>            Upgrade with verbose and progress bar (most common)
+  rpm -F <file.rpm>              Freshen — upgrade only if older version exists
+
+  REMOVING
+  --------
+
+  rpm -e <packagename>           Remove (erase) an installed package
+  rpm -e nmap                    Uninstall nmap
+
+  QUERYING — INSPECTING PACKAGES
+  ------------------------------
+
+  rpm -q <package>               Check if a package is installed
+  rpm -q nmap                    Returns version if installed, error if not
+
+  rpm -qa                        List ALL installed packages
+  rpm -qa | grep firefox         Search installed packages for firefox
+  rpm -qa | wc -l                Count all installed packages
+
+  rpm -qi <package>              Detailed info about an installed package
+  rpm -ql <package>              List all files installed by a package
+  rpm -qf <file>                 Find which package owns a specific file
+  rpm -qf /usr/bin/nmap          See what package installed that binary
+
+  rpm -qd <package>              List documentation files for a package
+  rpm -qc <package>              List configuration files for a package
+
+  QUERYING UNINSTALLED .RPM FILES
+  --------------------------------
+
+  rpm -qip <file.rpm>            Info about an RPM file before installing
+  rpm -qlp <file.rpm>            List files inside an RPM before installing
+
+  VERIFYING
+  ---------
+
+  rpm -V <package>               Verify installed package files haven't changed
+  rpm -Va                        Verify ALL installed packages
+  rpm --checksig <file.rpm>      Verify the signature/integrity of an RPM file
+
+  Examples:
+    rpm -ivh package.rpm         Standard install command
+    rpm -qa | grep nmap          Check if nmap is installed
+    rpm -qf /etc/ssh/sshd_config Find what package owns sshd_config
+    rpm -ql openssh-server       See all files the openssh-server package installed
+
+--------------------------------------------------------------------------------
+SU & SU- — SWITCHING USERS
+--------------------------------------------------------------------------------
+
+  su and su- are used to switch to another user account, most commonly root.
+
+  su                             Switch to root (keeps your current environment)
+  su -                           Switch to root WITH root's full environment
+                                 (loads root's PATH, shell config, home dir)
+                                 The - is important — always prefer su - over su
+
+  su <username>                  Switch to a specific user
+  su - <username>                Switch to a specific user with their full environment
+  su - justin                    Switch to user "justin" with their full login environment
+  exit                           Return to your original user after switching
+
+  su vs su -
+  ----------
+  su                             Switches user but keeps your current shell env
+                                 PATH and variables stay as your original user
+                                 Can cause issues with commands not being found
+
+  su -                           Simulates a full login as that user
+                                 Loads their .bashrc, .profile, PATH, home dir
+                                 Always use this unless you have a specific reason not to
+
+  sudo vs su
+  ----------
+  sudo <command>                 Run a single command as root without switching
+  su -                           Switch entirely to root for multiple commands
+
+  Examples:
+    su -                         Become root with full environment
+    su - postgres                Switch to the postgres user (common for databases)
+    su - justin                  Switch to justin's account with their environment
+    exit                         Go back to original user
+
+--------------------------------------------------------------------------------
+CURL — TRANSFER DATA FROM URLS
+--------------------------------------------------------------------------------
+
+  curl is a command-line tool for transferring data to/from servers.
+  Supports HTTP, HTTPS, FTP, and many other protocols.
+  Commonly used to download files, test APIs, and send web requests.
+
+  BASIC USAGE
+  -----------
+
+  curl <URL>                     Fetch a URL and print output to terminal
+  curl https://google.com        Dump the raw HTML of google.com to terminal
+
+  DOWNLOADING FILES
+  -----------------
+
+  curl -o <filename> <URL>       Download a file and save it with a specific name
+  curl -o nmap.rpm https://example.com/nmap.rpm    Save as nmap.rpm
+
+  curl -O <URL>                  Download and save using the remote filename
+  curl -O https://example.com/file.tar.gz          Saves as file.tar.gz
+
+  curl -o- <URL>                 Download and pipe output directly (no file saved)
+                                 Commonly used to pipe install scripts
+
+  curl -L <URL>                  Follow redirects (important — many URLs redirect)
+  curl -L -o file.rpm <URL>      Follow redirects and save to file
+
+  curl -C - -O <URL>             Resume an interrupted download
+
+  COMMON FLAGS
+  ------------
+
+  -o <file>          Save output to a specific filename
+  -O                 Save with the remote filename
+  -L                 Follow HTTP redirects
+  -s                 Silent — suppress progress output
+  -S                 Show errors even when silent (-sS used together)
+  -v                 Verbose — show full request/response headers
+  -I                 Fetch headers only (HEAD request)
+  -X <METHOD>        Specify HTTP method (GET, POST, PUT, DELETE)
+  -d <data>          Send POST data
+  -H <header>        Add a custom HTTP header
+  -u user:pass       HTTP basic authentication
+  -k                 Allow insecure connections (skip SSL verification)
+  -C -               Resume a previous download
+  -z <file>          Only download if remote is newer than local file
+
+  PRACTICAL EXAMPLES
+  ------------------
+
+  Download a file silently:
+    curl -sL -o syncthing.rpm https://example.com/syncthing.rpm
+
+  Check HTTP response headers only:
+    curl -I https://google.com
+
+  Send a POST request with data:
+    curl -X POST -d "user=admin&pass=1234" https://example.com/login
+
+  Test an API endpoint:
+    curl -s https://api.example.com/data | python3 -m json.tool
+
+  Download and immediately run an install script (use with caution):
+    curl -fsSL https://get.docker.com | sh
+
+  Pipe into bash (common pattern — verify the URL first):
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+
+  Download with progress bar:
+    curl -L --progress-bar -o file.tar.gz https://example.com/file.tar.gz
+
+  curl vs wget:
+  -------------
+  curl      Better for APIs, custom headers, one-liners, piping output
+  wget      Better for downloading files, recursive downloads, resuming
+
+--------------------------------------------------------------------------------
+WGET — DOWNLOAD FILES
+--------------------------------------------------------------------------------
+
+  wget <URL>                     Download a file to current directory
+  wget -O <filename> <URL>       Download and save with a specific name
+  wget -c <URL>                  Continue/resume an interrupted download
+  wget -q <URL>                  Quiet mode — suppress output
+  wget -r <URL>                  Recursive download (download entire website)
+  wget --no-check-certificate <URL>    Skip SSL certificate verification
+
+  Examples:
+    wget https://example.com/file.tar.gz         Download file
+    wget -O myfile.rpm https://example.com/x.rpm Save with custom name
+    wget -c https://example.com/bigfile.iso      Resume download
+
+--------------------------------------------------------------------------------
+APT — ADVANCED PACKAGE TOOL (Debian / Ubuntu / Kali)
+--------------------------------------------------------------------------------
+
+  apt is the package manager for Debian-based systems.
+  Included here as reference since Kali Linux (security work) uses apt.
+
+  apt update                     Refresh the package list from repos
+                                 (always run before installing anything)
+  apt upgrade                    Upgrade all installed packages
+  apt install <package>          Install a package
+  apt install nmap               Install nmap
+  apt install -y nmap            Install without confirmation prompt
+  apt remove <package>           Remove a package (keeps config files)
+  apt purge <package>            Remove package AND its config files
+  apt autoremove                 Remove unused dependency packages
+  apt search <keyword>           Search for a package
+  apt show <package>             Show detailed info about a package
+  apt list --installed           List all installed packages
+  apt list --upgradable          Show packages with available updates
+  apt clean                      Clear downloaded package cache
+  apt autoclean                  Remove outdated cached packages
+
+  Examples:
+    sudo apt update && sudo apt upgrade -y       Full system update
+    sudo apt install nmap wireshark -y           Install multiple packages
+    sudo apt purge firefox && sudo apt autoremove    Clean removal
+
+--------------------------------------------------------------------------------
+FLATPAK — UNIVERSAL PACKAGES (Fedora default)
+--------------------------------------------------------------------------------
+
+  Flatpak runs apps in sandboxed containers. Works across distros.
+  Fedora has Flathub enabled by default as of recent releases.
+
+  flatpak install flathub <app>       Install an app from Flathub
+  flatpak install flathub com.bitwarden.desktop    Install Bitwarden
+
+  flatpak run <app>                   Run a Flatpak app
+  flatpak run com.bitwarden.desktop   Launch Bitwarden
+
+  flatpak update                      Update all Flatpak apps
+  flatpak update <app>                Update a specific app
+
+  flatpak uninstall <app>             Remove a Flatpak app
+  flatpak uninstall --unused          Remove unused runtimes and dependencies
+
+  flatpak list                        List installed Flatpak apps
+  flatpak search <keyword>            Search Flathub for an app
+
+  Add Flathub if not already added:
+    flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
+
+  Examples:
+    flatpak install flathub org.videolan.VLC
+    flatpak install flathub com.spotify.Client
+    flatpak run org.videolan.VLC
+
+--------------------------------------------------------------------------------
+QUICK REFERENCE — INSTALL SAME PACKAGE ACROSS DISTROS
+--------------------------------------------------------------------------------
+
+  Task                   Fedora/RHEL              Debian/Ubuntu/Kali
+  -----------------------------------------------------------------------
+  Update repos           dnf check-update         apt update
+  Full system update     dnf update               apt upgrade
+  Install package        dnf install <pkg>        apt install <pkg>
+  Remove package         dnf remove <pkg>         apt remove <pkg>
+  Search package         dnf search <pkg>         apt search <pkg>
+  Package info           dnf info <pkg>           apt show <pkg>
+  List installed         dnf list installed       apt list --installed
+  Clean cache            dnf clean all            apt clean
+  Who owns file          rpm -qf <file>           dpkg -S <file>
+  List pkg files         rpm -ql <pkg>            dpkg -L <pkg>
+
+================================================================================
