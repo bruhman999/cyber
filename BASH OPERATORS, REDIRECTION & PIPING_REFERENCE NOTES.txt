@@ -1,0 +1,124 @@
+BASH OPERATORS, REDIRECTION & PIPING — REFERENCE NOTES
+=======================================================
+
+CORE OPERATORS
+--------------
+Operator   Meaning                                          Example
+--------   -------                                          -------
+&&         Run next ONLY if previous succeeded              mkdir test && cd test
+;          Run next regardless of success or failure        echo hi; pwd
+|          Pipe output of left into right command           ls | grep txt
+||         Run next ONLY if previous FAILED                 cd test || echo "failed"
+
+MKDIR + CD PATTERNS
+-------------------
+# Wrong way — pipe doesn't work here
+mkdir testing | cd testing        # BROKEN — cd gets no input, runs in subshell
+
+# Correct ways:
+mkdir testing && cd testing       # Only cd if mkdir succeeded
+mkdir testing; cd testing         # Always cd even if mkdir failed
+mkdir -p testing && cd testing    # -p = no error if exists, create parent dirs too
+
+# Nested directory example:
+mkdir -p projects/python/flask && cd projects/python/flask
+
+REDIRECTION OPERATORS
+---------------------
+Operator   Meaning                                          Example
+--------   -------                                          -------
+>          Redirect stdout to file (overwrite)              echo hi > file.txt
+>>         Redirect stdout to file (append)                 echo hi >> file.txt
+2>         Redirect stderr (errors) to file                 cmd 2> errors.txt
+2>&1       Redirect stderr INTO stdout stream               cmd > out.txt 2>&1
+&>         Redirect both stdout and stderr                  cmd &> all_output.txt
+/dev/null  Black hole — discard output entirely             cmd > /dev/null
+
+PROCESS SUBSTITUTION — >(command) and <(command)
+-------------------------------------------------
+>( )  = treat a command as if it were a file to write TO
+<( )  = treat a command as if it were a file to read FROM
+
+This lets you send output to MULTIPLE places at once.
+
+EXAMPLE 1 — Send errors to less AND save them:
+-----------------------------------------------
+example > >(less) 2> >(tee errors.txt)
+
+Breakdown:
+  example              runs the command
+  >  >(less)           stdout goes into less (paginated viewer)
+  2> >(tee errors.txt) stderr goes into tee which:
+                         - prints errors to terminal
+                         - saves errors to errors.txt simultaneously
+
+Flow:
+  example
+    ├── stdout ──────────────► less (view output page by page)
+    └── stderr ──────────────► tee
+                                ├── prints to terminal
+                                └── saves to errors.txt
+
+EXAMPLE 2 — Copy directory to MULTIPLE remote machines simultaneously:
+----------------------------------------------------------------------
+tar cf - directory | tee >(ssh neo tar xf -) >(ssh 10.0.0.124 tar xf -) > /dev/null
+
+Breakdown:
+  tar cf - directory          creates tar archive of directory, outputs to stdout (-)
+  |                           pipes that tar stream into tee
+  tee                         splits the stream into multiple outputs simultaneously
+  >(ssh neo tar xf -)         sends stream to first machine (neo), extracts there
+  >(ssh 10.0.0.124 tar xf -)  sends stream to second machine (10.0.0.124), extracts there
+  > /dev/null                 discards tee's own stdout (we don't need it locally)
+
+Flow:
+  tar archive
+       │
+       ▼
+      tee
+       ├──► ssh neo          → extracts on machine 1
+       ├──► ssh 10.0.0.124   → extracts on machine 2
+       └──► /dev/null        → discarded
+
+Real world use: clone a directory to two servers in one command with no temp file needed.
+
+TEE COMMAND
+-----------
+tee reads stdin and writes to BOTH stdout AND a file simultaneously.
+
+  command | tee output.txt          # print to terminal AND save to file
+  command | tee -a output.txt       # same but append instead of overwrite
+  command | tee file1.txt file2.txt # write to multiple files at once
+
+PIPING EXAMPLES
+---------------
+# Filter output
+ls | grep txt                        # list only .txt files
+ps aux | grep firefox                # find firefox process
+cat /var/log/auth.log | grep Failed  # find failed logins
+
+# Count lines
+ls | wc -l                           # count files in directory
+cat file.txt | wc -l                 # count lines in file
+
+# Chain multiple pipes
+ps aux | grep ssh | awk '{print $2}' # get PID of ssh process
+
+# Send find output to grep
+find . -name "*.txt" | grep notes
+
+FIND COMMAND
+------------
+find . -name "*.txt"                 # find all .txt files in current dir
+find /var/log -name "*.log"          # find all logs in /var/log
+find . -name "*.sh" | xargs chmod +x # make all shell scripts executable
+
+QUICK RULE OF THUMB
+-------------------
+&&  = "then, if successful"
+;   = "then, regardless"
+|   = "feed output into next command"
+>   = "save output to file"
+2>  = "save errors to file"
+>() = "send output into a command as if it were a file"
+tee = "split output — send to terminal AND somewhere else simultaneously"
