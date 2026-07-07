@@ -1,0 +1,441 @@
+================================================================
+LINUX REPOSITORIES & PACKAGE SOURCES — FEDORA FOCUSED
+================================================================
+
+----------------------------------------------------------------
+THE BIG PICTURE — WHAT IS A REPOSITORY?
+----------------------------------------------------------------
+
+  When you run:
+    sudo dnf install firefox
+
+  Your system doesn't search the internet randomly. It checks a list
+  of trusted sources called REPOSITORIES (repos). These are servers
+  that store software packages, maintained by either the distro itself,
+  a company, or the community.
+
+  Think of it like an app store — but instead of one store, Linux
+  has multiple stores from different sources, and you choose which
+  ones to trust.
+
+  Every distro has its own set of repos:
+    Fedora   → Fedora official repos + COPR + RPM Fusion
+    Arch     → Official repos + AUR
+    Ubuntu   → Official repos + PPAs + Snap
+    Debian   → Official repos + backports
+
+  The key question is always:
+    WHO maintains this package?
+    WHO do I trust?
+
+----------------------------------------------------------------
+OFFICIAL FEDORA REPOSITORIES
+----------------------------------------------------------------
+
+  These come pre-configured when you install Fedora.
+  Maintained by the Fedora Project (Red Hat employees + community).
+  Everything here is reviewed, tested, and meets Fedora's standards.
+
+  FEDORA (base repo)
+  ------------------
+  The main repo. Contains thousands of open-source packages.
+  All software here must be:
+    - Open source (no proprietary software)
+    - Legally distributable (no patent/license issues)
+    - Packaged to Fedora's standards
+
+  Check if enabled:
+    dnf repolist
+
+  Install from it:
+    sudo dnf install htop
+    sudo dnf install git
+    sudo dnf install vlc        (actually NOT here — see why below)
+
+  FEDORA UPDATES
+  --------------
+  Contains updated versions of packages from the base Fedora repo.
+  Automatically enabled — dnf pulls from here when you run dnf update.
+
+  FEDORA UPDATES-TESTING
+  ----------------------
+  Packages being tested before they go into the main updates repo.
+  Not enabled by default. Only use if you want cutting-edge but
+  potentially unstable updates.
+
+  Enable temporarily:
+    sudo dnf update --enablerepo=updates-testing
+
+  WHY SOME SOFTWARE ISN'T IN THE OFFICIAL FEDORA REPO
+  -----------------------------------------------------
+  Fedora has strict rules. Software is excluded if it is:
+
+  1. Proprietary / closed-source
+     Examples: NVIDIA drivers, Steam, Discord
+     Fedora is committed to open source — these don't qualify
+
+  2. Patent-encumbered
+     Examples: MP3 codecs, H.264 video, some media formats
+     These have legal restrictions in some countries
+
+  3. Trademark/legal concerns
+     Some software can't be repackaged freely
+
+  4. Niche or community-specific
+     Examples: Hyprland, some tiling window managers
+     The Fedora maintainer team is limited — they can't package
+     everything. Hyprland specifically moves very fast and has
+     historically been hard to maintain as a stable Fedora package.
+     It lives in COPR instead (see below).
+
+  5. Too new or experimental
+     Some software hasn't gone through Fedora's review process yet.
+
+  This is why you need additional sources beyond the official repo.
+
+----------------------------------------------------------------
+RPM FUSION — THE MOST IMPORTANT EXTRA REPO FOR FEDORA
+----------------------------------------------------------------
+
+  RPM Fusion is the standard first-add repository for Fedora.
+  Think of it as the "unofficial official" extension of Fedora's repos.
+  It covers everything Fedora can't ship due to legal/license reasons.
+
+  RPM Fusion has two halves:
+
+  FREE
+  ----
+  Open-source software that Fedora won't package for legal reasons.
+  Examples:
+    VLC media player
+    Media codecs (MP3, H.264, AAC)
+    FFmpeg
+    Some games
+
+  NONFREE
+  -------
+  Proprietary software or software with restrictive licenses.
+  Examples:
+    NVIDIA proprietary drivers  ← most common reason to add this
+    Steam
+    Discord
+    Some firmware
+
+  HOW TO ADD RPM FUSION
+  ---------------------
+
+  Add both free and nonfree at once:
+
+    sudo dnf install \
+      https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+      https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+  The $(rpm -E %fedora) part auto-detects your Fedora version number.
+  You don't need to type "42" or "43" manually — it fills it in.
+
+  Refresh after adding:
+    sudo dnf upgrade --refresh
+
+  Then install packages normally:
+    sudo dnf install vlc
+    sudo dnf install akmod-nvidia
+    sudo dnf install steam
+
+  WEBSITE: https://rpmfusion.org
+
+----------------------------------------------------------------
+COPR — FEDORA'S COMMUNITY BUILD SYSTEM
+----------------------------------------------------------------
+
+  COPR = Copr contains OPen-source Repos
+  (or more simply: Community + Open + Package + Repo)
+
+  WHAT IT IS
+  ----------
+  COPR is Fedora's official community repository platform.
+  Any developer or user can create a COPR repo and publish packages.
+  It's like the AUR (see below) but with pre-built binary packages
+  instead of build scripts — so installing is faster.
+
+  Think of it as:
+    Official Fedora repo   = App store (curated, vetted)
+    RPM Fusion             = Trusted third-party store (established)
+    COPR                   = Independent developer marketplace
+                             (use with awareness — quality varies)
+
+  WHY THINGS LIVE IN COPR INSTEAD OF OFFICIAL REPOS
+  --------------------------------------------------
+  Hyprland is a perfect example:
+    - It updates extremely frequently
+    - Fedora's packaging review process is too slow to keep up
+    - The maintainer publishes directly to COPR instead
+    - You get the latest version without waiting for Fedora review
+
+  Other reasons software ends up in COPR:
+    - Developer wants to ship directly to users
+    - Package hasn't been through Fedora review yet
+    - Too niche for official inclusion
+    - Testing ground before submitting to official Fedora
+
+  HOW TO FIND COPR REPOS
+  -----------------------
+  Website: https://copr.fedorainfracloud.org
+
+  Search for software by name on the website, or search from terminal:
+    dnf copr search hyprland
+    dnf copr search <keyword>
+
+  HOW TO ENABLE A COPR REPO
+  --------------------------
+  Format:
+    sudo dnf copr enable <username>/<reponame>
+
+  Examples:
+    sudo dnf copr enable solopasha/hyprland
+    sudo dnf copr enable atim/starship
+    sudo dnf copr enable varlad/helix
+
+  After enabling, install the package normally:
+    sudo dnf install hyprland
+    sudo dnf install starship
+    sudo dnf install helix
+
+  HOW TO DISABLE A COPR REPO
+  ---------------------------
+    sudo dnf copr disable <username>/<reponame>
+    sudo dnf copr disable solopasha/hyprland
+
+  LIST YOUR ENABLED COPR REPOS
+  ----------------------------
+    dnf copr list
+
+  REMOVE A COPR REPO ENTIRELY
+  ---------------------------
+    sudo dnf copr remove <username>/<reponame>
+
+  TRUST NOTE
+  ----------
+  COPR is community-maintained. Anyone can publish there.
+  Always check:
+    - Is the publisher the actual developer or a known community member?
+    - Does the COPR page have a description and active maintenance?
+    - How many people are using it? (shown on the COPR page)
+  Not every COPR is equal — some are well-maintained, some are abandoned.
+
+----------------------------------------------------------------
+FLATPAK & FLATHUB — DISTRO-AGNOSTIC APPS
+----------------------------------------------------------------
+
+  Flatpak is a different approach entirely. Instead of packages that
+  integrate into your OS, Flatpak bundles the app with all its
+  dependencies in a sandboxed container. The same Flatpak works on
+  Fedora, Ubuntu, Arch, or any Linux distro.
+
+  Flathub is the main Flatpak repository. It has thousands of apps.
+
+  Fedora includes Flatpak by default. Flathub is enabled by default
+  on recent Fedora versions.
+
+  WHEN TO USE FLATPAK
+  -------------------
+  - Desktop GUI applications (Bitwarden, Spotify, OBS, GIMP, etc.)
+  - When you want the latest version of an app regardless of distro
+  - When an app isn't in the official repo or COPR
+
+  HOW TO USE
+  ----------
+  Search:
+    flatpak search firefox
+
+  Install:
+    flatpak install flathub com.bitwarden.desktop
+    flatpak install flathub org.videolan.VLC
+    flatpak install flathub com.spotify.Client
+
+  Run:
+    flatpak run com.bitwarden.desktop
+
+  Update all Flatpaks:
+    flatpak update
+
+  List installed:
+    flatpak list
+
+  Remove:
+    flatpak uninstall com.bitwarden.desktop
+    flatpak uninstall --unused        (clean unused runtimes)
+
+  Add Flathub if not already added:
+    flatpak remote-add --if-not-exists flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+
+  WEBSITE: https://flathub.org
+
+  FLATPAK TRADE-OFFS
+  ------------------
+  Pros:
+    Works on any distro
+    Apps are sandboxed (more secure)
+    Always latest version
+    No dependency conflicts
+
+  Cons:
+    Larger disk usage (bundles own dependencies)
+    Slightly slower startup on first launch
+    Some system integration quirks (fonts, themes)
+    Not ideal for CLI tools or system-level software
+
+----------------------------------------------------------------
+AUR — ARCH USER REPOSITORY (NOT FEDORA — FOR CONTEXT)
+----------------------------------------------------------------
+
+  The AUR is Arch Linux's community package system.
+  It is NOT available on Fedora.
+  Included here so you understand what it is when you see it mentioned.
+
+  WHAT IT IS
+  ----------
+  A massive community repository where anyone can submit a PKGBUILD —
+  a script that tells your system HOW to download, compile, and install
+  a package. Your computer builds the package from source.
+
+  The AUR has over 80,000 packages — more than almost any other distro.
+  If software exists on Linux, it's probably in the AUR.
+
+  HOW IT WORKS (Arch only)
+  ------------------------
+  You use an AUR helper like yay or paru:
+    yay -S hyprland        # downloads PKGBUILD, compiles, installs
+    paru -S discord
+
+  FEDORA EQUIVALENT
+  -----------------
+  Fedora doesn't have an AUR equivalent for build-from-source.
+  The closest things on Fedora are:
+    COPR       Pre-built community packages (easier than AUR)
+    Flatpak    Sandboxed apps from Flathub (distro-agnostic)
+    RPM Fusion Trusted extras repo
+
+  WHY THE AUR IS POWERFUL BUT RISKY
+  ----------------------------------
+  Anyone can submit a PKGBUILD. There is no central review.
+  You are trusting a random community member's build script.
+  Most are fine — but always check the comments on AUR pages
+  before installing anything unfamiliar.
+
+----------------------------------------------------------------
+PPAs — UBUNTU/DEBIAN ONLY (FOR CONTEXT)
+----------------------------------------------------------------
+
+  PPAs = Personal Package Archives
+  Ubuntu's version of COPR — community repos hosted on Launchpad.
+  NOT available on Fedora.
+
+  Example you'd see in Ubuntu instructions:
+    sudo add-apt-repository ppa:username/reponame
+    sudo apt update
+    sudo apt install <package>
+
+  On Fedora the equivalent workflow is:
+    sudo dnf copr enable username/reponame
+    sudo dnf install <package>
+
+----------------------------------------------------------------
+SNAP — CANONICAL'S PACKAGE FORMAT (FOR CONTEXT)
+----------------------------------------------------------------
+
+  Snap is Ubuntu/Canonical's containerized package format.
+  Similar concept to Flatpak but more controversial.
+  NOT commonly used on Fedora (Flatpak is preferred on Fedora).
+  Snap packages phone home to Canonical's servers.
+  Most Fedora users avoid Snap and use Flatpak instead.
+
+----------------------------------------------------------------
+DECIDING WHICH SOURCE TO USE
+----------------------------------------------------------------
+
+  Follow this order when looking for software on Fedora:
+
+  1. Official Fedora repo first
+       sudo dnf search <package>
+       If it's there and up to date — use it. Most trusted.
+
+  2. RPM Fusion if it's media/codec/NVIDIA related
+       After adding RPM Fusion: sudo dnf install <package>
+       For anything proprietary or patent-encumbered.
+
+  3. Flathub / Flatpak for desktop GUI apps
+       flatpak search <package>
+       Great for apps like Bitwarden, Spotify, OBS, Blender.
+
+  4. COPR for community packages or cutting-edge software
+       dnf copr search <package>
+       Check who maintains it before enabling.
+
+  5. Official project website as a last resort
+       Some projects provide their own .rpm or repo config.
+       Example: VS Code, Google Chrome, Tailscale all publish
+       their own Fedora repos with install instructions.
+
+  NEVER use random scripts from the internet that say:
+    curl https://somesite.com/install.sh | bash
+  without reading what that script does first.
+
+----------------------------------------------------------------
+QUICK COMMAND REFERENCE
+----------------------------------------------------------------
+
+  CHECK ENABLED REPOS
+    dnf repolist
+    dnf repolist all              (includes disabled)
+
+  SEARCH ACROSS ALL ENABLED REPOS
+    dnf search <keyword>
+
+  INSTALL A PACKAGE
+    sudo dnf install <package>
+
+  ADD RPM FUSION
+    sudo dnf install \
+      https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+      https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+  COPR — SEARCH, ENABLE, DISABLE
+    dnf copr search <keyword>
+    sudo dnf copr enable <user>/<repo>
+    sudo dnf copr disable <user>/<repo>
+    sudo dnf copr remove <user>/<repo>
+    dnf copr list
+
+  FLATPAK
+    flatpak search <keyword>
+    flatpak install flathub <app.id>
+    flatpak update
+    flatpak list
+    flatpak uninstall <app.id>
+
+  FIND WHAT REPO A PACKAGE COMES FROM
+    dnf info <package>            (look at "From repo" line)
+
+----------------------------------------------------------------
+REAL EXAMPLES — WHERE THINGS ACTUALLY COME FROM
+----------------------------------------------------------------
+
+  firefox           → Official Fedora repo
+  git               → Official Fedora repo
+  htop              → Official Fedora repo
+  vlc               → RPM Fusion Free
+  ffmpeg            → RPM Fusion Free
+  akmod-nvidia      → RPM Fusion Nonfree
+  steam             → RPM Fusion Nonfree
+  hyprland          → COPR (solopasha/hyprland)
+  starship prompt   → COPR (atim/starship)
+  bitwarden         → Flatpak (Flathub)
+  spotify           → Flatpak (Flathub)
+  vscode            → Microsoft's own Fedora repo
+  google-chrome     → Google's own Fedora repo
+  tailscale         → Tailscale's own Fedora repo
+
+================================================================
+EOF
+echo "Done"
