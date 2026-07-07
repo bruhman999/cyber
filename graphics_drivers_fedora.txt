@@ -1,0 +1,358 @@
+================================================================
+FEDORA GRAPHICS DRIVERS & DISPLAY STACK REFERENCE
+================================================================
+
+----------------------------------------------------------------
+1. THE LINUX GRAPHICS STACK
+----------------------------------------------------------------
+
+  Applications (OBS, Steam, Firefox, Blender)
+               |
+         OpenGL / Vulkan
+               |
+  Graphics Drivers (Mesa or NVIDIA proprietary)
+               |
+         Kernel Driver
+               |
+          GPU Hardware
+
+  On modern desktops, a display layer sits between apps and monitor:
+
+  Application
+       |
+  Wayland (or X11)
+       |
+  Desktop Compositor (KDE Plasma, GNOME, etc.)
+       |
+  GPU Driver
+       |
+  Monitor
+
+----------------------------------------------------------------
+2. DESKTOP ENVIRONMENT
+----------------------------------------------------------------
+
+  The graphical interface you interact with.
+
+  Common options:
+    KDE Plasma      (what you use)
+    GNOME
+    Cinnamon
+    XFCE
+    COSMIC
+    Hyprland        (technically a compositor)
+    Sway
+
+  Check your current desktop:
+    echo $XDG_CURRENT_DESKTOP
+
+  Example output:
+    KDE
+
+----------------------------------------------------------------
+3. DISPLAY SERVER — WAYLAND VS X11
+----------------------------------------------------------------
+
+  WAYLAND (modern — what you use)
+  --------------------------------
+  Pros:
+    Better security
+    Better multi-monitor support
+    Better HiDPI scaling
+    Lower latency
+    Future of Linux desktops
+
+  Cons:
+    Some apps still have compatibility issues
+    Some GPU driver bugs appear only on Wayland
+    OBS requires OBS_USE_EGL=1 to work properly
+
+  X11 (Xorg) (legacy)
+  --------------------
+  Pros:
+    Extremely compatible
+    Mature — very few compatibility issues
+    Some older software works better
+
+  Cons:
+    Older architecture
+    Less secure
+    Being gradually replaced by Wayland
+
+  Check your current session type:
+    echo $XDG_SESSION_TYPE
+
+  Output will be either:
+    wayland
+    x11
+
+----------------------------------------------------------------
+4. KERNEL DRIVER
+----------------------------------------------------------------
+
+  The driver inside the Linux kernel that directly controls the GPU.
+
+  Check which driver is in use:
+    lspci -k | grep -EA3 "VGA|3D"
+
+  Check loaded kernel modules:
+    lsmod | grep -E "nvidia|nouveau"
+
+  NOUVEAU (open-source NVIDIA driver)
+  ------------------------------------
+  Included with Linux — works out of the box after installing Fedora.
+
+  Pros:
+    No installation required
+    Open source
+    Works immediately
+
+  Cons:
+    Lower performance than proprietary driver
+    No CUDA support
+    NVENC hardware encoding unavailable
+    New GPU support lags behind proprietary
+
+  Best for:
+    Basic desktop use
+    Open-source-only systems
+
+  NVIDIA PROPRIETARY DRIVER
+  --------------------------
+  Must be installed separately (via RPM Fusion on Fedora).
+
+  Pros:
+    Highest gaming performance
+    Full CUDA support
+    NVENC hardware video encoding (required for OBS GPU encoding)
+    Best support for OBS, Blender, AI workloads
+    Automatically rebuilt on kernel updates via akmods
+
+  Cons:
+    Closed source
+    Requires installation and setup
+    Kernel module must be rebuilt after kernel updates
+    (handled automatically by akmod-nvidia)
+
+  Best for:
+    Gaming
+    OBS / streaming / recording
+    CUDA / AI workloads
+    Professional graphics
+
+----------------------------------------------------------------
+5. OPENGL & VULKAN
+----------------------------------------------------------------
+
+  OPENGL
+  ------
+  Traditional graphics API used by many applications.
+  Being gradually replaced by Vulkan for performance-critical apps.
+
+  Check your OpenGL renderer:
+    glxinfo -B
+
+  Look for the line:
+    OpenGL renderer string: ...
+
+  VULKAN
+  ------
+  Modern graphics API replacing much of OpenGL.
+  Used by modern games, OBS, Steam, and many new applications.
+  Generally lower CPU overhead and better multi-threading than OpenGL.
+
+  MESA
+  ----
+  Open-source graphics library used by most Linux systems.
+  Contains drivers for AMD, Intel, and now NVIDIA (NVK).
+
+  Mesa drivers by GPU:
+
+    AMD:    RADV (Vulkan), RadeonSI (OpenGL)
+    Intel:  ANV (Vulkan), Iris (OpenGL)
+    NVIDIA: NVK (Vulkan), Zink (OpenGL via Vulkan)
+
+  NVK
+  ---
+  Mesa's open-source Vulkan driver for NVIDIA GPUs.
+  Rapidly improving — replaces older experimental NVIDIA open-source approaches.
+
+  If you see this in glxinfo output:
+    zink Vulkan (MESA_NVK)
+  You are using NVK (not the proprietary NVIDIA driver).
+
+  Pros:  Open source, included with Mesa, improving quickly
+  Cons:  Newer, some apps may expose bugs, no CUDA
+
+  ZINK
+  ----
+  An OpenGL implementation built on top of Vulkan.
+  Translates OpenGL calls into Vulkan instead of speaking directly to hardware.
+
+  Stack when using Zink:
+    Application → OpenGL → Zink → Vulkan → GPU
+
+  Seeing this in glxinfo:
+    OpenGL renderer: zink Vulkan ...
+  means OpenGL commands are being translated into Vulkan commands.
+  Not inherently bad — just another implementation layer.
+
+----------------------------------------------------------------
+6. RPM FUSION
+----------------------------------------------------------------
+
+  Fedora ships only software that fits its open-source licensing policies.
+  The NVIDIA proprietary driver is closed-source — Fedora excludes it by default.
+
+  RPM Fusion is a community-maintained repository providing additional packages.
+
+  Two repos:
+    Free      Open-source software Fedora doesn't include
+    Nonfree   Software with restrictive licenses (e.g. NVIDIA driver, media codecs)
+
+  RPM Fusion is the standard and recommended source for NVIDIA drivers on Fedora.
+
+----------------------------------------------------------------
+7. INSTALLING THE NVIDIA DRIVER (RPM FUSION METHOD)
+----------------------------------------------------------------
+
+  Step 1 — Enable RPM Fusion repos (free + nonfree):
+
+    sudo dnf install \
+      https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
+      https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
+  Step 2 — Refresh and upgrade package metadata:
+
+    sudo dnf upgrade --refresh
+
+  Step 3 — Install NVIDIA kernel module and CUDA support:
+
+    sudo dnf install akmod-nvidia xorg-x11-drv-nvidia-cuda
+
+  Step 4 — Force build the kernel module immediately (don't skip):
+
+    sudo akmods --force
+
+  Step 5 — Reboot:
+
+    sudo reboot
+
+  Step 6 — Verify driver loaded correctly:
+
+    nvidia-smi
+
+  You should see your GPU, driver version, and CUDA version.
+
+  Notes:
+    akmod-nvidia rebuilds the driver automatically on every kernel update
+    nouveau is blacklisted automatically by akmod-nvidia — no manual steps needed
+    On Wayland, launch OBS with:  OBS_USE_EGL=1 obs
+    Check Secure Boot state with:  mokutil --sb-state
+    (Secure Boot may require additional steps for the kernel module to load)
+
+----------------------------------------------------------------
+8. WHICH DRIVER SHOULD YOU USE?
+----------------------------------------------------------------
+
+  AMD GPU       Use default Mesa drivers (Fedora ships these)
+                Do NOT install proprietary AMD drivers for normal desktop use
+
+  Intel GPU     Use default Mesa drivers
+                No additional installation needed
+
+  NVIDIA GPU    Install proprietary driver from RPM Fusion
+  (gaming,      for gaming, OBS, CUDA, Blender, AI, video encoding
+  OBS, CUDA)
+
+                Use nouveau/NVK only if you want an all-open-source system
+                or are specifically testing Mesa drivers
+
+----------------------------------------------------------------
+9. OBS ON WAYLAND WITH NVIDIA
+----------------------------------------------------------------
+
+  OBS has Wayland compatibility issues when launched normally.
+  The fix is to force EGL rendering:
+
+    OBS_USE_EGL=1 obs
+
+  If OBS crashes or shows a black screen:
+    QT_QPA_PLATFORM=xcb obs         Try forcing X11 mode instead
+    LIBGL_ALWAYS_SOFTWARE=1 obs     Force software rendering (debug only)
+
+  Check OBS version:
+    obs --version
+
+  Check journal for OBS errors:
+    journalctl -b | grep -Ei "obs|kwin|nvidia|segfault|gpu|drm"
+
+----------------------------------------------------------------
+10. YOUR CURRENT CONFIGURATION
+----------------------------------------------------------------
+
+  Distribution:     Fedora 43
+  Kernel:           7.1.3-100.fc43.x86_64
+  Desktop:          KDE Plasma 6.7.1
+  Display protocol: Wayland
+  GPU:              NVIDIA GeForce RTX 3070 (Gigabyte OC, 8GB)
+  Kernel driver:    nvidia (proprietary)
+  Driver version:   580.173.02
+  CUDA version:     13.0
+  Install method:   RPM Fusion (akmod-nvidia)
+
+----------------------------------------------------------------
+11. QUICK DIAGNOSTIC COMMANDS
+----------------------------------------------------------------
+
+  Desktop environment:
+    echo $XDG_CURRENT_DESKTOP
+
+  Wayland or X11:
+    echo $XDG_SESSION_TYPE
+
+  KDE Plasma version:
+    plasmashell --version
+
+  Kernel version:
+    uname -r
+
+  Fedora version:
+    cat /etc/fedora-release
+
+  GPU detected by system:
+    lspci | grep -E "VGA|3D"
+
+  Kernel driver in use:
+    lspci -k | grep -EA3 "VGA|3D"
+
+  Loaded graphics kernel modules:
+    lsmod | grep -E "nvidia|nouveau"
+
+  OpenGL renderer:
+    glxinfo -B
+
+  NVIDIA driver and GPU status:
+    nvidia-smi
+
+  NVIDIA kernel module version:
+    modinfo nvidia | grep ^version
+
+  All NVIDIA packages installed:
+    rpm -qa | grep nvidia
+
+  OBS version:
+    obs --version
+
+  Secure Boot state:
+    mokutil --sb-state
+
+  OBS crash info:
+    coredumpctl info obs
+
+  Boot log filtered for GPU/display issues:
+    journalctl -b | grep -Ei "obs|kwin|nvidia|segfault|gpu|drm"
+
+================================================================
+EOF
+echo "Done"
