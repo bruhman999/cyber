@@ -71,25 +71,107 @@ DEFAULT KEYBINDS (out of the box, from the example config)
 ----------------------------------------------------------------
   $mainMod = SUPER (the Windows/Cmd key)
 
+  LAUNCHING APPS
+  --------------
   SUPER + Q            -> open terminal (kitty)
   SUPER + E            -> open file manager (dolphin, if installed)
   SUPER + R            -> open app launcher (wofi)
-  SUPER + C            -> close/kill the FOCUSED window
-  SUPER + M            -> exit Hyprland entirely (logs you out)
+
+  WINDOW MANAGEMENT
+  -----------------
+  SUPER + C            -> close/kill the focused window
   SUPER + V            -> toggle floating mode for focused window
+  SUPER + F            -> toggle fullscreen for focused window
   SUPER + P            -> toggle pseudotiling
   SUPER + J            -> toggle split direction
-  SUPER + [1-0]        -> switch to workspace 1-10
-  SUPER + SHIFT + [1-0]-> move focused window to workspace 1-10
-  SUPER + mouse drag   -> move a floating window
-  SUPER + right-click  -> resize a floating window
+
+  FOCUS — MOVING BETWEEN WINDOWS
+  -------------------------------
+  SUPER + arrow keys   -> move focus to window in that direction
+  SUPER + H            -> move focus left
+  SUPER + L            -> move focus right
+  SUPER + K            -> move focus up
+  SUPER + J            -> move focus down
+  ALT + TAB            -> cycle focus to next window (commonly added)
+
+  MOVING WINDOWS AROUND
+  ----------------------
+  SUPER + SHIFT + arrow keys  -> move window in that direction
+  SUPER + mouse drag          -> move a floating window
+  SUPER + right-click drag    -> resize a floating window
+
+  RESIZING WINDOWS
+  ----------------
+  SUPER + CTRL + arrow keys   -> resize focused window
+
+  WORKSPACES
+  ----------
+  SUPER + [1-0]               -> switch to workspace 1-10
+  SUPER + SHIFT + [1-0]       -> move focused window to workspace 1-10
+  SUPER + scroll up/down      -> cycle through workspaces
+  SUPER + TAB                 -> switch to previous workspace
+
+  MINIMIZE / SCRATCHPAD (SPECIAL WORKSPACE)
+  ------------------------------------------
+  NOTE: Hyprland has NO traditional minimize button.
+  Instead it uses a "special workspace" (scratchpad) —
+  an invisible workspace you can send windows to and
+  bring them back from at any time.
+
+  Send focused window to scratchpad (hide it):
+    SUPER + SHIFT + S    -> movetospecialworkspace
+
+  Bring scratchpad back into view / toggle it:
+    SUPER + S            -> togglespecialworkspace
+
+  Think of it like: SUPER+SHIFT+S hides the window,
+  SUPER+S shows/hides the scratchpad. The window is
+  still running — just tucked away out of sight.
+
+  To add this to your config manually:
+    bind = $mainMod SHIFT, S, movetospecialworkspace, magic
+    bind = $mainMod, S, togglespecialworkspace, magic
+
+  FULLSCREEN
+  ----------
+  SUPER + F            -> fullscreen (covers everything including bar)
+  SUPER + SHIFT + F    -> maximize (fills workspace but keeps bar)
+
+  Note: Some configs use different keys. If SUPER+F doesn't work
+  out of the box, add it to your config:
+    bind = $mainMod, F, fullscreen
+
+  SYSTEM
+  ------
+  SUPER + M            -> exit Hyprland entirely (logs you out)
+  SUPER + L            -> lock screen (if hyprlock is configured)
+
+  SCREENSHOTS
+  -----------
+  PRINT                -> screenshot (if grimblast or grim is set up)
+  SUPER + PRINT        -> screenshot of active window
+  SUPER + SHIFT + PRINT-> screenshot region select
+
+  CONFIG RELOAD
+  -------------
+  No default bind for this — add it yourself:
+    bind = $mainMod SHIFT, R, exec, hyprctl reload
+  Or just save your config file — Hyprland auto-reloads on save.
 
   NOTE: you wrote "SUPER+R = files" — by default SUPER+R is the
   app LAUNCHER (wofi), and SUPER+E is the file manager. Easy to
   mix up — just remember E = Explorer/files, R = Run/launcher.
-  You can always remap either in the config if you prefer it
-  the other way.
+  You can always remap either in the config if you prefer it.
 
+----------------------------------------------------------------
+WHERE THE CONFIG FILE LIVES
+----------------------------------------------------------------
+  ~/.config/hypr/hyprland.conf     (older syntax, still common)
+  ~/.config/hypr/hyprland.lua      (new Lua-based config, v0.55+)
+
+  Hyprland auto-reloads the moment you save the file.
+  Manual reload: hyprctl reload
+  View all active binds: hyprctl binds
 
 ----------------------------------------------------------------
 HOW TO CLOSE / EXIT THINGS
