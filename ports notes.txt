@@ -1,0 +1,220 @@
+----------------------------------------------------------------
+FINDING OPEN PORTS
+----------------------------------------------------------------
+  sudo ss -tupln
+    -t  = TCP
+    -u  = UDP
+    -p  = show the process using the port
+    -l  = listening sockets only
+    -n  = show numeric ports (don't resolve service names)
+
+  Other useful variants:
+    sudo ss -tupln | grep LISTEN     -> just the listening ones
+    sudo lsof -i -P -n                -> alternative, more detail
+    sudo nmap -sT -p- localhost       -> full scan from outside view
+
+
+----------------------------------------------------------------
+COMMON PORTS & RISK PROFILE (CORE WINDOWS/NETWORKING SET)
+----------------------------------------------------------------
+  PORT       SERVICE              RISK PROFILE
+  --------   ------------------   --------------------------------
+  21         FTP                  Cleartext credentials/data.
+                                   Avoid unless using FTPS/SFTP.
+  22         SSH                  Generally safe if key-based auth
+                                   used; risky if password auth +
+                                   exposed to internet (brute force).
+  23         Telnet               Cleartext, no encryption at all.
+                                   Should basically never be open.
+  53         DNS (UDP/TCP)        Normal for DNS resolvers; risky
+                                   if open to the world (DNS amp
+                                   attacks, cache poisoning).
+  80/443     HTTP/HTTPS           Standard web traffic. 443 (TLS)
+                                   is the safe one; plain 80 should
+                                   redirect to HTTPS.
+  123        NTP (UDP)            Network Time Protocol — keeps
+                                   clock synced (chronyd or
+                                   systemd-timesyncd). Can be abused
+                                   for UDP amplification DDoS if
+                                   open to the internet.
+  135        MS RPC               Windows remote procedure calls.
+                                   Historically targeted by malware
+                                   (e.g., Blaster worm).
+  139        NetBIOS              Legacy Windows file sharing.
+                                   Frequently exploited — disable
+                                   unless specifically needed.
+  161/162    SNMP (UDP)           Simple Network Management
+                                   Protocol — used to monitor/manage
+                                   network devices (routers,
+                                   switches, printers). Default
+                                   "public"/"private" community
+                                   strings are a classic
+                                   misconfig — treat like a weak
+                                   password if left default. Should
+                                   never be exposed externally.
+  445        SMB (CIFS)           File/printer sharing. Frequent
+                                   target (EternalBlue/WannaCry).
+  873        Rsync                File transfer/sync service. Can
+                                   allow anonymous file access if
+                                   misconfigured — restrict to
+                                   trusted hosts only.
+  3306       MySQL                Database port. Should never be
+                                   internet-facing; bind to
+                                   localhost or a private network.
+  3389       RDP                  Windows Remote Desktop. High
+                                   risk if exposed to the internet —
+                                   brute-force + known CVEs.
+  5355       LLMNR (UDP)          Windows name resolution fallback.
+                                   Commonly abused for credential
+                                   capture (see Responder, below).
+                                   Recommended to disable via GPO.
+  5985/5986  WinRM (HTTP/HTTPS)   Windows Remote Management /
+                                   Remote PowerShell. See dedicated
+                                   section below.
+  9050       Tor SOCKS proxy      Local proxy Tor listens on so
+                                   apps can route traffic through
+                                   the Tor network. (Note: this is
+                                   usually 9050, not 5050 — worth
+                                   double-checking your config if
+                                   you see something different.)
+
+
+----------------------------------------------------------------
+OTHER / SITUATIONAL PORTS
+----------------------------------------------------------------
+  2179       Hyper-V              Remote connections to Hyper-V
+                                   VMs. Moderate risk — firewall it
+                                   off if you're not using Hyper-V.
+  4444       Reverse shells       Common default port for tools
+                                   like msfvenom/Metasploit
+                                   payloads. ALWAYS BLOCK THIS PORT
+                                   on anything internet-facing.
+  8090       Custom app/proxy     Not a standardized service —
+                                   depends entirely on what's bound
+                                   to it. Verify with "ss -tupln"
+                                   + check the owning process
+                                   before trusting it (a fake
+                                   "Wondershare" popup that runs an
+                                   admin cmd through a port like
+                                   this is a red flag — treat as
+                                   suspicious until proven benign).
+  39051      Ephemeral/local      Randomly assigned high port used
+                                   temporarily by a process — NOT a
+                                   fixed service port, generally
+                                   nothing to worry about on its own.
+
+
+----------------------------------------------------------------
+LOCALHOST-ONLY vs OPEN-TO-ALL — WHY IT MATTERS
+----------------------------------------------------------------
+  Example: port 3350 vs port 3389
+
+  3350 (bound to 127.0.0.1 / ::1 only):
+    - LOW RISK. Only processes on the same machine can reach it.
+    - Remote attackers can't touch it directly unless they
+      already have local access or pivot through another
+      compromised service on the box.
+
+  3389 (bound to 0.0.0.0 — open to all interfaces):
+    - HIGHER RISK if exposed to the internet:
+        - Brute-force login attempts (esp. XRDP/Windows RDP)
+        - Exploitation of known RDP CVEs
+    - Check binding with: sudo ss -tupln | grep 3389
+      (0.0.0.0 or ::  = open to everyone, 127.0.0.1 = local only)
+
+
+----------------------------------------------------------------
+REMOTELY CREATING SERVICES USING "sc" (Windows)
+----------------------------------------------------------------
+  Relies on these ports being open/reachable:
+    135/TCP            -> DCE/RPC endpoint mapper
+    49152-65535/TCP     -> DCE/RPC dynamic port range
+    445/TCP            -> RPC over SMB named pipes
+    139/TCP            -> RPC over SMB named pipes (legacy)
+
+  If none of these are reachable, remote "sc create" / remote
+  service manipulation won't work — a good reason to keep them
+  firewalled from untrusted networks.
+
+
+----------------------------------------------------------------
+FIREWALL RULES — INBOUND vs OUTBOUND
+----------------------------------------------------------------
+  Example command (blocking inbound to a port):
+    netsh advfirewall firewall add rule name="Block Port 8090" ^
+      dir=in action=block protocol=TCP localport=8090
+
+  GENERAL RULE OF THUMB: only create OUTBOUND rules for your own
+  normal usage — you rarely need new INBOUND rules unless you're
+  intentionally hosting a service.
+
+  WHY ONLY OUTBOUND:
+    - Outbound = YOUR machine initiating a connection (downloading
+      keys, loading web pages, updating software). Low risk.
+    - Inbound = OUTSIDE systems connecting TO you. This is where
+      real exposure/risk comes from.
+
+  EXAMPLE — GPG key fetching:
+    SETTING                        SAFE?   WHY
+    ----------------------------   -----   --------------------------
+    Outbound rule for 443           YES    Standard HTTPS traffic
+    Outbound rule for 11371         YES    GPG key server fetch only
+    Inbound rule for 11371          NO     Would expose a GPG server
+                                            you don't need running
+
+
+----------------------------------------------------------------
+PORT 5985/5986 — WinRM EXPLAINED
+----------------------------------------------------------------
+  5985/TCP  -> WinRM over HTTP
+  5986/TCP  -> WinRM over HTTPS
+
+  - Stands for Windows Remote Management — part of Windows'
+    Remote PowerShell stack.
+  - Allows remote command execution over HTTP(S) via the
+    WS-Management protocol.
+  - Service identifies itself as "Microsoft HTTPAPI/2.0."
+  - This is the port you'd use to remotely access a Windows box
+    with valid credentials (e.g., after cracking creds via
+    Responder — see below).
+
+
+----------------------------------------------------------------
+RESPONDER — WHAT PORTS/PROTOCOLS IT USES
+----------------------------------------------------------------
+  Responder does NOT have one single listening port. It listens
+  for broadcast/multicast name-resolution traffic on the LAN and
+  impersonates multiple services at once:
+
+  PROTOCOL   PORT(S)
+  --------   -----------
+  LLMNR      UDP 5355
+  NBT-NS     UDP 137
+  SMB        TCP 445
+  HTTP       TCP 80
+  HTTPS      TCP 443
+  FTP        TCP 21
+
+  SUMMARY:
+    - Port 5985 = WinRM on the TARGET machine (used AFTER you've
+      captured/cracked credentials, to gain actual access).
+    - Responder = runs on YOUR attacking machine, passively
+      listens for name-resolution broadcasts (mostly UDP 137
+      and UDP 5355) to capture hashes/credentials in the first
+      place.
+
+
+----------------------------------------------------------------
+QUICK TAKEAWAYS
+----------------------------------------------------------------
+  - Always check BOTH the port number AND what it's bound to
+    (127.0.0.1 = local only = lower risk; 0.0.0.0 = exposed).
+  - SNMP (161/162), NetBIOS (139), Telnet (23), and RDP (3389)
+    are the classic "should not be internet-facing" group.
+  - Block 4444 outright — near-universal reverse shell default.
+  - Prefer outbound-only firewall rules unless you're
+    deliberately hosting something.
+  - Unrecognized listening ports (like an unexpected 8090) are
+    worth investigating with "ss -tupln" before assuming they're
+    safe — especially if tied to a suspicious install/popup.
+----------------------------------------------------------------

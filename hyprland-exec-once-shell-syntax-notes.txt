@@ -1,0 +1,147 @@
+----------------------------------------------------------------
+THE ORIGINAL PROBLEM COMMAND
+----------------------------------------------------------------
+  cd searxng | podman compose up -d
+
+  TWO THINGS WRONG WITH IT:
+    1. "|" is a PIPE, not "then" — it feeds cd's output into
+       podman. But cd produces NO output, and podman compose up
+       doesn't read from stdin anyway — so the pipe does nothing.
+    2. cd only affects the CURRENT shell, so it needs to be
+       chained correctly, not piped.
+
+  CORRECT VERSIONS:
+    cd ~/searxng && podman compose up -d
+    cd ~/searxng; podman compose up -d
+
+  && is preferred — it only runs podman if the cd actually
+  succeeded (so you never accidentally run podman from the
+  wrong directory).
+
+
+----------------------------------------------------------------
+WILL THIS AUTOSTART SEARXNG IN HYPRLAND?
+----------------------------------------------------------------
+  Yes, but it must be run through a shell — cd, &&, and ~ are
+  all shell features, and Hyprland's "exec-once" runs a program
+  directly, not through a shell, by default.
+
+  CORRECT hyprland.conf LINE:
+    exec-once = bash -c 'cd ~/searxng && podman compose up -d'
+    (or sh -c '...' instead of bash -c)
+
+  BETTER LONG-TERM OPTION:
+    If this is something you always want running (a server),
+    it's cleaner to use a systemd USER SERVICE instead of tying
+    it to your graphical session:
+      cd ~/searxng
+      podman generate systemd --new --name <container-name>
+    This starts SearXNG at login (or even at boot, with
+    lingering enabled) regardless of whether Hyprland is running
+    at all.
+
+
+----------------------------------------------------------------
+WHY DOES exec-once = obs WORK BUT NOT exec-once = cd ... && ...?
+----------------------------------------------------------------
+  Hyprland does not always invoke a shell for exec-once — it
+  typically executes a PROGRAM directly. That changes what
+  syntax is available:
+
+  exec-once = obs
+    -> Hyprland just runs the "obs" executable. No shell needed,
+       works fine.
+
+  exec-once = firefox
+    -> same idea, just "run the firefox executable."
+
+  exec-once = cd ~/searxng && podman compose up -d
+    -> this is NOT a single program. It contains:
+         cd     -> shell builtin, not an executable
+         &&     -> shell syntax
+         ~      -> shell expansion (your home directory)
+       Hyprland doesn't understand any of that on its own.
+
+  SOLUTION — explicitly ask a shell to interpret it:
+    exec-once = bash -c 'cd ~/searxng && podman compose up -d'
+
+    bash  -> run the Bash shell
+    -c    -> "execute the following string as a command"
+
+    This is identical to typing into a terminal:
+      bash -c 'cd ~/searxng && podman compose up -d'
+    Bash is the one that understands cd, &&, ~, etc — not
+    Hyprland itself.
+
+
+----------------------------------------------------------------
+"WHY DID THIS ONE WORK THEN?" — exec-once WITH $(...)
+----------------------------------------------------------------
+  exec-once = sudo docker stop $(sudo docker ps -aq)
+
+  Strictly speaking this SHOULDN'T work if Hyprland isn't
+  invoking a shell, because $(...) (command substitution) is
+  also shell-only syntax. Possible explanations if it did work:
+    - your Hyprland version runs exec-once commands through
+      /bin/sh internally, OR
+    - it was wrapped in a shell elsewhere, OR
+    - it hasn't actually been tested yet.
+
+  Even if it happens to work, using bash -c explicitly is more
+  predictable/portable whenever you rely on shell features —
+  don't count on undocumented internal behavior.
+
+
+----------------------------------------------------------------
+&&, ;, AND | — CLEARLY EXPLAINED
+----------------------------------------------------------------
+  &&  (AND)
+    Meaning: run the second command ONLY IF the first succeeded.
+    Example: mkdir test && cd test
+      mkdir succeeds -> cd test runs
+      mkdir fails (dir exists) -> cd test is SKIPPED
+
+  ;  (SEMICOLON)
+    Meaning: run the next command regardless of what happened
+    to the first one.
+    Example: mkdir test; cd test
+      mkdir fails -> cd test still runs anyway
+
+  |  (PIPE)
+    Meaning: completely different from && and ; — takes the
+    OUTPUT of the first command and feeds it in as INPUT to the
+    second command. Does NOT mean "then."
+    Example: ls | grep txt
+      ls produces a file listing -> that listing is fed into
+      grep, which filters it down to lines containing "txt"
+
+    Another example: cat file.txt | wc -l
+      cat prints the file's contents -> piped into wc -l, which
+      counts the number of lines
+
+
+----------------------------------------------------------------
+QUICK SUMMARY TABLE
+----------------------------------------------------------------
+  OPERATOR   MEANING                          RUNS 2ND IF 1ST FAILS?
+  --------   -------------------------------  -----------------------
+  &&         run next only if success                  No
+  ;          run next regardless                        Yes
+  |          send output of 1st into 2nd                N/A (not
+                                                          success-based)
+  $(...)     run a command, substitute its              N/A
+             output into another command
+
+
+----------------------------------------------------------------
+RULE OF THUMB — WHEN YOU NEED A SHELL EXPLICITLY
+----------------------------------------------------------------
+  If a command contains any of: && || | ; $(...) ~ wildcards (*)
+  or environment variables ($HOME, etc.) — that's SHELL SYNTAX.
+
+  A program like Hyprland (or many other autostart/config tools)
+  can only use those features if it launches a shell itself, or
+  you explicitly ask for one:
+    bash -c '...'
+    sh -c '...'
+----------------------------------------------------------------
