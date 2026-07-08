@@ -1,0 +1,140 @@
+----------------------------------------------------------------
+SCREENSHOTS ON HYPRLAND — GRIM + SLURP + SWAPPY (WORKING SETUP)
+----------------------------------------------------------------
+  Why not Flameshot: Flameshot's Wayland/wlroots support is
+  unreliable — real symptoms hit during setup included a 2+
+  minute load time, a stretched/broken image, stale windows
+  showing in the capture, and a broken click-drag selection
+  (QPainter "Paint device returned engine == 0" errors = it grabbed
+  a null/broken frame). This is a known limitation of Flameshot
+  itself, not a config mistake.
+
+  RECOMMENDED FIX — use the grim/slurp/swappy stack instead
+  (native Wayland tools, no portal weirdness):
+
+    sudo dnf install grim slurp swappy
+
+    grim    -> takes the actual screenshot
+    slurp   -> lets you click-drag to select a region
+    swappy  -> opens the capture for annotation (arrows, text,
+               blur, etc.)
+
+
+----------------------------------------------------------------
+TESTING IT MANUALLY (before binding a key)
+----------------------------------------------------------------
+  Step 1 — plain capture to a file, confirm no stretching/glitches:
+    grim -g "$(slurp)" ~/Pictures/test.png
+
+  Step 2 — capture straight into swappy for annotation:
+    grim -g "$(slurp)" - | swappy -f -
+
+  This worked cleanly once tested — no stretching, no stale
+  windows, proper click-drag region select.
+
+
+----------------------------------------------------------------
+KEYBIND SETUP — WATCH FOR CONFLICTS FIRST
+----------------------------------------------------------------
+  IMPORTANT: before adding a new bind, check what's already using
+  that key combo:
+    grep -n "S," ~/.config/hypr/hyprland.conf
+
+  Found an existing conflicting bind:
+    bind = $mainMod SHIFT, S, movetoworkspace, special:magic
+
+  WHAT THAT BIND DOES: moves the focused window into Hyprland's
+  "special workspace" — a hidden scratchpad that floats above
+  normal workspaces (name "magic" is arbitrary, just a label).
+  Genuinely useful for stashing a terminal/app out of view and
+  toggling it back with:
+    bind = $mainMod, S, togglespecialworkspace, magic
+
+  RESOLUTION USED: instead of removing the scratchpad bind,
+  moved it to a different key and gave the screenshot its own
+  key:
+
+    bind = $mainMod SHIFT, G, movetoworkspace, special:magic
+    bind = $mainMod SHIFT, F, exec, grim -g "$(slurp)" - | swappy -f -
+
+  Reload after editing:
+    hyprctl reload
+
+
+----------------------------------------------------------------
+SWAPPY CONFIG FILE — CREATING IT
+----------------------------------------------------------------
+  nano won't create missing parent folders, so make the
+  directory FIRST or the config write will fail with
+  "No such file or directory":
+
+    mkdir -p ~/.config/swappy
+    nano ~/.config/swappy/config
+
+  Paste config contents, then save: Ctrl+O, Enter, Ctrl+X
+
+
+----------------------------------------------------------------
+SWAPPY CONFIG — WORKING VERSION (~/.config/swappy/config)
+----------------------------------------------------------------
+  [Default]
+  save_dir=$HOME/Pictures/Screenshots
+  save_filename_format=screenshot-%Y%m%d-%H%M%S.png
+  show_panel=true
+  line_size=5
+  text_size=20
+  text_font=Sans
+  paint_mode=brush
+  early_exit=true
+  fill_shape=false
+
+  EXTRA OPTIONS YOU CAN ADD:
+    text_color=#ff0000ff        -> default text/annotation color
+                                    (hex + alpha)
+    fill_shape=true              -> shapes filled solid instead of
+                                    just outlined
+    corner_radius=0              -> corner rounding on saved image
+    custom_color_palette=#ff0000;#00ff00;#0000ff
+                                  -> preset quick-swap color swatches
+                                    shown in the toolbar
+    auto_save=false               -> whether it saves automatically
+                                    when you exit/copy
+
+
+----------------------------------------------------------------
+SWAPPY TOOLBAR — HOTKEYS ONCE THE PANEL IS VISIBLE
+----------------------------------------------------------------
+  1        -> Pencil (freehand draw)
+  2        -> Text
+  3        -> Rectangle
+  4        -> Ellipse
+  5        -> Arrow
+  6        -> Marker/highlighter
+  7        -> Blur (good for hiding sensitive info)
+  C        -> Crop
+  Ctrl+Z   -> Undo
+  Ctrl+S   -> Save
+  Ctrl+C   -> Copy to clipboard
+
+
+----------------------------------------------------------------
+FIX — TOOLBAR INVISIBLE (BLENDING INTO BACKGROUND)
+----------------------------------------------------------------
+  SYMPTOM: a bar was visible at the top of the swappy window, but
+  its color blended into the background/wallpaper, making it look
+  like the toolbar was missing (even though shortcuts like Ctrl+Z
+  still worked — proving the panel was there, just invisible).
+
+  ROOT CAUSE: GTK theme choice, not a swappy bug or config issue.
+
+  ✅ FIX THAT WORKED — force a high-contrast GTK theme, added to
+  ~/.config/hypr/hyprland.conf:
+
+    env = GTK_THEME,Adwaita:dark
+
+  Reload with hyprctl reload, then relaunch swappy — toolbar
+  became clearly visible.
+
+  (If Adwaita isn't installed: sudo dnf install gnome-themes-extra)
+  (If already dark and still blending, try Adwaita:light instead)
+----------------------------------------------------------------
