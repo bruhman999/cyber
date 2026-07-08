@@ -1,0 +1,132 @@
+----------------------------------------------------------------
+MOVING AROUND THE LINUX TERMINAL (BASH/ZSH LINE EDITING)
+----------------------------------------------------------------
+  These work at the command-line prompt itself (not in nano).
+
+  CURSOR MOVEMENT:
+    Ctrl + A        -> jump to START of the line
+    Ctrl + E        -> jump to END of the line
+    Alt  + B        -> jump back ONE WORD
+    Alt  + F        -> jump forward ONE WORD
+    Left / Right    -> move one character at a time
+    Up / Down       -> cycle through COMMAND HISTORY
+
+  DELETING:
+    Ctrl + U        -> delete from cursor to START of line
+    Ctrl + K        -> delete from cursor to END of line
+    Ctrl + W        -> delete ONE WORD backward
+    Alt  + D        -> delete ONE WORD forward
+    Backspace       -> delete one character back
+
+  PASTE WHAT YOU JUST DELETED:
+    Ctrl + Y        -> "yank" (paste) the last thing you cut
+                       with Ctrl+U/K/W
+
+  SEARCH / REUSE OLD COMMANDS:
+    Ctrl + R        -> search backward through command history
+                       (type to search, Ctrl+R again for next
+                       match, Enter to run it)
+    !!              -> re-run the last command
+    !<text>         -> re-run last command starting with <text>
+
+  SCREEN / PROCESS CONTROL:
+    Ctrl + L        -> clear the screen (same as typing "clear")
+    Ctrl + C        -> kill/interrupt the running command
+    Ctrl + Z        -> suspend the running command (use "fg" to
+                       resume it, "bg" to resume in background)
+    Ctrl + D        -> exit the current shell (same as "exit")
+    Tab             -> auto-complete file/folder/command names
+    Tab Tab         -> show ALL possible completions
+
+
+----------------------------------------------------------------
+NANO — BASIC NAVIGATION
+----------------------------------------------------------------
+  Ctrl + A        -> go to start of line
+  Ctrl + E        -> go to end of line
+  Ctrl + Y        -> page UP
+  Ctrl + V        -> page DOWN
+  Alt  + \        -> go to very TOP of file
+  Alt  + /        -> go to very BOTTOM of file
+  Ctrl + _        -> jump to a specific line number (then type it)
+  Ctrl + Space    -> move forward one WORD
+  Alt  + Space    -> move backward one WORD
+
+
+----------------------------------------------------------------
+NANO — CUT / COPY / PASTE (this is the "highlighting" part)
+----------------------------------------------------------------
+  Ctrl + K        -> cut the WHOLE current line (adds it to the
+                     cut buffer — press repeatedly on consecutive
+                     lines to cut multiple lines at once)
+  Ctrl + U        -> paste (uncut) whatever you last cut
+
+  TO SELECT/HIGHLIGHT A CUSTOM CHUNK OF TEXT (not just a full
+  line) — this is nano's version of Shift+Arrow highlighting:
+
+    1. Ctrl + 6 (or Ctrl + Shift + 6, sometimes shown as Ctrl+^)
+       -> starts marking text at the cursor position
+    2. Move the cursor with arrow keys to extend the highlighted
+       selection
+    3. Then either:
+         Ctrl + K    -> CUT the highlighted selection
+         Alt  + 6    -> COPY the highlighted selection (no cut)
+    4. Move cursor to where you want it -> Ctrl + U to paste
+
+
+----------------------------------------------------------------
+NANO — SEARCH / REPLACE / SAVE / EXIT
+----------------------------------------------------------------
+  Ctrl + W        -> search for text
+  Ctrl + \        -> search AND replace
+  Alt  + W        -> repeat last search (find next match)
+  Ctrl + O        -> save (write out) the file
+  Ctrl + X        -> exit nano (asks to save if unsaved changes)
+  Ctrl + G        -> open the help menu (lists all shortcuts)
+  Alt  + U        -> undo
+  Alt  + E        -> redo
+
+
+----------------------------------------------------------------
+DOING "WINDOWS-STYLE" ACTIONS IN LINUX (KEYBOARD SELECTION,
+COPY/PASTE, ETC.)
+----------------------------------------------------------------
+  Linux terminals don't behave exactly like Windows because
+  Ctrl+C / Ctrl+V are already taken (Ctrl+C = kill running
+  process). Here's the equivalent behavior:
+
+  HIGHLIGHTING TEXT WITH THE KEYBOARD (in a terminal window,
+  not inside an app like nano):
+    - This depends on your TERMINAL EMULATOR, not bash itself.
+    - Many modern terminals (kitty, GNOME Terminal, Konsole)
+      support:
+        Shift + Left/Right/Up/Down   -> select text like Windows
+        Shift + Home / Shift + End   -> select to start/end of
+                                         line
+    - If your terminal doesn't support this, you can also
+      click-and-drag with the MOUSE to highlight in basically
+      every terminal emulator (this always works).
+
+  COPY / PASTE IN THE TERMINAL:
+    Ctrl + Shift + C   -> copy highlighted text
+    Ctrl + Shift + V   -> paste
+    (Shift is added because plain Ctrl+C/Ctrl+V are reserved
+    for interrupting processes and other shell functions)
+
+  SELECT-ALL EQUIVALENT:
+    - There's no universal "select all" in a terminal the way
+      Ctrl+A works in a text box — Ctrl+A is bash's "go to start
+      of line" instead (see above).
+    - To select everything currently visible: click-drag with
+      the mouse, or triple-click a line to select that whole line
+      in most terminal emulators.
+
+  RUNNING/RESUMING PROGRAMS (like Windows Task Manager basics):
+    Ctrl + Z        -> pause/suspend current program
+    fg              -> bring it back to the foreground
+    bg              -> resume it running in the background
+    Ctrl + C        -> force-quit the current program
+    ps aux          -> list running processes (like Task Manager)
+    kill <PID>      -> close a process by its ID number
+    kill -9 <PID>   -> force-kill a stuck process
+----------------------------------------------------------------

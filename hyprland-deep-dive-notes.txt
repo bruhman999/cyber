@@ -1,0 +1,163 @@
+----------------------------------------------------------------
+DISPLAY SERVER PROTOCOLS — X11 vs WAYLAND
+----------------------------------------------------------------
+  X11 (X Window System)
+    - Old protocol (1987). Client-server model: apps talk to an
+      "X server" which draws to the screen.
+    - Compositing (effects, transparency) is bolted on via a
+      separate compositor (e.g. picom) sitting on top.
+    - Everything can see/read everything else by default (bad
+      for security — any app can screenshot/keylog another).
+    - Still needed for some legacy apps/games (handled via
+      XWayland compatibility layer under Wayland).
+
+  Wayland
+    - Modern protocol. The compositor IS the display server —
+      no separate X server + compositor layered on top.
+    - Each app is isolated (better security/sandboxing).
+    - Lower latency, no screen tearing by design.
+    - Slightly younger ecosystem — some old tools/screen-share
+      features needed catching up (mostly solved now).
+
+  HYPRLAND = a WAYLAND COMPOSITOR (built on wlroots library).
+  It IS the display server + window manager + compositor, all
+  in one. This is why it needs no separate "X server."
+
+
+----------------------------------------------------------------
+INSTALLING HYPRLAND (FEDORA)
+----------------------------------------------------------------
+  Step 1 — Enable the COPR repo (Hyprland isn't in Fedora's
+           official repos):
+    sudo dnf copr enable solopasha/hyprland
+
+  Step 2 — Install Hyprland itself:
+    sudo dnf install hyprland
+
+  Step 3 — Install the essential companion tools (Hyprland is
+           JUST a compositor — it has no terminal, no launcher,
+           no file manager, no bar, no lock screen built in):
+
+    sudo dnf install kitty waybar wofi hyprpaper hypridle \
+      hyprlock hyprpicker hyprpolkitagent dunst
+
+    kitty            -> terminal emulator
+    waybar           -> top status bar (clock, workspaces, tray)
+    wofi              -> app launcher (like a Spotlight/dmenu)
+    hyprpaper        -> wallpaper daemon
+    hypridle         -> handles screen idle/sleep behavior
+    hyprlock         -> lock screen
+    hyprpicker       -> color picker utility
+    hyprpolkitagent  -> auth prompts (needed for sudo GUI popups)
+    dunst            -> notification daemon (or use mako)
+
+  Step 4 — Make sure you have a display manager that can list
+           Wayland sessions (SDDM or GDM both work fine; LightDM
+           works too with the right greeter).
+
+
+----------------------------------------------------------------
+LOGGING IN TO HYPRLAND
+----------------------------------------------------------------
+  1. Log out of your current session (GNOME/KDE/whatever).
+  2. On the login screen, click the gear/session icon (usually
+     bottom-right corner near the password field).
+  3. Select "Hyprland" from the list.
+  4. Log in as normal — you're now in Hyprland.
+
+
+----------------------------------------------------------------
+DEFAULT KEYBINDS (out of the box, from the example config)
+----------------------------------------------------------------
+  $mainMod = SUPER (the Windows/Cmd key)
+
+  SUPER + Q            -> open terminal (kitty)
+  SUPER + E            -> open file manager (dolphin, if installed)
+  SUPER + R            -> open app launcher (wofi)
+  SUPER + C            -> close/kill the FOCUSED window
+  SUPER + M            -> exit Hyprland entirely (logs you out)
+  SUPER + V            -> toggle floating mode for focused window
+  SUPER + P            -> toggle pseudotiling
+  SUPER + J            -> toggle split direction
+  SUPER + [1-0]        -> switch to workspace 1-10
+  SUPER + SHIFT + [1-0]-> move focused window to workspace 1-10
+  SUPER + mouse drag   -> move a floating window
+  SUPER + right-click  -> resize a floating window
+
+  NOTE: you wrote "SUPER+R = files" — by default SUPER+R is the
+  app LAUNCHER (wofi), and SUPER+E is the file manager. Easy to
+  mix up — just remember E = Explorer/files, R = Run/launcher.
+  You can always remap either in the config if you prefer it
+  the other way.
+
+
+----------------------------------------------------------------
+HOW TO CLOSE / EXIT THINGS
+----------------------------------------------------------------
+  Close the current app/window:
+    - Use the app's own quit shortcut if it has one (e.g. Ctrl+Q
+      in many GUI apps, or "exit"/Ctrl+D in a terminal), OR
+    - SUPER + C   -> force-kills the focused window (like "kill
+      this window" — use if the app won't quit normally)
+
+  Exit Hyprland completely (back to login screen):
+    SUPER + M
+
+  Reload the Hyprland config after editing it (no need to log
+  out/in):
+    SUPER + SHIFT + R
+    (or run manually: hyprctl reload)
+
+
+----------------------------------------------------------------
+CONFIG FILE — WHERE IT LIVES & WHAT TO CHANGE FIRST
+----------------------------------------------------------------
+  Location:
+    ~/.config/hypr/hyprland.conf
+
+  If it doesn't exist yet, Hyprland creates a default one on
+  first launch — copy/edit that rather than starting from blank.
+
+  Things worth changing early:
+
+  1. Monitor setup (resolution/refresh/position):
+       monitor=,preferred,auto,1
+
+  2. Set your terminal/launcher/file manager explicitly (so the
+     default keybinds point at what you actually installed):
+       $terminal = kitty
+       $fileManager = dolphin
+       $menu = wofi --show drun
+
+  3. Autostart programs on login (add near top of config):
+       exec-once = waybar
+       exec-once = hyprpaper
+       exec-once = dunst
+       exec-once = hyprpolkitagent
+
+  4. Look and feel — gaps, borders, blur (in the "general" and
+     "decoration" blocks):
+       gaps_in = 5
+       gaps_out = 10
+       border_size = 2
+       blur = true
+
+  5. Keybinds — the "bind = " lines near the bottom. Add/change
+     any shortcut here, format is:
+       bind = MOD, KEY, ACTION, PARAMS
+     e.g.:
+       bind = $mainMod, Q, exec, $terminal
+
+
+----------------------------------------------------------------
+SUGGESTED FIRST-SETUP CHECKLIST
+----------------------------------------------------------------
+  [ ] Install kitty, waybar, wofi, hyprpaper, hypridle, hyprlock
+  [ ] Set $terminal / $fileManager / $menu variables in config
+  [ ] Add exec-once lines for waybar/hyprpaper/dunst/polkit agent
+  [ ] Confirm monitor line matches your actual display
+  [ ] Test SUPER+Q (terminal), SUPER+R (launcher), SUPER+E (files)
+  [ ] Test SUPER+C (close window) and SUPER+M (exit Hyprland)
+  [ ] Reload config with SUPER+SHIFT+R after each edit
+  [ ] Set a wallpaper via hyprpaper.conf (~/.config/hypr/hyprpaper.conf)
+----------------------------------------------------------------

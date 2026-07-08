@@ -1,0 +1,203 @@
+----------------------------------------------------------------
+DISPLAY MANAGERS vs DESKTOP ENVIRONMENTS/WMs — QUICK DEFINITIONS
+----------------------------------------------------------------
+  Display Manager (DM)   = the graphical login screen. Starts your
+                           session, hands off to X11/Wayland.
+                           (LightDM, GDM, SDDM, ly)
+
+  Desktop Environment(DE)= full suite: WM + panel + settings app +
+                           file manager. (GNOME, KDE, COSMIC)
+
+  Window Manager (WM)    = just handles windows, no built-in apps.
+                           (Hyprland, Sway, i3)
+
+  NOTE: COSMIC and Hyprland are NOT display managers. You still
+  need LightDM/GDM/SDDM (or a TTY) to launch them.
+
+
+----------------------------------------------------------------
+LIGHTDM — DISPLAY MANAGER
+----------------------------------------------------------------
+  Install:
+    sudo dnf install lightdm lightdm-gtk-greeter
+    sudo systemctl disable gdm
+    sudo systemctl enable lightdm
+
+  PROS:
+    + Very lightweight, low resource use
+    + Highly themeable (multiple greeter front-ends)
+    + Plays nice with tiling WMs (Hyprland/Sway)
+    + Mature and stable
+
+  CONS:
+    - Not as actively developed as GDM/SDDM
+    - Wayland support present but less polished
+    - Greeter theming can be fiddly
+
+
+----------------------------------------------------------------
+GDM — DISPLAY MANAGER (Fedora default)
+----------------------------------------------------------------
+  Install:
+    sudo dnf install gdm
+
+  PROS:
+    + Best Wayland integration (made by GNOME devs)
+    + Tight systemd-logind integration, "just works"
+    + Zero config needed out of the box
+
+  CONS:
+    - Heavier, pulls in GNOME Shell/mutter deps
+    - Theming intentionally locked down
+
+
+----------------------------------------------------------------
+SDDM — DISPLAY MANAGER
+----------------------------------------------------------------
+  Install:
+    sudo dnf install sddm
+    sudo systemctl disable gdm
+    sudo systemctl enable sddm
+
+  PROS:
+    + Excellent Wayland support
+    + Modern, good-looking QML themes
+    + Great pairing with KDE Plasma or Hyprland
+
+  CONS:
+    - QML theming has a learning curve
+    - Slightly less battle-tested than GDM for GNOME
+
+
+----------------------------------------------------------------
+LY — DISPLAY MANAGER (TUI, via COPR)
+----------------------------------------------------------------
+  Install:
+    sudo dnf copr enable errornointernet/ly
+    sudo dnf install ly
+    sudo systemctl disable gdm
+    sudo systemctl enable ly
+
+  PROS:
+    + Extremely minimal and fast, no compositing needed
+    + Great for pure tiling-WM / low-power setups
+
+  CONS:
+    - No graphical polish (terminal login screen)
+    - Smaller community than the big three
+
+
+----------------------------------------------------------------
+COSMIC — DESKTOP ENVIRONMENT (System76, Rust-based)
+----------------------------------------------------------------
+  Install (official, stable — Fedora 41+, NO COPR needed):
+    sudo dnf install @cosmic-desktop-environment
+
+  Install (nightly builds instead, via COPR):
+    sudo dnf copr enable ryanabx/cosmic-epoch
+    sudo dnf install cosmic-desktop
+
+  Then log out -> pick "COSMIC" on the login screen.
+
+  PROS:
+    + Officially packaged & QA'd by Fedora now
+    + Native Wayland, written in Rust
+    + Hybrid tiling + floating windows out of the box
+    + Clean GNOME-like workflow, more built-in customization
+    + Actively funded/developed by System76
+
+  CONS:
+    - Still maturing, some rough edges / missing settings
+    - Smaller app & theme ecosystem so far
+    - Fewer community guides than GNOME/KDE
+
+
+----------------------------------------------------------------
+HYPRLAND — WINDOW MANAGER / COMPOSITOR (needs COPR)
+----------------------------------------------------------------
+  Install:
+    sudo dnf copr enable solopasha/hyprland
+    sudo dnf install hyprland
+
+  Recommended companion packages (same COPR):
+    sudo dnf install waybar hyprpaper hypridle hyprlock \
+      hyprpicker hyprpolkitagent
+
+  You still need SDDM or LightDM to log into it — Hyprland has
+  no login screen of its own.
+
+  PROS:
+    + Extremely customizable, huge dotfile/ricing community
+    + Very fast, low overhead (just a compositor)
+    + Best-in-class animations/visual effects
+    + Great keyboard-driven workflow
+
+  CONS:
+    - Not a full DE — you assemble bar/notifications/lock
+      screen/wallpaper daemon yourself
+    - Steeper learning curve, all config-file based
+    - Requires third-party COPR repo, not Fedora-tested,
+      updates can occasionally break things
+
+
+----------------------------------------------------------------
+BONUS — GNOME / KDE PLASMA (for comparison)
+----------------------------------------------------------------
+  GNOME:
+    sudo dnf group install "GNOME Desktop Environment"
+
+  KDE Plasma:
+    sudo dnf group install "KDE Plasma Workspaces"
+
+
+----------------------------------------------------------------
+WHICH IS "BEST"? — DEPENDS ON THE GOAL
+----------------------------------------------------------------
+  Want stable, official, "just works"...... GDM+GNOME or SDDM+KDE
+  Want modern/fresh but still maturing..... SDDM + COSMIC
+  Want max customization, don't mind DIY... SDDM/LightDM + Hyprland
+  Want lightest DM for a tiling setup...... LightDM or ly
+
+  MY PICK:
+    Display manager -> SDDM (best all-around Wayland support,
+    works well with COSMIC, KDE, or Hyprland). LightDM is a close
+    second if you want something lighter/more classic.
+
+    Desktop -> COSMIC if you want it to work today with minimal
+    fuss (officially packaged, no COPR maintenance burden).
+    Hyprland if you're a power user who enjoys tuning every pixel
+    and is fine treating the COPR dependency as ongoing upkeep.
+
+
+----------------------------------------------------------------
+QUICK REFERENCE — COMMANDS ONLY
+----------------------------------------------------------------
+  # LightDM
+  sudo dnf install lightdm lightdm-gtk-greeter
+  sudo systemctl disable gdm && sudo systemctl enable lightdm
+
+  # SDDM
+  sudo dnf install sddm
+  sudo systemctl disable gdm && sudo systemctl enable sddm
+
+  # ly
+  sudo dnf copr enable errornointernet/ly
+  sudo dnf install ly
+  sudo systemctl disable gdm && sudo systemctl enable ly
+
+  # COSMIC (official, stable)
+  sudo dnf install @cosmic-desktop-environment
+
+  # COSMIC (nightly, COPR)
+  sudo dnf copr enable ryanabx/cosmic-epoch
+  sudo dnf install cosmic-desktop
+
+  # Hyprland (COPR required)
+  sudo dnf copr enable solopasha/hyprland
+  sudo dnf install hyprland waybar hyprpaper hypridle hyprlock \
+    hyprpicker hyprpolkitagent
+
+  NOTE: restart the DM service (sudo systemctl restart <name>)
+  or reboot after switching, then pick the new session from the
+  gear icon on the login screen before signing in.
+----------------------------------------------------------------
