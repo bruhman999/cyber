@@ -1,142 +1,433 @@
-----------------------------------------------------------------
-SCREENSHOTS ON HYPRLAND — GRIM + SLURP + SWAPPY (WORKING SETUP)
-----------------------------------------------------------------
-  Why not Flameshot: Flameshot's Wayland/wlroots support is
-  unreliable — real symptoms hit during setup included a 2+
-  minute load time, a stretched/broken image, stale windows
-  showing in the capture, and a broken click-drag selection
-  (QPainter "Paint device returned engine == 0" errors = it grabbed
-  a null/broken frame). This is a known limitation of Flameshot
-  itself, not a config mistake.
-
-  RECOMMENDED FIX — use the grim/slurp/swappy stack instead
-  (native Wayland tools, no portal weirdness):
-
-    sudo dnf install grim slurp swappy
-
-    grim    -> takes the actual screenshot
-    slurp   -> lets you click-drag to select a region
-    swappy  -> opens the capture for annotation (arrows, text,
-               blur, etc.)
+================================================================================
+                         ZSH & OH MY ZSH — SETUP NOTES
+================================================================================
 
 
-----------------------------------------------------------------
-TESTING IT MANUALLY (before binding a key)
-----------------------------------------------------------------
-  Step 1 — plain capture to a file, confirm no stretching/glitches:
-    grim -g "$(slurp)" ~/Pictures/test.png
+================================================================================
+  1. WHAT IS ZSH?
+================================================================================
 
-  Step 2 — capture straight into swappy for annotation:
-    grim -g "$(slurp)" - | swappy -f -
+  ZSH (Z Shell) is a shell — the program that runs in your terminal and
+  interprets your commands. It's like the engine of your terminal.
 
-  This worked cleanly once tested — no stretching, no stale
-  windows, proper click-drag region select.
+  Fedora can use several shells (bash, zsh, fish, etc). ZSH is more powerful
+  than the default bash shell and supports better autocomplete, globbing,
+  and customization.
 
-
-----------------------------------------------------------------
-KEYBIND SETUP — WATCH FOR CONFLICTS FIRST
-----------------------------------------------------------------
-  IMPORTANT: before adding a new bind, check what's already using
-  that key combo:
-    grep -n "S," ~/.config/hypr/hyprland.conf
-
-  Found an existing conflicting bind:
-    bind = $mainMod SHIFT, S, movetoworkspace, special:magic
-
-  WHAT THAT BIND DOES: moves the focused window into Hyprland's
-  "special workspace" — a hidden scratchpad that floats above
-  normal workspaces (name "magic" is arbitrary, just a label).
-  Genuinely useful for stashing a terminal/app out of view and
-  toggling it back with:
-    bind = $mainMod, S, togglespecialworkspace, magic
-
-  RESOLUTION USED: instead of removing the scratchpad bind,
-  moved it to a different key and gave the screenshot its own
-  key:
-
-    bind = $mainMod SHIFT, G, movetoworkspace, special:magic
-    bind = $mainMod SHIFT, F, exec, grim -g "$(slurp)" - | swappy -f -
-
-  Reload after editing:
-    hyprctl reload
-(add bind so hit print, it screenshots monitor and saves auto, need jq)
-bind = , Print, exec, grim -o "$(hyprctl monitors -j | jq -r '.[] | select(.focused==true) | .name')" ~/Pictures/Screenshots/screenshot-$(date +%Y%m%d-%H%M%S).png
+  You were already running ZSH — it showed "zsh" at the top of Konsole.
+  ZSH alone is plain with no colors or fancy prompt, just a basic command line.
 
 
-----------------------------------------------------------------
-SWAPPY CONFIG FILE — CREATING IT
-----------------------------------------------------------------
-  nano won't create missing parent folders, so make the
-  directory FIRST or the config write will fail with
-  "No such file or directory":
+================================================================================
+  2. WHAT IS OH MY ZSH?
+================================================================================
 
-    mkdir -p ~/.config/swappy
-    nano ~/.config/swappy/config
+  Oh My Zsh is a framework that sits ON TOP of zsh.
+  It is NOT a separate shell — it's a customization layer.
 
-  Paste config contents, then save: Ctrl+O, Enter, Ctrl+X
+  Think of it like this:
+    ZSH          = the car engine
+    Oh My Zsh    = the custom paint, rims, interior, dashboard
 
+  Oh My Zsh gives you:
+    - Themes (changes how your prompt looks — colors, icons, git info)
+    - Plugins (adds extra functionality to your terminal)
+    - Easy configuration through ~/.zshrc
 
-----------------------------------------------------------------
-SWAPPY CONFIG — WORKING VERSION (~/.config/swappy/config)
-----------------------------------------------------------------
-  [Default]
-  save_dir=$HOME/Pictures/Screenshots
-  save_filename_format=screenshot-%Y%m%d-%H%M%S.png
-  show_panel=true
-  line_size=5
-  text_size=20
-  text_font=Sans
-  paint_mode=brush
-  early_exit=true
-  fill_shape=false
-
-  EXTRA OPTIONS YOU CAN ADD:
-    text_color=#ff0000ff        -> default text/annotation color
-                                    (hex + alpha)
-    fill_shape=true              -> shapes filled solid instead of
-                                    just outlined
-    corner_radius=0              -> corner rounding on saved image
-    custom_color_palette=#ff0000;#00ff00;#0000ff
-                                  -> preset quick-swap color swatches
-                                    shown in the toolbar
-    auto_save=false               -> whether it saves automatically
-                                    when you exit/copy
+  Without Oh My Zsh your zsh prompt is plain and boring.
+  With Oh My Zsh it can show your current folder, git branch,
+  error codes, time, and more — all in color.
 
 
-----------------------------------------------------------------
-SWAPPY TOOLBAR — HOTKEYS ONCE THE PANEL IS VISIBLE
-----------------------------------------------------------------
-  1        -> Pencil (freehand draw)
-  2        -> Text
-  3        -> Rectangle
-  4        -> Ellipse
-  5        -> Arrow
-  6        -> Marker/highlighter
-  7        -> Blur (good for hiding sensitive info)
-  C        -> Crop
-  Ctrl+Z   -> Undo
-  Ctrl+S   -> Save
-  Ctrl+C   -> Copy to clipboard
+================================================================================
+  3. HOW ZSH AND OH MY ZSH WERE INSTALLED
+================================================================================
+
+  ZSH was already installed on Fedora KDE by default.
+
+  Oh My Zsh was installed by running this one-liner in the terminal:
+
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+
+  What that command does:
+    - curl         = downloads the install script from the internet
+    - -fsSL        = flags: fail silently, follow redirects, show errors only
+    - sh -c        = runs the downloaded script in the shell immediately
+    - The script   = creates ~/.oh-my-zsh folder and sets up the config
+
+  During install it asked:
+    "Do you want to overwrite your .zshrc with the Oh My Zsh template? [Y/n]"
+    → Answered Y
+
+  This backed up the old config to:
+    ~/.zshrc.pre-oh-my-zsh
+
+  And wrote a fresh Oh My Zsh template to:
+    ~/.zshrc
 
 
-----------------------------------------------------------------
-FIX — TOOLBAR INVISIBLE (BLENDING INTO BACKGROUND)
-----------------------------------------------------------------
-  SYMPTOM: a bar was visible at the top of the swappy window, but
-  its color blended into the background/wallpaper, making it look
-  like the toolbar was missing (even though shortcuts like Ctrl+Z
-  still worked — proving the panel was there, just invisible).
+================================================================================
+  4. POWERLEVEL10K THEME
+================================================================================
 
-  ROOT CAUSE: GTK theme choice, not a swappy bug or config issue.
+  The default Oh My Zsh theme is "robbyrussell" — simple arrow prompt.
+  Powerlevel10k is the most popular advanced theme — shows git status,
+  icons, path, time, error codes, and more in a highly visual prompt.
 
-  ✅ FIX THAT WORKED — force a high-contrast GTK theme, added to
-  ~/.config/hypr/hyprland.conf:
+  Install Powerlevel10k:
 
-    env = GTK_THEME,Adwaita:dark
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/themes/powerlevel10k
 
-  Reload with hyprctl reload, then relaunch swappy — toolbar
-  became clearly visible.
+  What that does:
+    - git clone    = downloads the theme from GitHub
+    - --depth=1    = only downloads the latest version (faster, saves space)
+    - The path     = saves it into Oh My Zsh's custom themes folder
 
-  (If Adwaita isn't installed: sudo dnf install gnome-themes-extra)
-  (If already dark and still blending, try Adwaita:light instead)
-----------------------------------------------------------------
+  Then set it in ~/.zshrc:
+    ZSH_THEME="powerlevel10k/powerlevel10k"
+
+  After sourcing .zshrc it launches an interactive setup wizard that
+  lets you visually configure your prompt style.
+
+  Recommended font for icons to render correctly:
+    sudo dnf install jetbrains-mono-fonts
+  Then set font in Konsole: Settings → Edit Current Profile → Appearance
+
+
+================================================================================
+  5. PLUGINS — WHAT THEY ARE AND HOW TO INSTALL THEM
+================================================================================
+
+  Plugins add extra features and commands to your terminal.
+  They are listed in ~/.zshrc like this:
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+  ── PLUGIN: git ──────────────────────────────────────────────────────────────
+
+  Comes built into Oh My Zsh. No install needed.
+
+  Gives you short aliases for common git commands:
+    gst    →  git status
+    gco    →  git checkout
+    gcm    →  git commit -m
+    gp     →  git push
+    gl     →  git pull
+    gd     →  git diff
+
+  Useful if you work with git repositories regularly.
+
+  ── PLUGIN: zsh-autosuggestions ──────────────────────────────────────────────
+
+  As you type a command, it shows a faded grey suggestion based on your
+  command history. Press the → right arrow key to accept the suggestion.
+
+  Example:
+    You type:  ssh
+    It shows:  ssh neo@192.168.1.1   ← (faded, from your history)
+    Press →    accepts the full command
+
+  Install:
+    git clone https://github.com/zsh-users/zsh-autosuggestions \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
+
+  ── PLUGIN: zsh-syntax-highlighting ──────────────────────────────────────────
+
+  Colors your command AS YOU TYPE before you hit Enter:
+    Green  = valid command that exists
+    Red    = typo or command not found
+
+  Lets you catch mistakes before running them.
+
+  Example:
+    grpe      ← turns red (typo)
+    grep      ← turns green (valid)
+
+  Install:
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting \
+    ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
+
+  ── ENABLING ALL PLUGINS ─────────────────────────────────────────────────────
+
+  After installing, open ~/.zshrc and set:
+    plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+  Then apply:
+    source ~/.zshrc
+
+
+================================================================================
+  6. CUSTOM CD FUNCTION (AUTO LS SCRIPT)
+================================================================================
+
+  This function overrides the default cd command so that every time
+  you change into a directory it automatically lists the contents.
+  No more typing ls after every cd.
+
+  Add this to the bottom of ~/.zshrc:
+
+    function cd() {
+        new_directory="$*";
+        if [ $# -eq 0 ]; then
+            new_directory=${HOME};
+        fi;
+        builtin cd "${new_directory}" && /bin/ls -lhF --time-style=long-iso --color=auto --ignore=lost+found
+    }
+
+  What each ls flag does:
+    -l              = long format (shows permissions, size, date, owner)
+    -h              = human readable sizes (KB, MB instead of bytes)
+    -F              = adds / after folders, * after executables
+    --time-style=long-iso  = shows date in clean YYYY-MM-DD HH:MM format
+    --color=auto    = colorizes output (folders blue, executables green, etc)
+    --ignore=lost+found    = hides the lost+found system folder from output
+
+  The function logic:
+    - If you type cd with no arguments → goes to home directory (~)
+    - If you type cd /some/path → goes there and lists contents
+    - builtin cd is used so it calls the real cd, not itself recursively
+
+
+================================================================================
+  7. TERMINAL ICONS — NERD FONTS + LSD SETUP
+================================================================================
+
+  To get emojis/icons next to files and folders in your terminal you need
+  two things working together:
+    1. A Nerd Font installed and set in your terminal
+    2. lsd (or eza) installed and aliased to replace ls
+
+  Without a Nerd Font, icons show as boxes or question marks.
+  Without lsd/eza, ls has no icons at all.
+
+  ── STEP 1: INSTALL JETBRAINS MONO NERD FONT ─────────────────────────────────
+
+  The best font for this: JetBrainsMono Nerd Font
+  Download from: https://www.nerdfonts.com/font-downloads
+  Pick: JetBrainsMono.zip
+
+  After downloading, the zip may dump all .ttf files directly into
+  your Downloads folder (no subfolder). Fix this with a wildcard move:
+
+    mkdir -p ~/.local/share/fonts/JetBrainsMono
+    mv ~/Downloads/*.ttf ~/.local/share/fonts/JetBrainsMono/
+
+  WILDCARD EXPLAINED — *.ttf
+  --------------------------
+  The * is a wildcard — it means "match anything".
+  So *.ttf means: every file in this location that ends in .ttf
+
+    ~/Downloads/*.ttf
+    ^^^^^^^^^^^^^^^^
+    This expands to every .ttf file in your Downloads folder.
+    Instead of typing each filename manually, * catches them all at once.
+
+  Examples of wildcards in action:
+    mv ~/Downloads/*.ttf /fonts/     move ALL .ttf files
+    rm ~/Downloads/*.zip             delete ALL .zip files
+    ls ~/Downloads/*.png             list ALL .png files
+
+  TIP: Always run ls first to preview what the wildcard will match
+  before using it with mv or rm:
+    ls ~/Downloads/*.ttf             (preview first)
+    mv ~/Downloads/*.ttf /dest/      (then move)
+
+  ── STEP 2: REBUILD THE FONT CACHE — fc-cache -fv ───────────────────────────
+
+  After copying fonts into ~/.local/share/fonts/ Linux doesn't
+  automatically know they exist. You need to tell the font system
+  to scan and register the new fonts. That's what fc-cache does.
+
+  Command:
+    fc-cache -fv
+
+  Breaking it down:
+    fc-cache    = font cache tool (fc = fontconfig, the Linux font system)
+    -f          = force — rescan everything even if it hasn't changed
+    -v          = verbose — show what it's doing as it runs
+
+  Without -f it might skip newly added fonts thinking nothing changed.
+  Without -v you won't see any output and won't know if it worked.
+
+  After running it, verify the font was registered:
+    fc-list | grep JetBrains
+
+  If you see output like:
+    /home/neo/.local/share/fonts/JetBrainsMono/JetBrainsMonoNerdFont-Regular.ttf
+  → font is installed and ready to use.
+
+  ── STEP 3: SET THE FONT IN YOUR TERMINAL ────────────────────────────────────
+
+  The terminal won't use the new font until you tell it to.
+
+  For kitty (~/.config/kitty/kitty.conf):
+    font_family JetBrainsMono Nerd Font Mono
+    font_size 12.0
+
+  Use the "Mono" variant — it keeps icon spacing consistent so
+  file listings don't look misaligned.
+
+  For Konsole: Settings → Edit Current Profile → Appearance → Font
+  Select: JetBrainsMono Nerd Font Mono
+
+  ── STEP 4: INSTALL LSD ──────────────────────────────────────────────────────
+
+  lsd (LSDeluxe) is a drop-in replacement for ls that adds icons
+  next to every file and directory automatically.
+
+    sudo dnf install lsd
+
+  Test it:
+    lsd
+    lsd -la
+    lsd --tree
+
+  ── STEP 5: ALIAS ls TO lsd ──────────────────────────────────────────────────
+
+  WHAT IS AN ALIAS?
+  -----------------
+  An alias is a shortcut — you tell the shell "when I type THIS,
+  actually run THAT instead." It replaces a command with another.
+
+  Example without alias:
+    You type: ls
+    Shell runs: ls (standard, no icons)
+
+  Example with alias:
+    You type: ls
+    Shell runs: lsd (icons, colors, better output)
+
+  The user never has to type lsd manually — ls just works better.
+
+  HOW TO ADD THE ALIAS
+  --------------------
+  Open your zsh config:
+    nano ~/.zshrc
+
+  Add these lines at the bottom:
+    alias ls='lsd'
+    alias ll='lsd -la'
+    alias lt='lsd --tree'
+
+  Save the file (CTRL+O, Enter, CTRL+X in nano).
+
+  Reload the config so the alias takes effect immediately:
+    source ~/.zshrc
+
+  NOTE: source ~/.zshrc vs source ~/.bashrc
+  -----------------------------------------
+  Since you're using ZSH (not bash), always reload with:
+    source ~/.zshrc          ← correct for zsh
+
+  NOT:
+    source ~/.bashrc         ← this is for bash users only
+                               running this in zsh won't apply
+                               your zsh aliases or plugins
+
+  Your shell config files:
+    ~/.zshrc     = zsh config (what you edit)
+    ~/.bashrc    = bash config (not used since you switched to zsh)
+
+  ── WHAT PARENT DIRECTORY AND mkdir -p MEAN ──────────────────────────────────
+
+  When you create a folder, it must have somewhere to live.
+  The folder it lives inside is called its PARENT DIRECTORY.
+
+  Example:
+    ~/.local/share/fonts/JetBrainsMono/
+                   ^^^^^^ ^^^^^ ^^^^^^^^^^^^^^^
+                     |      |       |
+                     |      |    JetBrainsMono  = the folder you're creating
+                     |      |
+                     |    fonts                 = parent of JetBrainsMono
+                     |
+                   share                        = parent of fonts
+
+  If fonts/ doesn't exist yet and you try to create JetBrainsMono/ inside it:
+    mkdir ~/.local/share/fonts/JetBrainsMono/
+    → ERROR: cannot create directory: No such file or directory
+
+  Linux won't create JetBrainsMono if its parent (fonts/) doesn't exist yet.
+
+  THE -p FLAG FIXES THIS
+  ----------------------
+    mkdir -p ~/.local/share/fonts/JetBrainsMono/
+
+  -p means "parents" — create the full path including any missing
+  parent directories along the way. It creates:
+    ~/.local/          (if it doesn't exist)
+    ~/.local/share/    (if it doesn't exist)
+    ~/.local/share/fonts/         (if it doesn't exist)
+    ~/.local/share/fonts/JetBrainsMono/   (the target folder)
+
+  All in one command. No errors if any part already exists.
+
+  Think of it like building a staircase — each step must exist
+  before you can stand on the next one. -p builds all the steps.
+
+  Other examples:
+    mkdir -p ~/projects/school/MIS567/notes
+    mkdir -p ~/.config/hypr/themes/dark
+
+
+================================================================================
+  8. FINAL ~/.zshrc STRUCTURE
+================================================================================
+
+  # Oh My Zsh setup
+  export ZSH="$HOME/.oh-my-zsh"
+  ZSH_THEME="powerlevel10k/powerlevel10k"
+  plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+  source $ZSH/oh-my-zsh.sh
+
+  # lsd aliases — icons in terminal file listings
+  alias ls='lsd'
+  alias ll='lsd -la'
+  alias lt='lsd --tree'
+
+  # Auto ls when changing directory
+  function cd() {
+      new_directory="$*";
+      if [ $# -eq 0 ]; then
+          new_directory=${HOME};
+      fi;
+      builtin cd "${new_directory}" && lsd -lhF --color=auto
+  }
+
+
+================================================================================
+  9. QUICK COMMAND REFERENCE
+================================================================================
+
+  Apply changes after editing .zshrc:
+    source ~/.zshrc
+
+  Open .zshrc for editing:
+    nano ~/.zshrc
+
+  Check what shell you are using:
+    echo $SHELL
+
+  Check zsh version:
+    zsh --version
+
+  Back up .zshrc before editing:
+    cp ~/.zshrc ~/Desktop/zshrc_backup
+
+  See Oh My Zsh themes list:
+    ls ~/.oh-my-zsh/themes/
+
+  Rebuild font cache after installing fonts:
+    fc-cache -fv
+
+  Verify font installed:
+    fc-list | grep JetBrains
+
+  Test lsd with icons:
+    lsd -la
+    lsd --tree
+
+
+================================================================================
+END OF NOTES
+================================================================================
