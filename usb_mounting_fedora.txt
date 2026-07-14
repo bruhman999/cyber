@@ -1,0 +1,84 @@
+----------------------------------------------------------------
+MOUNTING A USB DRIVE IN FEDORA LINUX
+----------------------------------------------------------------
+  1. IDENTIFY THE DEVICE
+    - List block devices with filesystem info:
+        lsblk -f
+    - Look for the USB device (usually /dev/sdb1 or similar —
+      NOT /dev/sda, that's typically your main disk).
+    - More detail (filesystem type, UUID, label):
+        sudo blkid
+----------------------------------------------------------------
+  2. AUTO-MOUNT VS MANUAL MOUNT
+    - On KDE Plasma, plugging in a USB and opening it in
+      Dolphin auto-mounts it via udisks2/gvfs. No terminal
+      needed for casual access.
+    - Auto-mounted path format:
+        /run/media/$USER/<LABEL-or-UUID>
+      Example:
+        /run/media/neo/SANDISK32GB
+    - Manual mount gives you control over the exact mount
+      point (e.g. /mnt/usb) — useful for scripting or fstab.
+----------------------------------------------------------------
+  3. MANUAL MOUNT
+    - Create a mount point and mount the device:
+        sudo mkdir -p /mnt/usb
+        sudo mount /dev/sdb1 /mnt/usb
+    - NTFS drives (permission/driver issues):
+        sudo mount -t ntfs3 /dev/sdb1 /mnt/usb
+    - exFAT drives (install tools first if needed):
+        sudo dnf install exfatprogs
+        sudo mount -t exfat /dev/sdb1 /mnt/usb
+----------------------------------------------------------------
+  4. ACCESSING IT WHILE PLUGGED IN
+    - Manual mount:
+        cd /mnt/usb
+        ls -la
+        cp somefile.txt /mnt/usb/
+    - Auto-mounted (Dolphin):
+        cd /run/media/neo/SANDISK32GB
+----------------------------------------------------------------
+  5. UNMOUNTING BEFORE REMOVAL (IMPORTANT)
+    - Never yank the drive without unmounting — risk of
+      corruption/incomplete writes.
+    - Manual mount:
+        sudo umount /mnt/usb
+    - Auto-mounted (CLI, or right-click "Safely Remove" in
+      Dolphin):
+        udisksctl unmount -b /dev/sdb1
+    - Optional — power off the USB device itself:
+        udisksctl power-off -b /dev/sdb1
+----------------------------------------------------------------
+  6. PLUGGING BACK IN — SAME MOUNT POINT OR NOT?
+    - MANUAL MOUNT (/mnt/usb):
+        - Nothing persists automatically. The directory still
+          exists but sits empty/unmounted after umount.
+        - Must re-run the mount command each time:
+              sudo mount /dev/sdb1 /mnt/usb
+        - Device node can shift (e.g. /dev/sdb1 -> /dev/sdc1)
+          depending on what else is plugged in — recheck with
+          lsblk if unsure.
+    - AUTO-MOUNT (Dolphin/udisks2):
+        - Consistent path every time, based on the filesystem
+          LABEL, not the device node:
+              /run/media/neo/SANDISK32GB
+        - Unplug/replug and it reappears at the same path
+          automatically — no manual work needed.
+----------------------------------------------------------------
+  7. PERMANENT / CONSISTENT MOUNT POINT (FSTAB)
+    - Get the UUID:
+        sudo blkid /dev/sdb1
+    - Add an entry to /etc/fstab:
+        UUID=xxxx-xxxx  /mnt/usb  ext4  defaults,nofail  0  2
+    - "nofail" is important — prevents boot hangs if the drive
+      isn't plugged in.
+    - Result: mounts to /mnt/usb automatically every time, on
+      reboot or replug.
+----------------------------------------------------------------
+  BOTTOM LINE
+    - Simple in-and-out access -> let Dolphin auto-mount it,
+      path stays consistent by label.
+    - Scripting or anything under /mnt -> use fstab with UUID
+      so the path is predictable instead of relying on /dev/sdX
+      which can shift.
+----------------------------------------------------------------
