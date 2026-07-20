@@ -1,0 +1,153 @@
+----------------------------------------------------------------
+XDP (EXPRESS DATA PATH) — OVERVIEW
+----------------------------------------------------------------
+  WHAT IT IS
+    - A hook point in the Linux kernel that runs eBPF programs
+      at the earliest possible point a packet arrives — inside
+      the NIC driver, before a sk_buff is allocated and before
+      the packet enters the normal networking stack (netfilter,
+      iptables, routing, etc.).
+    - Because it runs before the full stack, decisions happen
+      in nanoseconds with almost no per-packet overhead.
+  WHY IT'S FAST
+    - Normal path: NIC -> driver -> sk_buff alloc -> netfilter
+      hooks -> routing -> protocol stack -> socket.
+    - XDP path: NIC -> driver -> eBPF program -> verdict.
+      Skips allocation and stack traversal entirely for
+      dropped/redirected packets.
+    - eBPF programs are JIT-compiled to native machine code
+      before running, not interpreted at runtime.
+  VERDICTS (RETURN CODES)
+    - XDP_PASS     -> let packet continue to normal stack
+    - XDP_DROP     -> discard immediately, cheapest option
+    - XDP_TX       -> bounce packet back out same interface
+    - XDP_REDIRECT -> send to another interface or CPU
+    - XDP_ABORTED  -> drop + trace exception (debug use)
+----------------------------------------------------------------
+EBPF — THE ENGINE UNDERNEATH
+----------------------------------------------------------------
+  WHAT IT IS
+    - "Extended Berkeley Packet Filter" — a way to run small,
+      sandboxed programs inside the kernel without writing a
+      kernel module or recompiling the kernel.
+    - Originally just packet filtering (BPF), extended to hook
+      into tracing, security, and networking subsystems broadly.
+  THE VERIFIER (IMPORTANT PART)
+    - Every eBPF program is checked before being allowed to
+      load — rejects programs that could crash the kernel,
+      loop forever, or access memory unsafely.
+    - Enforces: bounded loops (or none, pre-5.3 kernels), no
+      unbounded memory access, no unreachable code, register
+      state must be provably safe on every path.
+    - This is what makes eBPF safe to expose to unprivileged
+      or semi-trusted code — worth reading up on separately,
+      it's a rich topic (bypasses have been found historically,
+      hence CAP_BPF/kernel lockdown considerations).
+  MAPS
+    - Key-value stores eBPF programs use to keep state between
+      invocations, or to share data with userspace.
+    - Types: hash maps, arrays, LRU maps, per-CPU maps, ring
+      buffers (for streaming events to userspace).
+    - Example use: XDP program increments a counter per source
+      IP in a map; a userspace tool reads the map to report
+      stats or drive decisions.
+  DEBUGGING
+    - Can't use printf() in kernel space.
+    - bpf_printk() writes to the kernel trace pipe:
+        sudo cat /sys/kernel/debug/tracing/trace_pipe
+    - bpftool is the general-purpose CLI for inspecting loaded
+      programs, maps, and links:
+        sudo bpftool prog list
+        sudo bpftool map dump id <id>
+----------------------------------------------------------------
+WRITING / ATTACHING AN XDP PROGRAM (TYPICAL FLOW)
+----------------------------------------------------------------
+  1. Write program in restricted C (subset of C the verifier
+     accepts), e.g. prog.c
+  2. Compile to BPF bytecode object file:
+        clang -O2 -target bpf -c prog.c -o prog.o
+  3. Load and attach to a NIC:
+        sudo ip link set dev eth0 xdp obj prog.o sec xdp
+  4. Verify it's attached:
+        ip link show dev eth0
+  5. Detach when done:
+        sudo ip link set dev eth0 xdp off
+  NOTE: attaching in "generic/SKB mode" (xdpgeneric) works on
+  any NIC but loses most of the performance benefit — "native"
+  mode requires driver support, and "offload" mode runs the
+  program directly on supported NIC hardware (highest perf).
+----------------------------------------------------------------
+LEGITIMATE USE CASES
+----------------------------------------------------------------
+  - DDOS MITIGATION
+      Drop malicious/garbage traffic (spoofed floods, malformed
+      packets, known bad source IPs) before it costs any CPU
+      time in the full stack. Cloudflare and Meta both run
+      XDP-based filtering at scale for this reason.
+  - LOAD BALANCING
+      Facebook's "Katran" is an open-source L4 load balancer
+      built on XDP — redirects packets to backend servers with
+      minimal overhead.
+  - FIREWALLING AT HIGH PACKET RATES
+      Scenarios where iptables/netfilter can't keep up with
+      millions of packets/sec; XDP handles the coarse filtering
+      before traffic ever reaches netfilter.
+  - MONITORING / TELEMETRY (NON-DROP USE)
+      XDP_PASS combined with a map counter lets you sample or
+      count traffic patterns with very low overhead, without
+      full packet capture cost.
+----------------------------------------------------------------
+DUAL-USE / CAUTION NOTES
+----------------------------------------------------------------
+  - Dropping packets before they reach the stack ALSO means
+    they never reach tools that hook later in the stack —
+    tcpdump, most IDS/IPS tools, standard logging.
+  - This is the same mechanism legitimate DDoS filtering uses
+    AND the same mechanism a rootkit/C2 implant could use to
+    hide its own traffic from monitoring on a compromised host.
+  - Framing matters: "drop known-bad inbound traffic" (DDoS
+    defense) vs. "hide arbitrary traffic from tcpdump" (evasion)
+    use near-identical code — the difference is intent and
+    what's being hidden from whom.
+  - For learning: build/test on an isolated VM, favor the
+    drop-malicious-traffic framing, and treat evasion-style
+    demos as "how attackers use this" reference material
+    rather than something to build for your own systems.
+----------------------------------------------------------------
+RELATED TOOLS WORTH KNOWING
+----------------------------------------------------------------
+  - bpftrace
+      High-level tracing language built on eBPF — good for
+      ad-hoc "what is this process/syscall doing right now"
+      investigation without writing a full C program. You've
+      already used this for SSL_write_ex interception.
+  - bcc (BPF Compiler Collection)
+      Python + C toolkit for writing eBPF tools with a higher-
+      level API than raw libbpf. Good middle ground for
+      scripting eBPF tools without hand-writing everything.
+  - libbpf / libxdp
+      The standard C libraries for loading/managing eBPF and
+      XDP programs from userspace. Most production tools
+      (Cilium, Katran) are built on these.
+  - AF_XDP (XDP sockets)
+      Lets userspace programs receive raw packets redirected
+      via XDP_REDIRECT at very high speed — used for packet
+      capture/processing tools that need line-rate performance
+      without kernel bypass frameworks like DPDK.
+  - Cilium
+      Kubernetes networking/security project built heavily on
+      eBPF and XDP — good real-world example of these concepts
+      applied at scale (network policy, load balancing,
+      observability all via eBPF).
+----------------------------------------------------------------
+GOOD NEXT STEPS FOR LEARNING
+----------------------------------------------------------------
+  - Read the kernel's eBPF verifier documentation — what it
+    catches, what it doesn't, known historical bypass classes.
+  - Try bpftrace one-liners first (lower barrier to entry) before
+    writing raw XDP/C programs.
+  - Build a simple "drop by source IP in a map" XDP program on
+    an isolated VM as a DDoS-defense-style exercise.
+  - Compare xdpgeneric vs native vs offload attach modes and
+    measure the performance difference with iperf3.
+----------------------------------------------------------------
