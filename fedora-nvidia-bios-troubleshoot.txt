@@ -1,0 +1,156 @@
+================================================================================
+          FEDORA + NVIDIA — BIOS CHANGE BOOT FAILURE & KERNEL MODULE FIX
+================================================================================
+OVERVIEW
+--------
+Reference guide from a real troubleshooting session (X570 board, Fedora 43,
+NVIDIA GPU). Two SEPARATE problems occurred back to back and got tangled
+together: a BIOS-caused boot hang, and an unrelated NVIDIA kernel module
+build failure triggered by a routine kernel update.
+
+Key takeaway: these are not the same issue. Treat them separately.
+
+================================================================================
+                          SYMPTOM TIMELINE
+================================================================================
+1. Changed BIOS settings (Fast Boot disabled, PCIe Gen 4 forced on both x16
+   slots, RAM/DOCP changes) -> boot hung with "No irq handler for X.55"
+   messages.
+
+2. Re-enabled Fast Boot, set PCIe slots back to Auto -> got past the boot
+   hang but hit a black screen with a blinking cursor.
+
+3. Booted with nomodeset -> got into Fedora, but NVIDIA kernel module was
+   missing (system fell back to nouveau).
+
+4. Ran akmods --force + dracut --force -> fixed it that time. Cause: a
+   stale initramfs that didn't have the module packed in for the new
+   kernel.
+
+5. Later, reverting RAM/DOCP settings in BIOS caused a total no-POST
+   (blank screen, no BIOS at all) -> required a CMOS reset.
+
+6. After CMOS reset, NVIDIA module still wouldn't build for the running
+   kernel. Root cause found: kernel 7.1.3-101 had a FAILED nvidia akmod
+   build, logged in /var/cache/akmods/nvidia/.
+
+7. Fix: sudo dnf update --refresh pulled in a newer kernel (7.1.4-100)
+   that the current akmod-nvidia package could build against cleanly.
+
+================================================================================
+                    ROOT CAUSES (TWO SEPARATE ISSUES)
+================================================================================
+BOOT HANG / BLACK SCREEN
+    Caused by a BIOS setting combination: Fast Boot disabled + PCIe Gen 4
+    forced on both slots simultaneously. Fixed on the BIOS side, not Linux.
+
+"NVIDIA KERNEL MODULE MISSING"
+    NOT a BIOS issue. Caused by a kernel/akmod version mismatch. A routine
+    kernel update (7.1.3-100 -> 7.1.3-101) shipped before akmod-nvidia
+    could successfully build against it. The module silently failed to
+    build and the system fell back to nouveau.
+
+================================================================================
+              STEP 1 — GET IN WHEN THE NVIDIA MODULE IS MISSING
+================================================================================
+At the GRUB / Fedora boot menu:
+
+    1. Highlight the boot entry, press E
+    2. Add nomodeset to the end of the "linux" line
+    3. Press Ctrl+X to boot
+
+This bypasses the NVIDIA driver so you land on a usable (if lower-res)
+desktop.
+
+================================================================================
+              STEP 2 — CHECK WHETHER THE MODULE ACTUALLY BUILT
+================================================================================
+# What kernel are you running?
+uname -r
+
+# Does the module exist for THIS kernel?
+ls /lib/modules/$(uname -r)/extra/nvidia/nvidia.ko* 2>/dev/null && \
+    echo "MODULE EXISTS" || echo "MODULE MISSING"
+
+# Force a rebuild and capture output
+sudo akmods --force 2>&1 | tail -50
+
+# Find any failed build logs
+sudo find /var/cache/akmods -name "*.failed.log" | xargs ls -t
+
+NOTE: A [ OK ] from akmods --force does NOT guarantee the module works
+for your CURRENT kernel — it may just be reusing a module built for a
+previous kernel version. Always check for a .failed.log matching your
+current uname -r.
+
+================================================================================
+                   STEP 3 — READ THE ACTUAL BUILD FAILURE
+================================================================================
+sudo cat /var/cache/akmods/nvidia/<version>-for-<kernel>.failed.log
+
+This log will name the exact kernel version the build failed against.
+
+================================================================================
+            STEP 4 — UPDATE SYSTEM (PULL IN A BUILDABLE KERNEL)
+================================================================================
+sudo dnf update --refresh
+
+This installs a newer kernel (in this case 7.1.4-100) and lets the old
+broken kernel get cleaned up automatically.
+
+================================================================================
+         STEP 5 — REBUILD MODULE + INITRAMFS, THEN REBOOT NORMALLY
+================================================================================
+sudo akmods --force
+sudo dracut --force
+sudo reboot
+
+IMPORTANT: Do NOT add nomodeset on this reboot — let it try to load the
+real NVIDIA driver.
+
+================================================================================
+              IF BIOS WON'T POST AFTER A SETTINGS CHANGE
+================================================================================
+If the system goes completely dark (no BIOS splash, nothing) after
+changing RAM/DOCP or other settings, do a CMOS reset.
+
+FASTEST FIX — CLR CMOS BUTTON (rear I/O panel, common on ASUS boards)
+    1. Power off, unplug from wall
+    2. Hold the CLR CMOS button 5-10 seconds
+    3. Plug back in and boot — BIOS settings reset to factory default
+
+ALTERNATIVE — CMOS JUMPER
+    1. Move the CLRTC jumper from pins 1-2 -> pins 2-3
+    2. Wait 10 seconds
+    3. Move it back to pins 1-2
+
+ALTERNATIVE — BATTERY PULL
+    1. Remove the CR2032 coin battery
+    2. Wait ~30 seconds
+    3. Reinsert
+
+After reset, redo BIOS changes ONE AT A TIME (e.g. XMP/DOCP first, then
+PCIe mode) rather than all at once, to isolate anything that causes a
+repeat no-POST.
+
+================================================================================
+                            KEY LESSONS
+================================================================================
+- Boot hangs after BIOS changes and missing kernel module errors can look
+  related but usually aren't. Treat them as separate problems.
+
+- akmods --force reporting [ OK ] can be misleading. Always cross-check
+  against uname -r and look for .failed.log files before assuming the
+  module is fine.
+
+- dracut --force is what actually repacks the initramfs with a module
+  akmods built. Running akmods alone is not enough.
+
+- A failed NVIDIA build tied to one specific kernel version is often
+  resolved simply by updating to a newer kernel/akmod pairing
+  (sudo dnf update --refresh) rather than fighting the broken one.
+
+- Change BIOS settings ONE GROUP AT A TIME (e.g. XMP first, then PCIe
+  mode) so a bad combination doesn't leave you troubleshooting multiple
+  issues at once.
+================================================================================
