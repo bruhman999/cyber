@@ -1,0 +1,295 @@
+----------------------------------------------------------------
+NEOVIM — INSTALL, LAZYVIM SETUP, AND KEYBIND REFERENCE (FEDORA)
+----------------------------------------------------------------
+  VIM VS NEOVIM — QUICK NOTE
+    - Neovim is a fork of Vim (2014), fully backward compatible
+      with Vim motions/keybinds.
+    - Config in Lua instead of VimScript, built-in LSP client,
+      better plugin architecture, more active development.
+    - Best pick for a modern daily-driver setup.
+----------------------------------------------------------------
+1. INSTALLING NEOVIM
+----------------------------------------------------------------
+  BASIC INSTALL (Fedora repo)
+        sudo dnf install neovim python3-neovim
+    - Check version (want 0.9+, ideally 0.10+ for full LSP
+      support):
+        nvim --version
+  IF FEDORA'S REPO VERSION IS BEHIND — GRAB LATEST APPIMAGE
+        curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+        chmod u+x nvim-linux-x86_64.appimage
+        sudo mv nvim-linux-x86_64.appimage /usr/local/bin/nvim
+  SET AS DEFAULT EDITOR (add to ~/.zshrc)
+        export EDITOR=nvim
+        export VISUAL=nvim
+        alias vim=nvim
+----------------------------------------------------------------
+2. INSTALLING LAZYVIM (STARTER CONFIG)
+----------------------------------------------------------------
+  WHY YOU NEED THIS
+    - Raw Neovim is nearly empty out of the box — no LSP, no
+      file tree, no fuzzy finder, no autocomplete.
+    - LazyVim is a pre-built, curated config that wires all of
+      that together with sane defaults (the <space> leader
+      menu, file tree, fuzzy search, git integration, LSP,
+      statusline, colorscheme). Built on "lazy.nvim," the
+      plugin manager that installs/loads everything.
+    - You still fully own and can edit the config — it's a
+      strong starting point, not a locked-down app.
+  PREREQS
+        sudo dnf install git curl ripgrep fd-find
+    - ripgrep (rg) and fd-find (fd) are required by Telescope
+      (the fuzzy finder/live-grep plugin). Without them,
+      live grep and some file searches silently fail.
+    - Check if already installed / confirm versions:
+        rg --version
+        fd --version
+    - A Nerd Font (e.g. JetBrainsMono Nerd Font) must be
+      installed and set in your terminal profile, or icons
+      will render as broken boxes.
+  BACKUP ANY EXISTING CONFIG (only if ~/.config/nvim already
+  exists from a prior setup — skip if it doesn't)
+        mv ~/.config/nvim ~/.config/nvim.bak 2>/dev/null
+        mv ~/.local/share/nvim ~/.local/share/nvim.bak 2>/dev/null
+        mv ~/.local/state/nvim ~/.local/state/nvim.bak 2>/dev/null
+        mv ~/.cache/nvim ~/.cache/nvim.bak 2>/dev/null
+  CLONE THE STARTER
+        git clone https://github.com/LazyVim/starter ~/.config/nvim
+        rm -rf ~/.config/nvim/.git
+  WHY REMOVE .git
+    - Cloning pulls down the whole repo including its .git
+      folder — git history, branches, and a remote origin
+      still pointed at LazyVim's own template repo.
+    - Left in place, running "git pull" inside ~/.config/nvim
+      would try to sync LazyVim's template changes into YOUR
+      personalized config — risk of overwriting customizations
+      or merge conflicts.
+    - It's meant to be a one-time starting template, not
+      something kept synced to upstream.
+    - Removing .git turns it into a plain folder of Lua files
+      — fully yours. You can later run "git init" yourself to
+      track your OWN changes in your OWN repo (common for
+      backing up dotfiles to your own GitHub).
+  FIRST LAUNCH
+        nvim
+    - Auto-installs all plugins via lazy.nvim on first run —
+      wait for the full install to finish (progress screen
+      shown), then quit (:qa) and relaunch nvim.
+----------------------------------------------------------------
+3. CONFIG FILE LAYOUT
+----------------------------------------------------------------
+    ~/.config/nvim/
+    ├── init.lua                  entry point, rarely edited
+    ├── lua/config/
+    │   ├── options.lua           editor settings (tabs, numbers)
+    │   ├── keymaps.lua           your custom keybinds
+    │   └── autocmds.lua          automated behaviors
+    └── lua/plugins/              add new plugin config files here
+
+  OPTIONS EXAMPLE (lua/config/options.lua)
+        vim.opt.relativenumber = true   -- relative line numbers
+        vim.opt.wrap = false             -- no line wrap
+        vim.opt.scrolloff = 8            -- keep 8 lines visible
+        vim.opt.tabstop = 4
+        vim.opt.shiftwidth = 4
+
+  ADD LSP SERVERS — create lua/plugins/lsp.lua
+        return {
+          {
+            "neovim/nvim-lspconfig",
+            opts = {
+              servers = {
+                pyright = {},   -- Python
+                bashls = {},    -- Bash
+                yamlls = {},    -- YAML
+                clangd = {},    -- C/C++
+              },
+            },
+          },
+        }
+    - LazyVim uses mason.nvim to auto-install these. If it
+      doesn't grab them automatically, run:
+        :MasonInstallAll
+
+  CHANGE COLORSCHEME — create lua/plugins/colorscheme.lua
+        return {
+          { "catppuccin/nvim", name = "catppuccin" },
+          { "LazyVim/LazyVim", opts = { colorscheme = "catppuccin" } },
+        }
+
+  CUSTOM KEYBINDS — add to lua/config/keymaps.lua
+        local map = vim.keymap.set
+        map("n", "<leader>w", ":w<CR>", { desc = "Save file" })
+        map("n", "<C-s>", ":w<CR>", { desc = "Save with Ctrl+S" })
+----------------------------------------------------------------
+4. MODES (FOUNDATIONAL CONCEPT)
+----------------------------------------------------------------
+    Normal mode    default mode, keys are commands, not text
+    Insert mode    actually typing text into the file
+    Visual mode    selecting text
+    Command mode   typing a : command at the bottom
+
+    i          enter insert mode before cursor
+    a          enter insert mode after cursor
+    I          insert at start of line
+    A          insert at end of line
+    o          open new line below, enter insert mode
+    O          open new line above, enter insert mode
+    v          visual mode (character select)
+    V          visual line mode (whole lines)
+    Ctrl+v     visual block mode (column select)
+    Esc        return to normal mode from anywhere
+    :          enter command mode
+----------------------------------------------------------------
+5. SAVING / QUITTING
+----------------------------------------------------------------
+  IMPORTANT: these are COMMAND MODE strings, not separate
+  keypresses. You must press Esc first (to reach normal mode),
+  then : (opens command line at bottom of screen), THEN type
+  the letters, THEN Enter. Pressing "w" alone in normal mode
+  just moves the cursor forward a word — that's expected,
+  it's not a bug.
+
+    :w         save (write)
+    :wq        save and quit
+    :wq!       save and quit, force (overrides read-only warns)
+    ZZ         shortcut for save-and-quit, no colon needed
+    :q         quit (fails if there are unsaved changes)
+    :q!        quit and discard changes
+    :wqa       save all open buffers/splits and quit all
+    :qa        quit all (fails if any buffer has unsaved changes)
+    :qa!       quit all, discard all unsaved changes
+----------------------------------------------------------------
+6. BASIC MOVEMENT (VANILLA VIM — WORKS ANYWHERE)
+----------------------------------------------------------------
+    h j k l          left / down / up / right
+    w                jump forward to start of next word
+    b                jump back to start of previous word
+    e                jump to end of current/next word
+    0                jump to start of line
+    ^                jump to first non-blank character of line
+    $                jump to end of line
+    gg               jump to top of file
+    G                jump to bottom of file
+    5G / :5          jump to line 5
+    { / }            jump by paragraph (blank-line separated)
+    Ctrl+d / Ctrl+u  half-page down / half-page up
+    Ctrl+f / Ctrl+b  full-page down / full-page up
+    %                jump to matching bracket/paren
+    Ctrl+o           jump back in jump history
+    Ctrl+i           jump forward in jump history
+----------------------------------------------------------------
+7. EDITING
+----------------------------------------------------------------
+    x          delete character under cursor
+    X          delete character before cursor
+    dd         delete (cut) current line
+    dw         delete to end of word
+    d$         delete to end of line
+    D          same as d$
+    yy         yank (copy) current line
+    yw         yank word
+    p          paste after cursor / below line
+    P          paste before cursor / above line
+    u          undo
+    Ctrl+r     redo
+    cw         change word (delete word, enter insert mode)
+    cc         change entire line
+    r<char>    replace single character under cursor
+    ~          toggle case of character under cursor
+    .          repeat last change — very useful, learn this early
+    J          join current line with next line
+----------------------------------------------------------------
+8. SEARCH & REPLACE
+----------------------------------------------------------------
+    /pattern         search forward for pattern
+    ?pattern         search backward for pattern
+    n                jump to next match
+    N                jump to previous match
+    *                search forward for word under cursor
+    #                search backward for word under cursor
+    :%s/old/new/g    replace all "old" with "new" in file
+    :%s/old/new/gc   same, but confirm each replacement
+    :s/old/new/g     replace all "old" with "new" on current line
+----------------------------------------------------------------
+9. VISUAL MODE ACTIONS
+----------------------------------------------------------------
+    v then move       select characters
+    V then move       select whole lines
+    Ctrl+v then move  select a rectangular block (great for
+                       editing columns/aligned text)
+    d                 delete selection
+    y                 yank (copy) selection
+    >                 indent selection right
+    <                 indent selection left
+    u                 lowercase selection
+    U                 uppercase selection
+----------------------------------------------------------------
+10. WINDOW / SPLIT MANAGEMENT
+----------------------------------------------------------------
+    <space>-              horizontal split         (LazyVim)
+    <space>|               vertical split           (LazyVim)
+    :split  / :sp          horizontal split (vanilla)
+    :vsplit / :vsp          vertical split (vanilla)
+    Ctrl+w then h/j/k/l    move focus between splits
+    Ctrl+w then q          close current split
+    Ctrl+w then =          equalize split sizes
+    Ctrl+w then _          maximize height of current split
+----------------------------------------------------------------
+11. LAZYVIM-SPECIFIC KEYBINDS (LEADER = SPACEBAR)
+----------------------------------------------------------------
+    Press <space> alone and WAIT — a popup menu shows all
+    available leader commands. This is the fastest way to
+    discover things as you go; don't feel like you need to
+    memorize everything up front.
+
+  FILE / PROJECT NAVIGATION
+    <space>ff       find file (Telescope fuzzy finder)
+    <space>fg       live grep (search text across project)
+    <space>fr       recent files
+    <space>fb       find open buffers
+    <space>e        toggle file tree (Neo-tree)
+    <space><space>  quick switch between open buffers
+
+  LSP (once a language server is installed via Mason)
+    gd              go to definition
+    gr              find references
+    gI              go to implementation
+    K               hover documentation for symbol under cursor
+    <space>ca       code action (quick fixes, refactors)
+    <space>rn       rename symbol across project
+    ]d / [d         jump to next / previous diagnostic
+    <space>cd       show line diagnostics
+
+  GIT (built into LazyVim via gitsigns/lazygit)
+    <space>gg       open lazygit (full terminal git UI)
+    ]h / [h         jump to next / previous git change (hunk)
+    <space>gb       git blame for current line
+
+  BUFFER / TAB MANAGEMENT
+    <space>bd       delete (close) current buffer
+    Shift+h         previous buffer/tab
+    Shift+l         next buffer/tab
+
+  TERMINAL
+    <space>ft       open floating terminal
+    Ctrl+\          toggle terminal (in some configs)
+
+  PLUGIN / HEALTH MANAGEMENT (command mode, not leader)
+    :Lazy           open plugin manager UI (install/update/clean)
+    :Mason          open LSP/linter/formatter installer UI
+    :checkhealth    diagnose missing dependencies/config issues
+    :MasonInstallAll  force-install all configured LSP servers
+----------------------------------------------------------------
+12. GOOD HABITS / LEARNING ORDER
+----------------------------------------------------------------
+    - Run :checkhealth right after setup to catch missing deps.
+    - Spend 10 minutes just pressing <space> and browsing the
+      menu — fastest way to learn LazyVim's actual layout.
+    - Learn in this rough order: modes -> save/quit -> basic
+      movement -> dd/yy/p -> search -> LSP go-to-definition.
+    - The "." repeat command is one of the highest-leverage
+      things to build muscle memory for early.
+    - Don't try to memorize this whole list at once — treat it
+      as a reference to come back to as you hit specific needs.
+----------------------------------------------------------------
