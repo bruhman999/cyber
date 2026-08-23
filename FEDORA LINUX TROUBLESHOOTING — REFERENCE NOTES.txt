@@ -1,0 +1,374 @@
+FEDORA LINUX TROUBLESHOOTING — REFERENCE NOTES
+===============================================
+
+UNDERSTANDING COMMAND FLAGS
+----------------------------
+Most Linux commands follow this pattern:
+  command -flags target
+
+Flags modify what the command does. They can be combined:
+  ss -tlnp  =  ss + t + l + n + p all at once
+
+HOW TO READ MAN PAGES (built-in documentation)
+-----------------------------------------------
+  man ss          # full manual for ss command
+  man nmap        # full manual for nmap
+  ss --help       # quick flag reference
+  tldr ss         # simplified practical examples (install: sudo dnf install tldr -y)
+
+================================================================
+NETWORK TROUBLESHOOTING
+================================================================
+
+SS — SOCKET STATISTICS (replacement for netstat)
+-------------------------------------------------
+ss shows network connections, listening ports, and socket info.
+
+  ss -tlnp
+
+Breaking down each flag:
+  s  = ss command itself (socket statistics)
+  t  = TCP sockets only (use -u for UDP, -a for all)
+  l  = Listening sockets only (ports waiting for connections)
+  n  = Numeric — show port numbers not service names (e.g. 80 not "http")
+  p  = Show Process — which program is using the socket
+
+Examples:
+  ss -tlnp                    # show all TCP listening ports with process names
+  ss -tulnp                   # show TCP and UDP listening ports
+  ss -anp                     # show ALL connections (listening + established)
+  ss -tlnp | grep 8080        # check if port 8080 is in use
+  ss -tlnp | grep LISTEN      # only show listening ports
+  ss -s                       # summary statistics of all sockets
+
+Output explained:
+  State    = LISTEN (waiting) or ESTABLISHED (active connection)
+  Recv-Q   = data waiting to be received
+  Send-Q   = data waiting to be sent
+  Local Address:Port  = your machine's IP and port
+  Peer Address:Port   = remote machine connecting to you
+  Process  = PID and name of program using that socket
+
+FIND WHAT IS USING A SPECIFIC PORT
+------------------------------------
+  sudo ss -tlnp | grep :443       # who is using port 443
+  sudo ss -tlnp | grep :8080      # who is using port 8080
+  sudo lsof -i :443               # alternative using lsof
+  sudo fuser 443/tcp              # another alternative, returns PID only
+
+NETSTAT (older but still used)
+--------------------------------
+  sudo netstat -tulnp             # same as ss -tulnp
+  sudo netstat -an | grep LISTEN  # all listening ports
+
+Note: netstat may not be installed by default on Fedora
+  sudo dnf install net-tools -y   # installs netstat, ifconfig, route
+
+================================================================
+PROCESS AND RESOURCE TROUBLESHOOTING
+================================================================
+
+PS — PROCESS STATUS
+--------------------
+ps shows running processes.
+
+  ps aux
+
+Breaking down each flag:
+  a  = show processes from all users
+  u  = show in user-oriented format (shows %CPU %MEM)
+  x  = include processes not attached to a terminal
+
+Examples:
+  ps aux                          # list all running processes
+  ps aux --sort=-%mem | head -15  # top 15 processes by RAM usage
+  ps aux --sort=-%cpu | head -15  # top 15 processes by CPU usage
+  ps aux | grep brave             # find brave browser processes
+  ps aux | grep docker            # find docker processes
+
+Output columns explained:
+  USER   = who owns the process
+  PID    = process ID number
+  %CPU   = CPU usage percentage
+  %MEM   = RAM usage percentage
+  VSZ    = virtual memory size
+  RSS    = actual RAM being used (most important)
+  STAT   = process state (S=sleeping, R=running, Z=zombie)
+  START  = when process started
+  COMMAND = what command is running
+
+KILL A PROCESS
+---------------
+  kill PID                        # graceful stop (sends SIGTERM)
+  kill -9 PID                     # force kill (sends SIGKILL) — use when kill fails
+  pkill brave                     # kill by name
+  pkill -9 brave                  # force kill by name
+  killall brave                   # kill all processes with that name
+
+TOP / HTOP — LIVE RESOURCE MONITOR
+-------------------------------------
+  top                             # built-in live process viewer
+  htop                            # better version with colors (sudo dnf install htop -y)
+
+Inside htop:
+  F6    = sort by column
+  F9    = kill selected process
+  F5    = tree view (shows parent/child processes)
+  q     = quit
+
+MEMORY — RAM AND SWAP
+-----------------------
+  free -h                         # human readable RAM and swap usage
+  cat /proc/meminfo | head -20    # detailed memory info
+
+Output explained:
+  total      = total physical RAM
+  used       = currently in use
+  free       = completely unused
+  shared     = shared between processes
+  buff/cache = used for disk caching (gets freed when needed — NOT wasted RAM)
+  available  = what's actually available for new programs
+
+Swap explained:
+  Swap is disk space used as overflow when RAM is full
+  High swap usage = you are out of RAM and system is using disk as RAM
+  Disk is 100x slower than RAM — high swap = system slowdown
+
+  sudo swapoff -a && sudo swapon -a   # clear swap without rebooting
+
+DISK USAGE
+-----------
+  df -h                           # disk space on all mounted filesystems
+  df -h /home                     # disk space on specific path
+  du -sh /home/neo                # total size of a directory
+  du -sh /*  2>/dev/null          # size of every folder in root
+  du -sh * | sort -rh | head -10  # top 10 largest folders in current directory
+
+Find large files:
+  find / -size +1G 2>/dev/null    # find files larger than 1GB
+  find /home -size +500M          # find files over 500MB in /home
+
+================================================================
+SERVICE TROUBLESHOOTING (SYSTEMD)
+================================================================
+
+SYSTEMCTL — MANAGE SERVICES
+-----------------------------
+  sudo systemctl status nginx          # check if nginx is running
+  sudo systemctl start nginx           # start a service
+  sudo systemctl stop nginx            # stop a service
+  sudo systemctl restart nginx         # restart a service
+  sudo systemctl enable nginx          # start automatically on boot
+  sudo systemctl disable nginx         # don't start on boot
+  sudo systemctl reload nginx          # reload config without full restart
+
+Check if service is enabled on boot:
+  sudo systemctl is-enabled nginx      # returns enabled or disabled
+  sudo systemctl is-active nginx       # returns active or inactive
+
+List all services:
+  sudo systemctl list-units --type=service          # all active services
+  sudo systemctl list-units --type=service --all    # all services including inactive
+  sudo systemctl list-unit-files | grep enabled     # only boot-enabled services
+
+JOURNALCTL — VIEW LOGS
+------------------------
+journalctl reads systemd logs — much more powerful than cat /var/log/
+
+  sudo journalctl -u nginx              # logs for nginx service
+  sudo journalctl -u nginx -f           # live follow nginx logs
+  sudo journalctl -u nginx --since today  # today's nginx logs
+  sudo journalctl -xe                   # most recent errors with context
+  sudo journalctl -b                    # logs since last boot
+  sudo journalctl -b -1                 # logs from previous boot (before last reboot)
+  sudo journalctl --since "1 hour ago"  # last hour of logs
+  sudo journalctl -p err                # only error level messages
+  sudo journalctl -p err -b            # errors since last boot
+
+Breaking down flags:
+  u  = unit (service name)
+  f  = follow (live tail like tail -f)
+  x  = add explanatory text to entries
+  e  = jump to end of log
+  b  = since boot
+  p  = priority level (err, warning, info, debug)
+
+================================================================
+FILE AND PERMISSION TROUBLESHOOTING
+================================================================
+
+FILE PERMISSIONS
+-----------------
+  ls -la                          # list files with permissions
+  ls -lah                         # same but human readable sizes
+
+Permission output explained:
+  -rwxr-xr--  neo  neo  file.sh
+
+  First character:  - = file, d = directory, l = symlink
+  rwx = owner permissions (read, write, execute)
+  r-x = group permissions
+  r-- = everyone else permissions
+
+  r = read    (value 4)
+  w = write   (value 2)
+  x = execute (value 1)
+
+Change permissions:
+  chmod +x script.sh              # make executable
+  chmod 755 script.sh             # rwxr-xr-x (owner full, others read/execute)
+  chmod 644 file.txt              # rw-r--r-- (owner read/write, others read only)
+  chmod -R 755 /var/www/html      # recursive — apply to all files in folder
+
+Change ownership:
+  sudo chown neo file.txt         # change owner to neo
+  sudo chown neo:neo file.txt     # change owner and group to neo
+  sudo chown -R neo /home/neo     # recursive ownership change
+
+FIND FILES
+-----------
+  find . -name "*.txt"            # find all .txt files in current directory
+  find / -name "config.yaml"      # find file anywhere on system
+  find /home -name "*.log" -mtime -7   # logs modified in last 7 days
+  find . -type f -name "*.sh"     # only files (not directories)
+  find . -type d                  # only directories
+  find / -name "file" 2>/dev/null # suppress permission errors
+
+GREP — SEARCH INSIDE FILES
+----------------------------
+  grep "error" /var/log/syslog           # find lines with "error"
+  grep -i "error" /var/log/syslog        # case insensitive
+  grep -r "password" /etc/               # search recursively in directory
+  grep -n "error" file.txt               # show line numbers
+  grep -v "info" /var/log/syslog         # show lines that DON'T contain "info"
+  grep -E "error|warning" /var/log/syslog  # search for multiple terms
+  cat file.txt | grep "keyword"          # pipe output into grep
+
+Breaking down flags:
+  i  = case insensitive
+  r  = recursive (search all files in directory)
+  n  = show line numbers
+  v  = invert (show non-matching lines)
+  E  = extended regex (allows | for OR)
+
+================================================================
+PACKAGE MANAGEMENT (DNF — FEDORA)
+================================================================
+
+  sudo dnf install package -y         # install package
+  sudo dnf remove package -y          # uninstall package
+  sudo dnf update -y                  # update all packages
+  sudo dnf search keyword             # search for a package
+  sudo dnf info package               # show package details
+  sudo dnf list installed             # list all installed packages
+  sudo dnf list installed | grep vim  # check if specific package is installed
+  sudo dnf autoremove                 # remove unused dependencies
+  sudo dnf clean all                  # clear dnf cache
+
+================================================================
+FIREWALL (FIREWALLD — FEDORA DEFAULT)
+================================================================
+
+  sudo firewall-cmd --state                          # check if firewall is running
+  sudo firewall-cmd --list-all                       # show all rules
+  sudo firewall-cmd --list-ports                     # show open ports
+  sudo firewall-cmd --add-port=8080/tcp --permanent  # open port 8080
+  sudo firewall-cmd --remove-port=8080/tcp --permanent # close port 8080
+  sudo firewall-cmd --reload                         # apply changes
+  sudo firewall-cmd --add-service=http --permanent   # allow HTTP service
+
+================================================================
+COMMON TROUBLESHOOTING SCENARIOS
+================================================================
+
+SOMETHING WON'T START — ALWAYS CHECK LOGS FIRST
+-------------------------------------------------
+  sudo systemctl status servicename
+  sudo journalctl -u servicename -xe
+
+PORT ALREADY IN USE
+--------------------
+  sudo ss -tlnp | grep :8080      # find what's using it
+  sudo kill -9 PID                # kill it by PID shown in output
+
+DISK FULL
+----------
+  df -h                           # find which filesystem is full
+  du -sh * | sort -rh | head -10  # find largest directories
+  sudo journalctl --vacuum-size=500M  # trim logs to 500MB
+  docker system prune -a          # clear docker images/containers if applicable
+
+RAM/SWAP FULL
+--------------
+  free -h                         # check usage
+  ps aux --sort=-%mem | head -10  # find what's eating RAM
+  sudo swapoff -a && sudo swapon -a  # clear swap
+  sudo systemctl stop servicename # stop heavy services
+
+CANT CONNECT TO A SERVICE
+--------------------------
+  ping 10.0.0.50                  # basic connectivity test
+  sudo ss -tlnp | grep :443       # is service actually listening
+  sudo systemctl status servicename  # is service running
+  sudo firewall-cmd --list-ports  # is port open in firewall
+  curl -v http://10.0.0.50        # test HTTP connection with verbose output
+  telnet 10.0.0.50 443            # test if port is reachable
+
+DNS NOT RESOLVING
+------------------
+  dig google.com                  # test DNS resolution
+  dig google.com @8.8.8.8         # test using Google DNS directly
+  cat /etc/resolv.conf            # check what DNS server is configured
+  resolvectl status               # detailed DNS info per interface
+  sudo systemctl restart systemd-resolved  # restart DNS resolver
+
+CHECK OPEN FILES / WHAT A PROCESS IS DOING
+-------------------------------------------
+  sudo lsof -p PID                # list all files opened by a process
+  sudo lsof -i :80                # what process is using port 80
+  strace -p PID                   # trace system calls of running process (advanced)
+
+================================================================
+USEFUL ONE-LINERS
+================================================================
+
+  # Watch a command run every 2 seconds live
+  watch -n 2 free -h
+
+  # Monitor network traffic on an interface
+  sudo tcpdump -i enp5s0
+
+  # Monitor specific port traffic
+  sudo tcpdump -i enp5s0 port 443
+
+  # Check last reboot time
+  last reboot | head -5
+
+  # Check failed login attempts
+  sudo journalctl -u sshd | grep "Failed"
+
+  # List all users on system
+  cat /etc/passwd | cut -d: -f1
+
+  # Check current logged in users
+  who
+  w
+
+  # Show routing table
+  ip route show
+
+  # Test if a port is open on remote host
+  nc -zv 10.0.0.50 443
+
+  # Copy file over SSH
+  scp file.txt neo@10.0.0.50:/home/neo/
+
+  # Run last command with sudo
+  sudo !!
+
+  # Show command history
+  history
+  history | grep ssh              # search history for specific command
+
+  # Repeat last argument
+  mkdir /very/long/path && cd !$  # !$ = last argument of previous command
