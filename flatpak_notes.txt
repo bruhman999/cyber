@@ -1,0 +1,333 @@
+================================================================================
+                         FLATPAK — REFERENCE NOTES (FEDORA)
+================================================================================
+
+--------------------------------------------------------------------------------
+WHAT IS FLATPAK?
+--------------------------------------------------------------------------------
+
+  Flatpak is a universal Linux application packaging system. Instead of
+  packages that integrate deeply into your OS like dnf packages do, Flatpak
+  bundles each app with all its own dependencies inside a sandboxed container.
+
+  The same Flatpak package works on Fedora, Ubuntu, Arch, Debian, or any
+  Linux distro — it doesn't care what distro you're on.
+
+  Think of it like this:
+    dnf package    = app that integrates into your OS, shares system libraries
+    Flatpak        = app in its own sealed box with everything it needs inside
+
+  FLATHUB
+  -------
+  Flathub is the main Flatpak repository — the "app store" for Flatpaks.
+  It hosts thousands of apps: Bitwarden, Spotify, OBS, GIMP, VLC, and more.
+  Website: https://flathub.org
+
+  Without adding Flathub as a remote source, Flatpak is installed but has
+  nowhere to pull apps from. Adding Flathub is a required step.
+
+--------------------------------------------------------------------------------
+INSTALLATION ON FEDORA
+--------------------------------------------------------------------------------
+
+  Flatpak is included with Fedora by default — no install needed.
+  However, Flathub (the main app source) may not be added yet.
+
+  Check if Flatpak is installed:
+    flatpak --version
+
+  Check what remotes (sources) are configured:
+    flatpak remotes
+
+  If Flathub is not listed, add it:
+    flatpak remote-add --if-not-exists flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+
+  Breakdown of that command:
+    flatpak remote-add       = add a new source/repository
+    --if-not-exists          = only add it if it's not already there
+                               (safe to run multiple times, won't duplicate)
+    flathub                  = the name you're giving this remote
+    https://flathub.org/...  = the URL of the Flathub repository file
+
+  After adding Flathub, update the remote metadata:
+    flatpak update
+
+  Verify Flathub was added:
+    flatpak remotes
+
+  Output should show:
+    Name     Options
+    flathub  system,ipa
+
+--------------------------------------------------------------------------------
+WHY YOU HAD TO ADD FLATHUB FOR BITWARDEN
+--------------------------------------------------------------------------------
+
+  When you tried to install Bitwarden, it wasn't in the official Fedora repo
+  because Bitwarden is a proprietary/closed-source app — Fedora only ships
+  open-source software in its official repos.
+
+  Bitwarden is distributed on Flathub as a Flatpak.
+  Without Flathub added as a remote, Flatpak had no source to pull it from.
+
+  The fix was:
+    1. Add Flathub as a remote source
+    2. Then install Bitwarden from Flathub
+
+  Commands used:
+    flatpak remote-add --if-not-exists flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+
+    flatpak install flathub com.bitwarden.desktop
+
+  The app ID "com.bitwarden.desktop" is Bitwarden's unique Flatpak identifier.
+  Every Flatpak app has a unique reverse-domain ID like this.
+
+--------------------------------------------------------------------------------
+SEARCHING FOR APPS
+--------------------------------------------------------------------------------
+
+  Search Flathub from terminal:
+    flatpak search <keyword>
+    flatpak search bitwarden
+    flatpak search spotify
+    flatpak search vlc
+
+  The search returns:
+    Application ID         Name          Version   Branch   Remotes
+    com.bitwarden.desktop  Bitwarden     2024.x.x  stable   flathub
+
+  The Application ID (e.g. com.bitwarden.desktop) is what you use to
+  install, run, update, or remove the app.
+
+  You can also browse and find app IDs at:
+    https://flathub.org
+
+--------------------------------------------------------------------------------
+INSTALLING APPS
+--------------------------------------------------------------------------------
+
+  Install from Flathub:
+    flatpak install flathub <app-id>
+
+  Examples:
+    flatpak install flathub com.bitwarden.desktop
+    flatpak install flathub com.spotify.Client
+    flatpak install flathub org.videolan.VLC
+    flatpak install flathub com.obsproject.Studio
+    flatpak install flathub org.gimp.GIMP
+    flatpak install flathub org.libreoffice.LibreOffice
+
+  Install without confirmation prompt:
+    flatpak install flathub com.bitwarden.desktop -y
+
+  Install a specific version (branch):
+    flatpak install flathub com.bitwarden.desktop stable
+
+--------------------------------------------------------------------------------
+RUNNING APPS
+--------------------------------------------------------------------------------
+
+  Run a Flatpak app:
+    flatpak run <app-id>
+    flatpak run com.bitwarden.desktop
+    flatpak run com.spotify.Client
+
+  Flatpak apps also appear in your app launcher (Wofi, KRunner, etc.)
+  automatically after install — you don't need to run them from terminal.
+
+  Run with extra environment variables (useful for Wayland/NVIDIA issues):
+    flatpak run --env=VARIABLE=value com.obsproject.Studio
+
+--------------------------------------------------------------------------------
+LISTING INSTALLED APPS
+--------------------------------------------------------------------------------
+
+  List all installed Flatpaks:
+    flatpak list
+
+  List only installed apps (not runtimes):
+    flatpak list --app
+
+  List installed runtimes only:
+    flatpak list --runtime
+
+  Show detailed info about an installed app:
+    flatpak info com.bitwarden.desktop
+
+--------------------------------------------------------------------------------
+UPDATING APPS
+--------------------------------------------------------------------------------
+
+  Update all Flatpak apps and runtimes:
+    flatpak update
+
+  Update a specific app only:
+    flatpak update com.bitwarden.desktop
+
+  Check for updates without installing:
+    flatpak remote-ls --updates flathub
+
+  Flatpak apps update independently from your system packages (dnf).
+  Run both regularly:
+    sudo dnf update && flatpak update
+
+--------------------------------------------------------------------------------
+REMOVING APPS
+--------------------------------------------------------------------------------
+
+  Remove a Flatpak app:
+    flatpak uninstall <app-id>
+    flatpak uninstall com.bitwarden.desktop
+
+  Remove unused runtimes and dependencies (frees up disk space):
+    flatpak uninstall --unused
+
+  Remove an app AND its leftover data:
+    flatpak uninstall com.bitwarden.desktop --delete-data
+
+  Remove all Flatpaks at once (nuclear option):
+    flatpak uninstall --all
+
+--------------------------------------------------------------------------------
+MANAGING REMOTES (SOURCES)
+--------------------------------------------------------------------------------
+
+  A remote is a source repository Flatpak pulls apps from.
+  Flathub is the main one — others exist for specific projects.
+
+  List all configured remotes:
+    flatpak remotes
+
+  Add a remote:
+    flatpak remote-add --if-not-exists flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+
+  Remove a remote:
+    flatpak remote-delete flathub
+
+  Disable a remote without removing it:
+    flatpak remote-modify --disable flathub
+
+  Re-enable a disabled remote:
+    flatpak remote-modify --enable flathub
+
+  List all apps available in a remote:
+    flatpak remote-ls flathub
+
+  List only available updates from a remote:
+    flatpak remote-ls --updates flathub
+
+--------------------------------------------------------------------------------
+FLATPAK PERMISSIONS & SANDBOX
+--------------------------------------------------------------------------------
+
+  Flatpak apps run in a sandbox — they are isolated from your system.
+  By default they have limited access to your files, devices, and network.
+
+  View permissions for an app:
+    flatpak info --show-permissions com.bitwarden.desktop
+
+  Override permissions (grant extra access):
+    flatpak override com.bitwarden.desktop --filesystem=home
+    flatpak override com.bitwarden.desktop --filesystem=/mnt/data
+
+  Remove a permission override:
+    flatpak override com.bitwarden.desktop --reset
+
+  List all overrides:
+    flatpak override --show com.bitwarden.desktop
+
+  GUI tool to manage permissions (easier):
+    flatpak install flathub com.github.tchx84.Flatseal
+    flatpak run com.github.tchx84.Flatseal
+
+  Flatseal is a graphical Flatpak permission manager — recommended if
+  you want to manage sandbox access without memorizing CLI flags.
+
+--------------------------------------------------------------------------------
+FLATPAK PROS AND CONS
+--------------------------------------------------------------------------------
+
+  PROS
+  ----
+  Works on any Linux distro (distro-agnostic)
+  Always latest version regardless of distro repo age
+  Sandboxed — apps can't easily access system files
+  No dependency conflicts with system packages
+  Easy install/remove without affecting other software
+
+  CONS
+  ----
+  Larger disk usage — each app bundles its own libraries
+  Slightly slower first launch (libraries load from the bundle)
+  Some system integration quirks (fonts, themes may not match)
+  Sandbox can block legitimate file access (fixable with overrides)
+  Not suitable for CLI tools or system-level software
+
+  WHEN TO USE FLATPAK VS DNF
+  --------------------------
+  Use DNF for:
+    System tools, CLI utilities, development tools, drivers
+    Anything that needs deep system integration
+    Examples: git, nmap, ffmpeg, vim, htop
+
+  Use Flatpak for:
+    GUI desktop apps, especially proprietary ones
+    Apps not in the official Fedora repo
+    Apps where you want the latest version
+    Examples: Bitwarden, Spotify, Discord, OBS, GIMP
+
+--------------------------------------------------------------------------------
+COMMON FLATPAK APP IDS — QUICK REFERENCE
+--------------------------------------------------------------------------------
+
+  Bitwarden          com.bitwarden.desktop
+  Spotify            com.spotify.Client
+  Discord            com.discordapp.Discord
+  OBS Studio         com.obsproject.Studio
+  VLC                org.videolan.VLC
+  GIMP               org.gimp.GIMP
+  LibreOffice        org.libreoffice.LibreOffice
+  Flatseal           com.github.tchx84.Flatseal
+  Brave Browser      com.brave.Browser
+  Bottles (Wine)     com.usebottles.bottles
+  Steam              com.valvesoftware.Steam
+
+--------------------------------------------------------------------------------
+QUICK COMMAND REFERENCE
+--------------------------------------------------------------------------------
+
+  Add Flathub remote:
+    flatpak remote-add --if-not-exists flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+
+  Search for an app:
+    flatpak search <keyword>
+
+  Install an app:
+    flatpak install flathub <app-id>
+
+  Run an app:
+    flatpak run <app-id>
+
+  Update all apps:
+    flatpak update
+
+  List installed apps:
+    flatpak list --app
+
+  Remove an app:
+    flatpak uninstall <app-id>
+
+  Remove unused runtimes:
+    flatpak uninstall --unused
+
+  List remotes:
+    flatpak remotes
+
+  Check Flatpak version:
+    flatpak --version
+
+================================================================================

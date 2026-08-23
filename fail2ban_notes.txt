@@ -1,0 +1,178 @@
+================================================================================
+                         FAIL2BAN — FEDORA REFERENCE NOTES
+================================================================================
+
+--------------------------------------------------------------------------------
+WHAT IS FAIL2BAN?
+--------------------------------------------------------------------------------
+
+  Fail2ban is a system-level security daemon that monitors log files for
+  repeated failed authentication attempts and automatically bans the offending
+  IP addresses using firewall rules.
+
+  It is NOT a desktop application — it runs as a background system service
+  managed by systemd. You do not need to launch it manually or add it to
+  Hyprland autostart.
+
+  Common use case:
+    Someone repeatedly tries to brute-force your SSH login →
+    Fail2ban detects the failures in the log →
+    Automatically bans that IP via firewalld/iptables
+
+  Each service Fail2ban monitors is called a JAIL.
+  Example jails: sshd, nginx, apache, etc.
+
+--------------------------------------------------------------------------------
+INSTALLATION
+--------------------------------------------------------------------------------
+
+  sudo dnf install fail2ban
+
+--------------------------------------------------------------------------------
+STARTING & ENABLING FAIL2BAN
+--------------------------------------------------------------------------------
+
+  Start the service immediately:
+    sudo systemctl start fail2ban
+
+  Enable auto-start at every boot (recommended):
+    sudo systemctl enable fail2ban
+
+  Do both at once:
+    sudo systemctl enable --now fail2ban
+
+--------------------------------------------------------------------------------
+CHECKING STATUS
+--------------------------------------------------------------------------------
+
+  Check if the service is running:
+    systemctl status fail2ban
+
+  Check if it's enabled to start at boot:
+    systemctl is-enabled fail2ban
+
+  Show all active jails:
+    sudo fail2ban-client status
+
+  Show details for a specific jail:
+    sudo fail2ban-client status sshd
+
+  Example output of fail2ban-client status sshd:
+    Status for the jail: sshd
+    |- Filter
+    |  |- Currently failed: 2
+    |  |- Total failed:     47
+    |  `- Journal matches:  _SYSTEMD_UNIT=sshd.service
+    `- Actions
+       |- Currently banned: 1
+       |- Total banned:     3
+       `- Banned IP list:   192.168.1.55
+
+--------------------------------------------------------------------------------
+MANAGING BANS
+--------------------------------------------------------------------------------
+
+  Unban an IP address:
+    sudo fail2ban-client set sshd unbanip <IP>
+    sudo fail2ban-client set sshd unbanip 192.168.1.55
+
+  Manually ban an IP:
+    sudo fail2ban-client set sshd banip <IP>
+
+  Reload config after making changes:
+    sudo fail2ban-client reload
+
+  Restart the service:
+    sudo systemctl restart fail2ban
+
+--------------------------------------------------------------------------------
+CONFIGURATION
+--------------------------------------------------------------------------------
+
+  Main config file (do not edit directly):
+    /etc/fail2ban/jail.conf
+
+  Local override file (edit this one):
+    /etc/fail2ban/jail.local
+
+  Create jail.local if it doesn't exist:
+    sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+
+  Basic jail.local settings to customize:
+
+    [DEFAULT]
+    bantime  = 1h        # How long to ban an IP (default 10 minutes)
+    findtime = 10m       # Window to count failures in
+    maxretry = 5         # Failed attempts before ban
+
+    [sshd]
+    enabled = true       # Enable the SSH jail
+
+  After editing jail.local always reload:
+    sudo fail2ban-client reload
+
+--------------------------------------------------------------------------------
+VIEWING LOGS
+--------------------------------------------------------------------------------
+
+  View Fail2ban logs live:
+    sudo journalctl -u fail2ban -f
+
+  View recent Fail2ban activity:
+    sudo journalctl -u fail2ban -n 50
+
+  View ban history:
+    sudo cat /var/log/fail2ban.log
+
+--------------------------------------------------------------------------------
+HYPRLAND — IMPORTANT CLARIFICATION
+--------------------------------------------------------------------------------
+
+  Fail2ban is a SYSTEM-LEVEL daemon, not a desktop application.
+
+  You DO NOT need to add Fail2ban to Hyprland autostart.
+  Systemd already handles starting it at boot when enabled.
+
+  Hyprland autostart (exec-once) is only for:
+    - Desktop apps (waybar, dunst, nm-applet, etc.)
+    - User-mode services that systemd doesn't manage
+
+  The correct and complete setup is just:
+    sudo systemctl enable --now fail2ban
+
+  DO NOT add this to hyprland.conf:
+    exec-once = systemctl --user start fail2ban   ← wrong, not needed
+
+  If you see Fail2ban NOT starting at boot despite being enabled,
+  check with: journalctl -u fail2ban -b
+  to see boot-time errors.
+
+--------------------------------------------------------------------------------
+QUICK COMMAND REFERENCE
+--------------------------------------------------------------------------------
+
+  Install:
+    sudo dnf install fail2ban
+
+  Start + enable at boot:
+    sudo systemctl enable --now fail2ban
+
+  Check running status:
+    systemctl status fail2ban
+
+  Check all active jails:
+    sudo fail2ban-client status
+
+  Check specific jail:
+    sudo fail2ban-client status sshd
+
+  Unban an IP:
+    sudo fail2ban-client set sshd unbanip <IP>
+
+  Reload after config changes:
+    sudo fail2ban-client reload
+
+  View live logs:
+    sudo journalctl -u fail2ban -f
+
+================================================================================
