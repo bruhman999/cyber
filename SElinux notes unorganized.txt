@@ -1,0 +1,50 @@
+SELinux = Security Enhanced Linux
+
+It is a security system built into the Linux kernel, originally developed by the NSA and now maintained as open source.
+
+SIMPLE EXPLANATION
+
+Normal Linux permissions control who can access files based on users and groups. SELinux adds a second layer on top of that — it controls what processes are allowed to do, even if they are running as root.
+
+Think of it like this:
+
+Normal permissions: "Can this user access this file?"
+SELinux: "Even if they can access it, are they allowed to do this specific action with it?"
+
+EXAMPLE
+
+Say a web server process gets compromised by an attacker. Without SELinux, that process could potentially read /etc/passwd, write files anywhere, or open network connections. With SELinux, the web server process is locked to only doing exactly what a web server should do — nothing else, even if the attacker has control of it.
+
+THREE MODES
+
+Enforcing   — SELinux is active and blocking violations (default on Fedora)
+Permissive  — SELinux logs violations but does not block them (good for debugging)
+Disabled    — SELinux is completely off
+
+Check your current mode:
+
+getenforce
+
+Or for more detail:
+
+sestatus
+
+WHY IT MATTERS FOR YOU
+
+On Fedora SELinux runs in Enforcing mode by default which is why sometimes things that work on Kali (which uses no SELinux) break on Fedora. For example:
+
+Reverse shells getting blocked
+Services not starting
+Files being denied even though permissions look correct
+
+QUICK FIXES WHEN SELinux BREAKS SOMETHING
+
+Temporarily switch to permissive mode to test if SELinux is the problem:
+
+sudo setenforce 0
+
+Switch back to enforcing:
+
+sudo setenforce 1
+
+Note: setenforce 0 only lasts until reboot. To make it permanent you edit /etc/selinux/config and change ENFORCING to PERMISSIVE — but that is generally not recommended for security reasons.
